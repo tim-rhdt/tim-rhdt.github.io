@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="https://cindyjs.org/dist/latest/Cindy.js"></script>
+    <title>Kites</title>
+
+    <script type="text/javascript">
+    // Prevent right clicks
+    document.addEventListener('contextmenu', function(e) {e.preventDefault();}, false);
+    // Prevent dragging on everything except range inputs
+    document.addEventListener("dragstart", function (e) {e.preventDefault();});
+
+    window.addEventListener("load", function () {
+      const canvasContainer = document.getElementById("CSCanvas");
+      const zoomSlider = document.getElementById("zoom-slider");
+      if (!canvasContainer || !zoomSlider) return;
+      canvasContainer.addEventListener("wheel", function (event) {
+        event.preventDefault();
+        const min = parseFloat(zoomSlider.min);
+        const max = parseFloat(zoomSlider.max);
+        const current = parseFloat(zoomSlider.value);
+        const step = (max - min) / 40;
+        const direction = event.deltaY > 0 ? -1 : 1;
+        let next = current + direction * step;
+        next = Math.max(min, Math.min(max, next));
+        zoomSlider.value = next;
+        zoomSlider.dispatchEvent(new Event("input", { bubbles: true }));
+      }, { passive: false });
+    });
+
+    function hexToRGB(hex) {
+      return [
+        parseInt(hex.substr(1, 2), 16) / 255,
+        parseInt(hex.substr(3, 2), 16) / 255,
+        parseInt(hex.substr(5, 2), 16) / 255
+      ];
+    }
+
+    function setColor(target, hex) {
+      const rgb = hexToRGB(hex);
+      cindy.evokeCS(`${target} = [${rgb.join(",")}];`);
+    }
+
+    var cindy = CindyJS({
+      scripts: "cs*",
+      autoplay: false,
+      geometry: [ {name: "A", type: "Free", pos: [-1, 0, 1], size: 6, color: [0.0, 0.0, 0.0], alpha: 0, labeled: false, border: false}],
+      ports: [ {id: "CSCanvas", width: 1000, height: 1000, transform: [{ visibleRect: [-20, 20, 20, -20] }] } ]
+    });
+    </script>
+
+    <script id="csinit" type="text/x-cindyscript">
+      //===== LIST REDUCTION =====
+      normalize3(point) := if(point_3 == 0, point, point/point_3);
+      removeDuplicates(transformations) := (
+        regional(result, images, pt);
+        result = []; images = [];
+        forall(transformations, M,
+          pt = normalize3(M * [0,0,1]);
+          if(length(images) == 0,
+            images = append(images, pt);
+            result = append(result, M);
+          , // else
+            if(min(apply(images, p, |p - pt|)) > 0.01,
+              images = append(images, pt);
+              result = append(result, M);
+            );
+          );
+        );
+        result
+      );
+
+      selectVisible(transformations) := select(transformations, trafo,
+        // assumes centered origin of visibleRect, security overflow factor of 1.1
+        |normalize3(trafo * [0,0,1])_1| <= 1.1 * |normalize3(screenbounds()_1)_1| &
+        |normalize3(trafo * [0,0,1])_2| <= 1.1 * |normalize3(screenbounds()_1)_2|
+      );
+      
+      //===== STYLE and UI =====
+      style = {
+        "anticlockwiseColor": [68,159,188]/255,
+        "clockwiseColor": [1,1,1],
+        "kiteOnlyBool": false,
+        "kiteColorBool": true,
+        "kiteColor": [1,1,1],
+        "kiteBorderBool": true,
+        "kiteBorderColor": [178,178,178]/255,
+        "kiteBorderSize": 2,
+        "kiteDiagonalBool": false,
+        "kiteDiagonalColor": [178,178,178]/255,
+        "kiteDiagonalSize": 1,
+        "originalTilingBool": false,
+        "originalTilingColor": [100,100,230]/255,
+        "originalTilingSize": 1,
+        "newTilingBool": false,
+        "newTilingColor": [0,0,0],
+        "newTilingSize": 2,
+        "UIColor": [225,91,28]/255,
+        "zoom": [[1,0,0], [0,1,0], [0,0,0.4]]
+      };
+
+      UI = {
+        "visiBool": true,
+        "size": 2,
+        "scale": 3,
+        "basePoint": [0,0],
+        "shift": [0,0],
+        "anchor": [0,0],
+        "angleRange": [0,0],
+        "orientation": 0,
+        "overhang": 1.2
+      };
+      updateUI(angle, zoom) := (
+        UI.anchor = 1/zoom_3_3 * (UI.basePoint + floor(20 * zoom_3_3 / |UI.shift|) * UI.shift);
+        UI.sliderPoints = apply([UI.angleRange_1, (UI.angleRange_1 + UI.angleRange_2)/2, UI.angleRange_2], angle, gauss(exp(i*(angle + UI.orientation))));
+        UI.arc = apply(UI.scale * UI.sliderPoints, arcpt, arcpt + UI.anchor);
+        A.xy = UI.anchor + UI.scale * rotate(UI.orientation, gauss(exp(i * angle)));
+      );
+
+      drawUI() := if(UI.visiBool,
+        drawarc(UI.arc_1, UI.arc_2, UI.arc_3, color->style.UIColor, size->UI.size);
+        draw(UI.anchor, UI.anchor + UI.overhang * (UI.arc_1 - UI.anchor), color->style.UIColor, size->UI.size);
+        draw(UI.anchor, UI.anchor + UI.overhang * (UI.arc_3 - UI.anchor), color->style.UIColor, size->UI.size);
+        draw(UI.anchor, UI.anchor + UI.overhang * (A.xy - UI.anchor), color->style.UIColor, size->UI.size);
+        draw(A.xy, color->style.UIColor, size->6, border->false);
+      );
+
+      updateVisuals() := (
+        if(style.kiteColorBool, style.kiteColor = style.clockwiseColor, style.kiteColor = style.anticlockwiseColor);
+        if(UI.visiBool, A.visible = true, A.visible = false);
+      );
+
+      //===== ANGLE HANDLING =====
+      rotate(angle, input) := [[cos(angle), -sin(angle)],[sin(angle), cos(angle)]] * input;
+      updateAngle() := (
+        A.xy = UI.anchor + UI.scale * rotate(UI.orientation, gauss(
+          exp(i * max(min((arctan2(rotate(-UI.orientation, A.xy-UI.anchor))), UI.angleRange_2), UI.angleRange_1)) 
+        ));
+        tilings.theta = arctan2(A.xy-UI.anchor) - UI.orientation;
+      );
+      
+      //===== GEOMETRY INPUT =====
+      // the descriptions are local and kind of dumb as I use only the interiors of each tile
+      // it works well except for if I want to draw the resulting tilings which require global-ish information
+      // therefore: hardcode some global information via "problematicEdge" to avoid redoing everything
+      hexagon = {
+        "clockwise": false,
+        "euclUnitVertices": [[2,0], [1,sqrt(3)], [-1,sqrt(3)], [-2,0], [-1,-sqrt(3)], [1,-sqrt(3)]]/2,
+        "sidelength": 2
+      };
+      hexagon.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          // sidelength * (lam * [3/2 + sqrt(3)/2, 1/2 + sqrt(3)/2] + mu * [0, 1 + sqrt(3)])
+          [[1, 0, hexagon.sidelength * lam * (3+sqrt(3))/2], [0, 1, hexagon.sidelength * (lam * (1+sqrt(3))/2 + mu * (1+sqrt(3)))], [0, 0, 1]]
+        )))
+      ));
+      
+      square = {
+        "clockwise": true,
+        "euclUnitVertices": [[1,1], [1,-1], [-1,-1], [-1,1]]/2,
+        "sidelength": 2
+      };
+      square.simpleTransformations = apply(0..5, k,
+        [[cos(2*pi*k/6), -sin(2*pi*k/6), -square.sidelength * (1+sqrt(3))/2 * sin(2*pi*k/6)],
+         [sin(2*pi*k/6), cos(2*pi*k/6), square.sidelength * (1+sqrt(3))/2 * cos(2*pi*k/6)],
+         [0, 0, 1]]
+      );
+      square.transformations = removeDuplicates(flatten(apply(hexagon.transformations, translation,
+        apply(square.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+      
+      triangle = {
+        "clockwise": false,
+        "euclUnitVertices": [[-3, -sqrt(3)], [3, -sqrt(3)], [0, 2*sqrt(3)]]/6,
+        "sidelength": 2
+      };
+      triangle.simpleTransformations = apply(0..5, k,
+        [[cos(2*pi*k/6 + pi/2), -sin(2*pi*k/6 + pi/2), triangle.sidelength * (1 + sqrt(3)/3) * cos(2*pi*k/6)],
+         [sin(2*pi*k/6 + pi/2), cos(2*pi*k/6 + pi/2), triangle.sidelength * (1 + sqrt(3)/3) * sin(2*pi*k/6)],
+         [0, 0, 1]]
+      );
+      triangle.transformations = removeDuplicates(flatten(apply(hexagon.transformations, translation,
+        apply(triangle.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+
+
+      bourgoin047star = {
+        "clockwise": false,
+        "euclUnitVertices": [[2,0], [3,sqrt(3)], [1,sqrt(3)], [0,2*sqrt(3)], [-1,sqrt(3)], [-3,sqrt(3)], [-2,0], [-3,-sqrt(3)], [-1,-sqrt(3)], [0,-2*sqrt(3)], [1,-sqrt(3)], [3,-sqrt(3)]]/2,
+        "sidelength": 2
+      }; 
+      bourgoin047star.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-6..6, lam,
+        apply(-6..6, mu,
+          [[1, 0, bourgoin047star.sidelength * (lam * 3 + mu * 3)], [0, 1, bourgoin047star.sidelength * (lam * sqrt(3) - mu * sqrt(3))], [0, 0, 1]]
+        )))
+      ));
+
+      bourgoin047hex = {
+        "clockwise": true,
+        "euclUnitVertices": [[2,0], [1,-sqrt(3)], [-1,-sqrt(3)], [-2,0], [-1,sqrt(3)], [1,sqrt(3)]]/2,
+        "problematicEdge": [false, true, false, true, false, true],
+        "sidelength": 2
+      };
+      bourgoin047hex.simpleTransformations = apply(0..5, k,
+        [[cos(2*pi*k/6), -sin(2*pi*k/6), bourgoin047hex.sidelength * 2 * cos(2*pi*k/6)],
+         [sin(2*pi*k/6), cos(2*pi*k/6), bourgoin047hex.sidelength * 2 * sin(2*pi*k/6)],
+         [0, 0, 1]]
+      ); // rotation of tile important for "problematic" edges
+      bourgoin047hex.transformations = removeDuplicates(flatten(apply(bourgoin047star.transformations, translation,
+        apply(bourgoin047hex.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+
+
+      square1 = {
+        "clockwise": true,
+        "euclUnitVertices": [[1,1], [1,-1], [-1,-1], [-1,1]]/2,
+        "sidelength": 4
+      };
+      square1.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          if(mod(lam+mu,2) == 0,
+            [[1, 0, square1.sidelength * lam], [0, 1, square1.sidelength * mu], [0, 0, 1]],
+            [[1,0,0], [0,1,0], [0,0,1]]
+          );
+        )))
+      ));
+      
+      square2 = {
+        "clockwise": false,
+        "euclUnitVertices": [[1,1], [-1,1], [-1,-1], [1,-1]]/2,
+        "sidelength": 4
+      };
+      square2.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          if(mod(lam+mu,2) == 1,
+            [[1, 0, square2.sidelength * lam], [0, 1, square2.sidelength * mu], [0, 0, 1]],
+            [[1,0,square2.sidelength], [0,1,0], [0,0,1]]
+          );
+        )))
+      ));
+
+      triangle1 = {
+        "clockwise": false,
+        "euclUnitVertices": [[-3, -sqrt(3)], [3, -sqrt(3)], [0, 2*sqrt(3)]]/6,
+        "sidelength": 6
+      };
+      triangle1.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[1, 0, triangle1.sidelength * (lam + mu/2)],
+           [0, 1, triangle1.sidelength * (mu * sqrt(3)/2)],
+           [0, 0, 1]]
+        ))
+      )));
+
+      triangle2 = {
+        "clockwise": true,
+        "euclUnitVertices": [[-3, sqrt(3)], [3, sqrt(3)], [0, -2*sqrt(3)]]/6,
+        "sidelength": 6
+      };
+      triangle2.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[1, 0, triangle2.sidelength * (lam + mu/2)],
+           [0, 1, triangle2.sidelength * (mu * sqrt(3)/2 - sqrt(3)/3)],
+           [0, 0, 1]]
+        ))
+      )));
+
+
+      bourgoin088star = {
+        "clockwise": false,
+        "euclUnitVertices": [[0, 6 - 4*sqrt(2)], [sqrt(2) - 2, 2 - sqrt(2)], [4*sqrt(2) - 6, 0], [sqrt(2) - 2, sqrt(2) - 2],
+                             [0, 4*sqrt(2) - 6], [2 - sqrt(2), sqrt(2) - 2], [6 - 4*sqrt(2), 0], [2 - sqrt(2), 2 - sqrt(2)]],
+        "sidelength": 2
+      };
+      bourgoin088star.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[1, 0, bourgoin088star.sidelength * (4 * lam + 2)], [0, 1, bourgoin088star.sidelength * (4 * mu + 2)], [0, 0, 1]];
+        ));
+      )));
+
+      s = sqrt(2)-1;
+      bourgoin088wheel = {
+        "clockwise": true,
+        "euclUnitVertices": [[0, 2*s],[s, 1],[1-s, 1-s],[1, s],[2*s, 0],[1, -s],[1-s, s-1],[s, -1],[0, -2*s],[-s, -1],[s-1, s-1],[-1, -s],[-2*s, 0],[-1, s],[s-1, 1-s],[-s, 1]],
+        "sidelength": 2
+      };
+      bourgoin088wheel.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[1, 0, bourgoin088wheel.sidelength * 4 * lam], [0, 1, bourgoin088wheel.sidelength * 4 * mu], [0, 0, 1]];
+        ));
+      )));
+
+      bourgoin088kite = {
+        "clockwise": false,
+        "euclUnitVertices": [[0, -s], [1, 0], [0, s], [2*s-1, 0]],
+        "problematicEdge": [false, false, false, true],
+        "sidelength": 2
+      };
+      bourgoin088kite.simpleTransformations = apply(0..7, k,
+        [[cos(2*pi*k/8), -sin(2*pi*k/8), bourgoin088kite.sidelength * cos(2*pi*k/8)],
+         [sin(2*pi*k/8), cos(2*pi*k/8), bourgoin088kite.sidelength * sin(2*pi*k/8)],
+         [0, 0, 1]]
+      );
+      bourgoin088kite.transformations = removeDuplicates(flatten(apply(bourgoin088wheel.transformations, translation,
+        apply(bourgoin088kite.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+
+      bourgoin088hex = {
+        "clockwise": true,
+        "euclUnitVertices": [[0, (-47 + 46*sqrt(2))/21], [2 - sqrt(2), (37 - 17*sqrt(2))/21], [1, (16 - 17*sqrt(2))/21],
+                             [0, (37 - 38*sqrt(2))/21], [-1, (16 - 17*sqrt(2))/21], [-2 + sqrt(2), (37 - 17*sqrt(2))/21]],
+        "problematicEdge": [true, false, false, false, false, false],
+        "sidelength": 2
+      };
+      bourgoin088hex.simpleTransformations = apply(0..3, k,
+        [[cos(2*pi*k/4 + pi), -sin(2*pi*k/4 + pi), rotate(2*pi*k/4, bourgoin088hex.sidelength * [2, -(38*sqrt(2)-37)/21])_1],
+         [sin(2*pi*k/4 + pi), cos(2*pi*k/4 + pi), rotate(2*pi*k/4, bourgoin088hex.sidelength * [2, -(38*sqrt(2)-37)/21])_2],
+         [0, 0, 1]]
+      ) ++ apply(0..3, k,
+        [[cos(2*pi*k/4), -sin(2*pi*k/4), rotate(2*pi*k/4, bourgoin088hex.sidelength * [2, (38*sqrt(2)-37)/21])_1],
+         [sin(2*pi*k/4), cos(2*pi*k/4), rotate(2*pi*k/4, bourgoin088hex.sidelength * [2, (38*sqrt(2)-37)/21])_2],
+         [0, 0, 1]]
+      );
+      bourgoin088hex.transformations = removeDuplicates(flatten(apply(bourgoin088wheel.transformations, translation,
+        apply(bourgoin088hex.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+
+      cairoPentagon1 = {
+        "clockwise": false,
+        "euclUnitVertices": [[-(sqrt(3)+1), 0], [-sqrt(3), -sqrt(3)], [0, (1-sqrt(3))], [sqrt(3), -sqrt(3)],
+                            [(sqrt(3)+1), 0], [sqrt(3), sqrt(3)], [0, (sqrt(3)-1)], [-sqrt(3), sqrt(3)]],
+        "problematicEdge": [true, false, false, false, true, false, false, false],
+        "sidelength": 1
+      };
+      cairoPentagon1.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[cos(pi/4), -sin(pi/4), cairoPentagon1.sidelength * 2 * sqrt(6) * lam],
+          [sin(pi/4), cos(pi/4), cairoPentagon1.sidelength * 2 * sqrt(6) * mu],
+          [0, 0, 1]]
+        ))
+      )));
+
+      cairoPentagon2 = {
+        "clockwise": true,
+        "euclUnitVertices": [[0, -(sqrt(3)+1)], [-sqrt(3), -sqrt(3)], [(1-sqrt(3)), 0], [-sqrt(3), sqrt(3)],
+                             [0, (sqrt(3)+1)], [sqrt(3), sqrt(3)], [(sqrt(3)-1), 0], [sqrt(3), -sqrt(3)]],
+        "problematicEdge": [true, false, false, false, true, false, false, false],
+        "sidelength": 1
+      };
+      cairoPentagon2.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[cos(pi/4), -sin(pi/4), cairoPentagon2.sidelength * sqrt(6) * (2 * lam + 1)],
+          [sin(pi/4), cos(pi/4), cairoPentagon2.sidelength * sqrt(6) * (2 * mu + 1)],
+          [0, 0, 1]]
+        ))
+      )));
+
+      bourgoin221kite = {
+        "clockwise": false,
+        "euclUnitVertices": [[0, 4*sqrt((5 + sqrt(5))/10)],
+                            [-(3 - sqrt(5)), sqrt(10 - 2*sqrt(5))],
+                            [0, 4*sqrt((5 - sqrt(5))/10)],
+                            [(3 - sqrt(5)), sqrt(10 - 2*sqrt(5))]],
+        "sidelength": 2
+      };
+      bourgoin221kite.transformations = [
+        [[1,0,0],[0,1,0],[0,0,1]]
+      ];
+
+      bourgoin221wheel = {
+      "clockwise": true,
+      "euclUnitVertices": [
+        [sqrt(5)-1, 0],
+        [1, -sqrt((5-sqrt(5))/10)],
+        [1, -2*sqrt((5-sqrt(5))/10)],
+        [(sqrt(5)-1)/2, -sqrt((5+sqrt(5))/10)],
+        [(3-sqrt(5))/2, -2*sqrt((5-sqrt(5))/8)],
+        [0, -2*sqrt((5-sqrt(5))/10)],
+        [-(3-sqrt(5))/2, -2*sqrt((5-sqrt(5))/8)],
+        [-(sqrt(5)-1)/2, -sqrt((5+sqrt(5))/10)],
+        [-1, -2*sqrt((5-sqrt(5))/10)],
+        [-1, -sqrt((5-sqrt(5))/10)],
+        [-(sqrt(5)-1), 0],
+        [-1, sqrt((5-sqrt(5))/10)],
+        [-1, 2*sqrt((5-sqrt(5))/10)],
+        [-(sqrt(5)-1)/2, sqrt((5+sqrt(5))/10)],
+        [-(3-sqrt(5))/2, 2*sqrt((5-sqrt(5))/8)],
+        [0, 2*sqrt((5-sqrt(5))/10)],
+        [(3-sqrt(5))/2, 2*sqrt((5-sqrt(5))/8)],
+        [(sqrt(5)-1)/2, sqrt((5+sqrt(5))/10)],
+        [1, 2*sqrt((5-sqrt(5))/10)],
+        [1, sqrt((5-sqrt(5))/10)]
+      ],
+      "sidelength": 1/2
+      };
+      bourgoin221wheel.transformations = [
+          [[1,0,0],[0,1,0],[0,0,1]]
+        ];
+
+      bourgoin221octagon = {
+        "clockwise": true,
+        "euclUnitVertices": [
+          [-(3-sqrt(5)),  2*sqrt((5-sqrt(5))/10)],
+          [0,             (5-sqrt(5))/2],
+          [(3-sqrt(5)),   2*sqrt((5-sqrt(5))/10)],
+          [(sqrt(5)-1),   0],
+          [(3-sqrt(5)),  -2*sqrt((5-sqrt(5))/10)],
+          [0,            -(5-sqrt(5))/2],
+          [-(3-sqrt(5)), -2*sqrt((5-sqrt(5))/10)],
+          [-(sqrt(5)-1),  0]
+        ],
+        "sidelength": 1/4
+      };
+      bourgoin221octagon.transformations = [
+          [[1,0,0],[0,1,0],[0,0,1]]
+        ];
+
+      bourgoin221pentagon = {
+        "clockwise": true,
+        "euclUnitVertices": [
+          [-(2*(5-sqrt(5))/5), 0],
+          [-(3-sqrt(5)),       2*sqrt((5-sqrt(5))/10)],
+          [4/sqrt(5),          (sqrt(5)-1)],
+          [4/sqrt(5),         -(sqrt(5)-1)],
+          [-(3-sqrt(5)),      -2*sqrt((5-sqrt(5))/10)]
+        ],
+        "sidelength": 1/4
+      };
+      bourgoin221pentagon.transformations = [
+          [[1,0,0],[0,1,0],[0,0,1]]
+        ];
+
+      
+      tilings = {
+        "theta": 0,
+        "selectedTiling": [],
+        "allTiles": [hexagon, triangle, square, bourgoin047star, bourgoin047hex, square1, square2, triangle1, triangle2,
+                     bourgoin088kite, bourgoin088star, bourgoin088wheel, bourgoin088hex, cairoPentagon1, cairoPentagon2,
+                     bourgoin221kite, bourgoin221wheel, bourgoin221octagon, bourgoin221pentagon],
+        "1": {
+          "name": "squares",
+          "tiles": [square1, square2],
+          "UIbase": [-2, 2],
+          "UIshift": [-4, -4],
+          "UIangleRange": [0, pi/2],
+          "UIorientation": 0
+        },
+        "2": {
+          "name": "bourgoin047",
+          "tiles": [bourgoin047star, bourgoin047hex],
+          "UIbase": [-3, -sqrt(3)],
+          "UIshift": [-6, -2*sqrt(3)],
+          "UIangleRange": [0, pi/3],
+          "UIorientation": 0
+        },
+        "3": {
+          "name": "hexagons-triangles-squares",
+          "tiles": [hexagon, triangle, square],
+          "UIbase": [-2, 0],
+          "UIshift": [-3-sqrt(3), -1-sqrt(3)],
+          "UIangleRange": [0, pi/3],
+          "UIorientation": 5*pi/6
+        },
+        "4": {
+          "name": "bourgoin088",
+          "tiles": [bourgoin088kite, bourgoin088star, bourgoin088wheel, bourgoin088hex],
+          "UIbase": [-4, 0],
+          "UIshift": [-8,-8],
+          "UIangleRange": [0, 35*2*pi/360],
+          "UIorientation": 15/8 * pi
+        },
+        "5": {
+          "name": "cairo-pentagon",
+          "tiles": [cairoPentagon1, cairoPentagon2],
+          "UIbase": [-2*sqrt(6),-sqrt(6)],
+          "UIshift": [-4*sqrt(6), -2*sqrt(6)],
+          "UIangleRange": [0, pi/3],
+          "UIorientation": -285*2*pi/360
+        },
+        "6": {
+          "name": "triangles",
+          "tiles": [triangle1, triangle2],
+          "UIbase": [-3, -sqrt(3)],
+          "UIshift": [-9, -3*sqrt(3)],
+          "UIangleRange": [0, pi/3],
+          "UIorientation": 0
+        },
+        "7": {
+          "name": "bourgoin221",
+          "tiles": [bourgoin221octagon],
+          "UIbase": [-26, -18],
+          "UIshift": [0, 0],
+          "UIangleRange": [0, pi/2],
+          "UIorientation": pi/2
+        }
+      };
+
+      //finish tile initialization
+      forall(tilings.allTiles, tile,
+        tile.vertices = apply(tile.euclUnitVertices, v, [tile.sidelength * v_1, tile.sidelength * v_2, 1]);
+        tile.length = length(tile.vertices);
+        if(isundefined(tile.problematicEdge), tile.problematicEdge = apply(1..tile.length, false));
+      );
+
+
+      //===== DERIVED GEOMETRY =====
+
+      changeTiling(string) := (
+        forall(tilings, tiling,
+          if(string == tiling.name,
+            tilings.selectedTiling = tiling.tiles;
+            UI.basePoint = tiling.UIbase;
+            UI.shift = tiling.UIshift;
+            UI.angleRange = tiling.UIangleRange;
+            UI.orientation = tiling.UIorientation;
+          );
+        );
+        updateUI(UI.angleRange_1, style.zoom);
+      );
+      changeTiling("bourgoin047");
+
+      updateGeometry(tiling) := forall(tiling, tile,
+        tile.length = length(tile.vertices);
+        tile.edges = apply(1..tile.length, k, [tile.vertices_k, tile.vertices_(mod(k,tile.length)+1)]);
+        tile.triangles = apply(1..tile.length, k,
+          regional(edge, nextedge, kitevertex);
+          edge = tile.edges_k;
+          nextedge = tile.edges_(mod(k,tile.length)+1);
+          kitevertex = meet(
+            join(edge_1, ((edge_1).xy + rotate(if(tile.clockwise, -1, 1) * tilings.theta, (edge_2).xy - (edge_1).xy)).homog),
+            join(nextedge_1, ((nextedge_1).xy + rotate(if(tile.clockwise, -1, 1) * tilings.theta, (nextedge_2).xy - (nextedge_1).xy)).homog)
+          ).homog;
+          [edge_1, kitevertex, edge_2]
+        );
+      );
+
+      fillTiling(tiling, zoom) := (
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+          fillpoly(apply(tile.vertices, vertex, zoom * trafo * vertex),
+          color->if(style.kiteOnlyBool,
+            if(style.kiteColorBool, style.anticlockwiseColor, style.clockwiseColor),
+            if(tile.clockwise, style.clockwiseColor, style.anticlockwiseColor)
+          ));
+        ));
+      );
+
+      fillKites(tiling, zoom) := (
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+        forall(tile.triangles, triangle,
+          fillpoly( apply(triangle, vertex, zoom * trafo * vertex), color->style.kiteColor);
+        )));
+      );
+
+      outlineKites(tiling, zoom) := if(style.kiteBorderBool % style.kiteDiagonalBool,
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+        forall(tile.triangles, triangle,
+          if(style.kiteBorderBool,
+            draw( apply(triangle, vertex, zoom * trafo * vertex)_[1,2], color->style.kiteBorderColor, size->style.kiteBorderSize);
+            draw( apply(triangle, vertex, zoom * trafo * vertex)_[2,3], color->style.kiteBorderColor, size->style.kiteBorderSize);
+          );
+          if(style.kiteDiagonalBool,
+            draw( apply(triangle, vertex, zoom * trafo * vertex)_[3,1], color->style.kiteDiagonalColor, size->style.kiteDiagonalSize);
+          );
+        )));
+      );
+
+      outlineOriginalTiling(tiling, zoom) := if(style.originalTilingBool,
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+        forall(tile.triangles, triangle,
+          draw( apply(triangle, vertex, zoom * trafo * vertex)_[3,1], color->style.originalTilingColor, size->style.originalTilingSize);
+        )));
+      );
+
+      outlineNewTiling(tiling, zoom) := if(style.newTilingBool,
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+        forall(1..tile.length, k,
+          if( xor(tile.clockwise, style.kiteColorBool),
+            draw( zoom * trafo * tile.triangles_k_2, zoom * trafo * tile.triangles_(mod(k, tile.length)+1)_2, color->style.newTilingColor, size->style.newTilingSize);
+            if(tile.problematicEdge_k,
+              regional(previousTriangle);
+              previousTriangle = tile.triangles_(mod(k-2,tile.length)+1);
+              draw( zoom * trafo * previousTriangle_2, zoom * trafo * tile.triangles_k_2, color->style.newTilingColor, size->style.newTilingSize);
+              , //else
+              draw( zoom * trafo * tile.triangles_k_1, zoom * trafo * tile.triangles_k_2, color->style.newTilingColor, size->style.newTilingSize);
+            );
+          );
+        )));
+      );
+
+    </script>
+
+    <script id="csdraw" type="text/x-cindyscript">
+      updateAngle();
+      updateGeometry(tilings.selectedTiling);
+      fillTiling(tilings.selectedTiling, style.zoom);
+      fillKites(tilings.selectedTiling, style.zoom);
+      outlineKites(tilings.selectedTiling, style.zoom);
+      outlineOriginalTiling(tilings.selectedTiling, style.zoom);
+      outlineNewTiling(tilings.selectedTiling, style.zoom);
+      drawUI();
+      //forall(tilings.allTiles, tile, println(length(tile.transformations)));
+    </script>
+  </head>
+
+  <body>
+    <style>
+      body {font-family: system-ui, sans-serif; font-size: 16px; font-weight: 200; line-height: 1.4;}
+      .container {max-width: 1500px; display: flex; align-items: flex-start; gap: 28px;}
+
+      .controls {display: flex; flex-direction: column; gap: 12px; width: 280px;}
+      .controls fieldset {margin: 0; padding: 8px 10px 12px; box-sizing: border-box;}
+      .controls legend {padding: 0 6px; font-weight: 800;}
+      .controls label {display: flex; align-items: center; gap: 5px; margin: 5px 0;}
+      .controls label.group {display: block; border: 1px solid #ddd; border-radius: 6px;
+        padding: 6px 8px; margin: 8px 0; background: #fafafa; box-sizing: border-box;}
+      .controls label.group .row-top {display: flex; align-items: center; gap: 8px;}
+      .controls label.group .row-bottom {display: flex; align-items: center; gap: 10px; margin-top: 6px; padding-left: 23px;}
+      .controls label.group.single-line .row-bottom {display: none;}
+
+      select {font: inherit; color: inherit; background: transparent; border: 0; padding: 5px; width: 100%; box-sizing: border-box;}
+      select[size] option {font-family: system-ui, sans-serif; font-size: 16px; font-weight: 200; line-height: 1.4; padding: 2px;}
+      input[type="color"] {padding: 2px; width: 44px; min-width: 44px; height: 26px; box-sizing: border-box;}
+      input[type="range"].mini {width: 50%; flex: 0 0 auto;}
+    </style>
+
+    <div class="container">
+      <div class="controls">
+
+        <fieldset>
+          <legend>Tiling</legend>
+
+          <label class="group" style="border: 2px solid #000000;">
+            <select size="6" onchange="cindy.evokeCS('changeTiling(&quot;' + this.value + '&quot;);')">
+              <option value="squares">Checkerboard</option>
+              <option value="triangles">Equilateral Triangles</option>
+              <option value="hexagons-triangles-squares">Archimedean 3-4-6-4</option>
+              <option value="cairo-pentagon">Cairo Pentagon</option>
+              <option value="bourgoin047" selected>Bourgoin 047</option>
+              <option value="bourgoin088">Bourgoin 088</option>
+            </select>
+          </label>
+
+          <label class="group">
+            <div class="row-top">
+              <input type="checkbox" onchange="cindy.evokeCS('style.originalTilingBool=' + (this.checked?'true':'false'))">
+              <span>Outline Original Tiling:</span>
+            </div>
+            <div class="row-bottom">
+              <input type="color" value="#6464e6" oninput="setColor('style.originalTilingColor', this.value)"/>
+              <input type="range" class="mini" min="1" max="5" value="1" step="1"
+                oninput="cindy.evokeCS('style.originalTilingSize = ' + this.value + ';');">
+            </div>
+          </label>
+
+          <label class="group">
+            <div class="row-top">
+              <input type="checkbox" onchange="cindy.evokeCS('style.newTilingBool=' + (this.checked?'true':'false'))">
+              <span>Outline New Tiling:</span>
+            </div>
+            <div class="row-bottom">
+              <input type="color" value="#000000" oninput="setColor('style.newTilingColor', this.value)"/>
+              <input type="range" class="mini" min="1" max="5" value="2" step="1"
+                oninput="cindy.evokeCS('style.newTilingSize = ' + this.value + ';');">
+            </div>
+          </label>
+        </fieldset>
+        
+        <fieldset>
+          <legend>Kites</legend>
+
+          <label class="group single-line">
+            <div class="row-top">
+              <input type="checkbox" onchange="cindy.evokeCS('style.kiteColorBool=' + (this.checked?'false':'true') + '; updateVisuals();')">
+              <span>Switch Kite Color</span>
+            </div>
+          </label>
+
+          <label class="group single-line">
+            <div class="row-top">
+              <input type="checkbox" onchange="cindy.evokeCS('style.kiteOnlyBool=' + (this.checked?'true':'false'))">
+              <span>Kites Only</span>
+            </div>
+          </label>
+
+          <label class="group">
+            <div class="row-top">
+              <input type="checkbox" checked onchange="cindy.evokeCS('style.kiteBorderBool=' + (this.checked?'true':'false'))">
+              <span>Kite Borders:</span>
+            </div>
+            <div class="row-bottom">
+              <input type="color" value="#b2b2b2" oninput="setColor('style.kiteBorderColor', this.value)"/>
+              <input type="range" class="mini" min="1" max="5" value="2" step="1"
+                oninput="cindy.evokeCS('style.kiteBorderSize = ' + this.value + ';');">
+            </div>
+          </label>
+
+          <label class="group">
+            <div class="row-top">
+              <input type="checkbox" onchange="cindy.evokeCS('style.kiteDiagonalBool=' + (this.checked?'true':'false'))">
+              <span>Kite Diagonals:</span>
+            </div>
+            <div class="row-bottom">
+              <input type="color" value="#b2b2b2" oninput="setColor('style.kiteDiagonalColor', this.value)"/>
+              <input type="range" class="mini" min="1" max="5" value="1" step="1"
+                oninput="cindy.evokeCS('style.kiteDiagonalSize = ' + this.value + ';');">
+            </div>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Settings</legend>
+
+          <label class="group single-line">
+            <div class="row-top">
+              <span>2-Coloring:</span>
+              <input type="color" value="#449ebc" oninput="setColor('style.anticlockwiseColor', this.value)"/>
+              <input type="color" value="#ffffff" oninput="setColor('style.clockwiseColor', this.value)"/>
+            </div>
+          </label>
+
+          <label class="group">
+            <div class="row-top">
+              <input type="checkbox" checked onchange="cindy.evokeCS('UI.visiBool=' + (this.checked?'true':'false') + '; updateVisuals();')">
+              <span>Angle Selector:</span>
+            </div>
+            <div class="row-bottom">
+              <input type="color" value="#e15a1c" oninput="setColor('style.UIColor', this.value)"/>
+              <input type="range" class="mini" min="1" max="8" value="3" step="1"
+                oninput="cindy.evokeCS('UI.scale = ' + this.value + '; updateUI(tilings.theta, style.zoom);');">
+            </div>
+          </label>
+
+          <label class="group single-line">
+            <div class="row-top">
+              <span>Zoom</span>
+              <input id="zoom-slider" type="range" min=".2" max="1" value=".8" step="any"
+              oninput="cindy.evokeCS('style.zoom = [[1,0,0], [0,1,0], [0,0,1.2-' + this.value + ']]; updateUI(tilings.theta, style.zoom);');">
+            </div>
+          </label>
+        </fieldset>
+
+      </div>
+      <div id="CSCanvas"></div>
+    </div>
+  </body>
+</html>

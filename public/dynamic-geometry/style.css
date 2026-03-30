@@ -1,0 +1,431 @@
+:root {
+  /*JS*/
+  --ModeBackgroundColor:  rgb(240,209,221);
+  --ModeHoverColor:       rgba(224,163,187,0.80);
+  --ModeCheckedColor:     rgb(224,163,187);
+  --InfoBackgroundColor:  rgb(255,245,225);
+  --InfoHoverColor:       rgba(243,218,176,0.80);
+  --InfoCheckedColor:     rgb(243,218,176);
+  --BorderColor:          rgb(0,0,0);
+  --TextColor:            rgb(0,0,0);
+  --InfoBorderColor:      rgb(204,204,204);
+  /*CJS*/
+  --pointColor:           rgb(201,94,134);
+  --lineColor:            rgb(38,88,115);
+  --highlightColor:       rgb(255,255,255);
+  --cubicColor:           rgb(232,168,124);
+  --canvasColor:          rgb(232,238,247);
+}
+
+/* ==================== Global Settings ==================== */
+* {
+  margin: 0px;
+  padding: 0px;
+  font-family: 'Helvetica', sans-serif;
+  font-size: 13px;
+  font-weight: lighter; /*previousl: 12px and normal weight*/
+  -webkit-user-select: none;
+  user-select: none;
+  justify-content: center;
+  overflow: hidden; /*disable scrolling*/
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--TextColor); /*text color*/
+}
+
+/* ==================== CindyJS ==================== */
+#CindyContainer {
+    width: 100vw;
+    height: calc(100vh - 140px);
+}
+#CindyCanvas {
+  width: 100%;
+  height: 100%;
+  z-index:1;
+  position:relative;
+  cursor: auto;
+}
+
+/* ==================== Basic UI Elements: Inputs, Buttons, Switches, Sliders ==================== */
+
+/* Hide default appearance of input elements */
+input {
+  display: none;
+}
+
+span {
+  display: inline-block;
+  width: 100%;
+}
+
+label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 5px;
+  height: 40px;
+  width: 60px;
+  margin: 2px 12px;
+}
+
+label svg {
+  height:30px;
+  width:auto;
+}
+input[name="mode-type"] + label svg {
+  height:40px;
+}
+
+label img {
+  height: 30px;
+  width: auto;
+}
+input[name="mode-type"] + label img {
+  height: 40px;
+  width: auto;
+}
+
+label:hover {
+  background-color: var(--ModeHoverColor);
+}
+label:active, input:checked + label {
+  background-color: var(--ModeCheckedColor);
+}
+
+input[name="mode-category"]:checked + label {
+  box-shadow:inset 0px 0px 0px 2px var(--BorderColor);
+}
+
+input:disabled, input:disabled + label {
+  opacity: 0.3;
+}
+
+
+/* ==================== Mode Selection ==================== */
+.UI-container {
+  display: flex;
+  width: 100%;
+  height: 70px;
+  background-color: var(--ModeBackgroundColor);
+}
+
+.cat:not(.hidden) {
+  display: inline-flex;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+
+/* Color picker swatches */
+.color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 150px;
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  background: var(--ownColor);
+  border-radius: 5px;
+  border: 2px solid var(--InfoBackgroundColor);
+  cursor: pointer;
+}
+.color-swatch:hover {
+  border-color: var(--ownColor);
+}
+.color-swatch.active {
+  border-color: var(--BorderColor);
+}
+
+.color-swatch-add {
+  background: transparent;
+  border: 2px dashed var(--InfoBorderColor);
+  display: flex;
+  align-items: center;
+}
+.color-swatch-add::before {
+  content: "+";
+  color: var(--InfoBorderColor);
+  line-height: 1;
+}
+.color-swatch:disabled, .color-swatch-add:disabled, .color-swatch-add::before:disabled {
+  opacity: 0.3;
+}
+
+/* Simple on/off “switch” styling for visibility & border toggles */
+/* You can tweak sizes/colors as you like */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  background-color: var(--InfoBorderColor);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: 8px; /* space between checkbox (hidden) and background */
+}
+.switch::before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+.switch:active::before, input:checked + label.switch::before {
+  transform: translateX(20px);
+}
+
+/* Slider Design */
+/* Remove the native thumb to restyle it */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px; /* thumb size */
+  display: inline-block;
+  overflow: visible;
+  background: transparent;
+  cursor: pointer;
+  margin: 0px;
+  padding: 0px;
+}
+
+/* Keep the track unchanged or style it if */
+input[type="range"]::-webkit-slider-runnable-track {
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px; /* height / 2 */
+  background: linear-gradient(
+    to right,
+    var(--ModeCheckedColor) 0%,
+    var(--ModeCheckedColor) var(--percent),
+    var(--InfoBorderColor) var(--percent),
+    var(--InfoBorderColor) 100%
+  );
+  /*var(--InfoBorderColor);*/
+}
+
+/* Style the thumb itself in Chrome/Safari */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--InfoBorderColor);
+  box-sizing: border-box;
+  margin-top: -8px; /* (track-height - thumb-size) / 2 */
+  background-color: white;
+  cursor: pointer;
+}
+
+
+/* ==================== Property and Settings Menu ==================== */
+
+#property-menu {
+  display: none;
+  width: max-content;
+  padding: 10px;
+  position: absolute;
+  right: 0;
+  max-width: 25%;
+  max-height: calc(100% - 140px - 20px); /* adjust for padding */
+  min-height: calc(100% - 140px - 20px);
+  background-color: var(--InfoBackgroundColor);
+  justify-self: right;
+  z-index: 1000;
+  overflow-y: auto;
+  align-content: start;
+  align-items: start;
+}
+
+#settings {
+  display: none;
+  width: max-content;
+  padding: 10px;
+  position: absolute;
+  right: 0;
+  max-width: 25%;
+  max-height: calc(100% - 140px - 20px); /* adjust for padding */
+  min-height: calc(100% - 140px - 20px);
+  background-color: var(--InfoBackgroundColor);
+  justify-self: right;
+  z-index: 1000;
+  overflow-y: auto;
+  align-content: start;
+  align-items: start;
+}
+
+#info-section, #element-section, #global-section, #theme-section, #toric-section {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto auto;
+  column-gap: 5px; /* space between label (left) and control (right) */
+  row-gap: 10px; /* vertical spacing between each row */
+  align-content: start;
+  align-items: center;
+}
+
+.information-menu-row {
+  display: contents; /* let the children flow into the grid columns */
+}
+
+.information-menu-label {
+  align-self: center;
+  color: var(--TextColor);
+}
+
+.information-menu-control {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  gap: 5px; /* small gap between things inside the control */
+}
+.information-menu-control input[type="button"] + label {
+  display: inline-flex;
+  border: 2px dashed var(--InfoBorderColor);
+  align-items: center;
+  white-space: wrap;
+  margin: 0px;
+  height: 30px;
+}
+.information-menu-control input[type="radio"] + label {
+  display: inline-flex;
+  align-items: center;
+  white-space: wrap;
+  margin: 0px;
+  height: 30px;
+}
+
+.information-menu-control input[type="button"] + label:hover,
+.information-menu-control input[type="radio"] + label:hover {
+  background-color: var(--InfoHoverColor);
+}
+.information-menu-control input[type="button"] + label:active,
+.information-menu-control input[type="radio"] + label:active,
+.information-menu-control input[type="radio"]:checked + label {
+  background-color: var(--InfoCheckedColor);
+}
+.information-menu-control input[type="radio"]:checked + label {
+  box-shadow:inset 0px 0px 0px 2px var(--InfoBorderColor);
+}
+
+.section-header {
+  grid-column: 1 / -1;
+  justify-self: center;
+  display: inline-block;
+  width: 100%;
+  margin: 12px 8px 8px 8px; /* top right bottom left */
+  border-top: 2px solid var(--BorderColor);
+  padding-top: 6px;
+  text-align: center;
+  font-weight: bold;
+}
+
+
+/* ==================== Custom Context Menu ==================== */
+#context-menu {
+  background: var(--InfoBackgroundColor);
+  border-radius: 5px;
+  padding: 10px;
+  z-index: 1000;
+  position: absolute;
+  display: none;
+}
+
+.context-menu-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 5px;
+  row-gap: 10px;
+}
+
+.context-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Each row in the menu: label + control */
+.context-menu-row {
+  display: contents;
+}
+
+/* Left column: the labels */
+.context-menu-label {
+  align-self: center; /* center vertically */
+  color: var(--TextColor);
+}
+
+/* Right column: container for the actual control */
+.context-menu-control {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* small gap between things inside the control */
+}
+
+.context-menu-item {
+  display: inline-flex;
+  align-items: center;
+  white-space: wrap;
+}
+.context-menu-item input[type="button"] + label {
+  margin: 0px;
+  height: 30px;
+  border: 2px solid var(--InfoBorderColor);
+}
+.context-menu-item input[type="button"] + label:hover {
+  background-color: var(--InfoHoverColor);
+}
+.context-menu-item input[type="button"] + label:active {
+  background-color: var(--InfoCheckedColor);
+}
+
+
+
+/* ==================== Export ==================== */
+.export-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  width: 30%;
+  height: 70px;
+  background-color: var(--ModeBackgroundColor);
+}
+
+.export-text {
+  width: 60%;
+  display: block;
+  padding: 10px;
+  margin-right: 12px;
+  background-color: var(--ModeHoverColor);
+  border-width: 2px;
+  border-radius: 5px;
+  border-color: var(--BorderColor);
+  border-style: solid;
+  outline: var(--BorderColor);
+  color: var(--TextColor);
+  font-size: 16px;
+  font-family: 'Helvetica', sans-serif;
+}
+
+.export-text:focus {
+  background-color: var(--ModeCheckedColor);
+}
+
+.hidden {
+  display: none;
+}
