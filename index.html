@@ -2,13 +2,98 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Meine GitLab Pages</title>
+  <title>Meine Projekte</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --accent: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 500px;
+      width: 100%;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 2rem;
+      font-size: 2rem;
+      letter-spacing: 0.5px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      margin: 1rem 0;
+    }
+
+    a {
+      display: block;
+      padding: 1rem;
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--text);
+      background: rgba(255,255,255,0.05);
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    a:hover {
+      background: rgba(56,189,248,0.15);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      opacity: 0.6;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>Meine Seiten</h1>
-  <ul>
-    <li><a href="./dynamic-geometry/">Dynamic Geometry</a></li>
-    <li><a href="./whirling-kites/">Whirling Kites</a></li>
-  </ul>
+  <div class="container">
+    <h1>Meine Projekte</h1>
+
+    <div class="card">
+      <ul>
+        <li><a href="./dynamic-geometry/">Dynamic Geometry</a></li>
+        <li><a href="./whirling-kites/">Whirling Kites</a></li>
+      </ul>
+    </div>
+
+  </div>
 </body>
 </html>
