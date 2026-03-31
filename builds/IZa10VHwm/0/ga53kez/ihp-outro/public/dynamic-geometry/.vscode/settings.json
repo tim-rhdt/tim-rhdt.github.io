@@ -1,0 +1,99 @@
+{
+    "editor.wordSeparators": "`~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?_",
+    "editor.tokenColorCustomizations": {
+      "textMateRules": [
+        {
+          "scope": "keyword.operator.arithmetic.cjs",
+          "settings": {
+          }
+        },
+        {
+          "scope": "keyword.operator.logical.cjs",
+          "settings": {
+            "foreground": "#fe86f4"
+          }
+        },
+        {
+          "scope": "keyword.operator.comparison.cjs",
+          "settings": {
+            "foreground": "#fe86f4"
+          }
+        },
+        {
+          "scope": "keyword.operator.set.cjs",
+          "settings": {
+            "foreground": "#fb5296"
+          }
+        },
+        {
+          "scope": "comment.line.double-slash.cjs",
+          "settings": {
+            "fontStyle": "italic"
+          }
+        },
+        {
+          "scope": "comment.block.cjs",
+          "settings": {
+            "fontStyle": "italic"
+          }
+        },
+        {
+          "scope": "keyword.control.cjs",
+          "settings": {
+            "fontStyle": "bold"
+          }
+        },
+        {
+          "scope": "constant.language.boolean.cjs",
+          "settings": {
+            "fontStyle": "bold"
+          }
+        },
+        {
+          "scope": "support.function.builtin.cjs",
+          "settings": {
+            "foreground": "#ff9d00", // pick your color
+            "fontStyle": "italic"
+          }
+        },
+        {
+          "scope": "keyword.consti.cjs",
+          "settings": {
+            "foreground": "#ff9d00", // pick your color
+            "fontStyle": "bold"
+          }
+        },
+        {
+          "scope": "variable.other.dictionary.cjs",
+          "settings": {
+            "foreground": "#7df2ff" // pick your color
+          }
+        },
+        {
+          "scope": "variable.other.array.cjs",
+          "settings": {
+            "foreground": "#7dffe1" // pick your color
+          }
+        },
+        {
+          "scope": "variable.other.global.cjs",
+          "settings": {
+            "foreground": "#a0e824", // pick your color
+            "fontStyle": "bold"
+          }
+        },
+        {
+          "scope": "constant.numeric.integer.cjs",
+          "settings": {
+            "foreground": "#a9ffb5" // pick your color
+          }
+        },
+        {
+          "scope": "constant.numeric.float.cjs",
+          "settings": {
+            "foreground": "#a9ffb5" // pick your color
+          }
+        }
+      ]
+    }
+  }

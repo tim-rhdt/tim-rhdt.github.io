@@ -1,0 +1,14 @@
+[init]
+	defaultBranch = none
+[fetch]
+	recurseSubmodules = false
+[credential]
+	interactive = never
+[gc]
+	autoDetach = false
+[http]
+	extraHeader = X-Gitaly-Correlation-ID: 01KN0J3C7N2KW9702S4XAB6EV7
+[transfer]
+	bundleURI = true
+[http "https://gitlab.lrz.de"]
+	sslCAInfo = /Users/timreinhardt/Desktop/IHP Illustration Research Trimester/ihp-outro/builds/IZa10VHwm/0/ga53kez/ihp-outro.tmp/CI_SERVER_TLS_CA_FILE

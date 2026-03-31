@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="style.css" />
+<title>Cindy In Cindy</title>
+
+<link rel="stylesheet" href="dependencies/katex/katex.min.css" />
+<script src="dependencies/katex/katex.min.js"></script>
+<script type="text/javascript" src="dependencies/other/jszip.js"></script>
+<script type="text/javascript" src="dependencies/Cindy.js"></script>
+<script type="text/javascript" src="dependencies/CindyGL.js"></script>
+<script type="text/javascript" src="Communication.js"></script>
+<script id="csmousedown" type="text/x-cindyscript"> doDown(); </script>
+<script id="csmousedrag" type="text/x-cindyscript"> doDrag(); </script>
+<script id="csmouseup" type="text/x-cindyscript"> doUp(); </script>
+<script id="csmousemove" type="text/x-cindyscript"> doMove(); </script>
+<script id="csdraw" type="text/x-cindyscript"> redraw();
+ //GSLP
+ if(debugMode,
+  drawtext(((screenbounds()_1).x + .2,1), "gslp = [", color->cølors.Text, size->10);
+  //apply(1..length(gslp), k, drawtext(((screenbounds()_1).x + .4, 1-(k-1)/10), "{" + "name:" + gslp_k.name + ", alg:" + gslp_k.alg + ", parents:" + gslp_k.parents + ", recalc:" + gslp_k.recalc + ", coords:" + gslp_k.coords + ", draggable:" + gslp_k.draggable + ", ref:" + gslp_k.ref + ", radius:" + gslp_k.radius + ", backup:" + gslp_k.backup + ", tracing:" + gslp_k.tracing + "}", color->cølors.Text, size->10));
+  apply(1..length(gslp), k, drawtext(((screenbounds()_1).x + .4, 1-(k-1)/10), gslp_k, color->cølors.Text, size->10));
+  drawtext(((screenbounds()_1).x + .2,1.5), "gslptmp = [", color->cølors.Text, size->10);
+  apply(1..length(gslptmp), k, drawtext(((screenbounds()_1).x + .5, 1.5-(k-1)/10), gslptmp_k+",", color->cølors.Text, size->10));
+ );
+
+/* //Michael Debugging
+  drawtext((-19,2), "DebugArray = [", color->cølors.Text, size->10);
+  apply(1..length(DebugArray), k, drawtext((-16.3, 2-(k-1)/2), DebugArray_k+",", color->cølors.Text, size->10));
+  drawtext((-19,-7), "gslp = [", color->cølors.Text, size->10);
+  apply(1..length(gslp), k, drawtext((-17.1, -7-(k-1)/2), gslp_k+",", color->cølors.Text, size->10));
+*/
+
+/* //GLØBAL
+  drawtext((-19,-7), "gløbal.newel = " + gløbal.newel, color->cølors.Text, size->10);
+  drawtext((-19,-7.5), "gløbal.move = " + gløbal.move, color->cølors.Text, size->10);
+  drawtext((-19,-8), "gløbal.calc = " + gløbal.calc, color->cølors.Text, size->10);
+  drawtext((-19,-8.5), "gløbal.update = " + gløbal.update, color->cølors.Text, size->10);
+  drawtext((-19,-9), "gløbal.pos = " + gløbal.pos, color->cølors.Text, size->10);
+  drawtext((-19,-9.5), "gløbal.downpos = " + gløbal.downpos, color->cølors.Text, size->10);
+*/
+
+commonTangents(A, B) := (
+  regional(polA, polB, lns, pts);
+  //polA = B * inverse(A) * transpose(B);
+  polB = normalizeAbs(A * inverse(B) * transpose(A));
+  pts = normalizeAbs(intersectCC(A, polB));
+  lns = apply(pts, pt, A*apply(pt, re(#)));
+  //lns = select(lns, |transpose(#) * inverse(A) * #| < 0.1);
+  lns;
+);
+
+dualCubic(c, l) := (
+  regional(L, mat);
+  L = apply(1..3, jk, epsTensor_(jk) * l);
+  print(apply(1..3, k, c_k * L * c_k * L));
+);
+
+//dualCubic(cubicTensor([0,1,2,3,4,5,6,7,8,9]), (1,2,3));
+
+/*
+//println(tracedLog(mouse().x + i*mouse().y, "mouse"));
+if(!isundefined(getEl("C0")), draw(tracedIntersectCL(getCoords("C0"), getCoords("a"), "testICL")_1, color->(0,1,0)); draw(tracedIntersectCL(getCoords("C0"), getCoords("a"), "testICL")_2, color->(0,0,1)););
+if(!isundefined(getEl("C0")), drawcircle(intersectCL(getCoords("C0"), getCoords("a"))_1, 0.5, size->3, color->(0,1,0)); drawcircle(intersectCL(getCoords("C0"), getCoords("a"))_2, 0.5, size->3, color->(0,0,1)););
+if(!isundefined(getEl("C0")), println(tracedIntersectCL(getCoords("C0"), getCoords("a"), "testICL")));
+if(!isundefined(getEl("C0")), println(intersectCL(getCoords("C0"), getCoords("a"))));
+//println(activeState);
+*/
+/*
+if(!isundefined(getEl("C0")),
+  //lp = getCoords("a"); Ap = getCoords("A"); Bp = getCoords("B"); Cp = getCoords("C"); Dp = cross(lp, cross(Bp,Cp)); Ep = cross(getCoords("C0")*Ap, getCoords("C0")*Cp);
+  //draw(det(Ap,Bp,Cp)*cross(lp, cross(Dp, Ep)) - det(Cp,Dp,Ep)*Ap);
+  //draw(det(Ap,Bp,Cp)*(lp*Bp)*cross(getCoords("C0")*Cp,lp) + (Bp*getCoords("C0")*Ap)*(lp*Cp)*cross(lp,cross(Bp,Cp)));
+  //draw(det(getCoords("A"),getCoords("B"),getCoords("C"))*cross(getCoords("a"),cross(dp,ep)) - det(getCoords("C"),dp,ep)*cross(getCoords("a"),cross(getCoords("A"),getCoords("B"))));
+  //draw(det(getCoords("A"),getCoords("B"),getCoords("C"))*cross(getCoords("a"),cross(dp,ep)) - det(getCoords("C"),dp,ep)*cross(getCoords("a"),cross(getCoords("A"),getCoords("B"))));
+  //apply(commonTangents(cubicPolarConic(getCoords("Cubic0"), getCoords("A")), cubicPolarConic(getCoords("Cubic0"), getCoords("C"))), draw(line(#), size->2, color->(0,1,0)));
+);
+*/
+</script>
+
+
+<script type="text/javascript">
+  var rect = [-2, 2, 2, -2];
+  var dict = {
+        scripts: "cs*",
+        angleUnit: "pi",
+        ports: [{
+          id: "CindyCanvas",
+          transform: [{visibleRect: rect}]
+        }],
+        import: {
+          "init": ["kernel", "modes", "algorithms", "port", "userinput", "selection", "communication", "style", "prover", "tests", "misc_functions"]
+        },
+        use: ["CindyGL", "katex"]
+      };
+  var cindy = CindyJS(dict);
+
+  var setm = function(m) {
+    cindy.evokeCS('setMode("'+m+'");');
+  };
+
+  var shiftDetect = function(event) {
+    if(event.shiftKey)  {
+      cindy.evokeCS('gløbal.shiftDown=true;');
+    } else {
+      cindy.evokeCS('gløbal.shiftDown=false;');
+    }
+  };
+
+  var pressedKeys = {};
+  document.onkeydown = function(evt) {
+    if (evt.key === "Escape") {
+        cindy.evokeCS('setMode("move");');
+        document.getElementById('move').checked = true;
+        if (document.getElementById('export').checked) {
+          document.getElementById('export-container').classList.add('hidden');
+          document.getElementById('export').checked = false;
+        }
+    }
+    if (evt.key === "Shift") {
+        cindy.evokeCS('if(møde != "move", setMode("move"););');
+        document.getElementById('move').checked = true;
+    }
+    //Wenn "p" gedrückt wird...
+    if (evt.key == "p" || evt.key == "π") {
+        //...während ALT gedrück ist ...
+        if (pressedKeys[18] == true) {
+            cindy.evokeCS('initializeAlgebraicProofFromSelection()');
+        }
+    }
+
+    //Wenn "ö" gedrückt wird...
+    if (evt.key == "o" || evt.key == "ø") {
+        //...während ALT gedrück ist ...
+        if (pressedKeys[18] == true) {
+            cindy.evokeCS('initializeAlgebraicProofFromSelectionIter()');
+        }
+    }
+
+    //Wenn "t" gedrückt wird...
+    if (evt.key == "t" || evt.key == "†") {
+        //...während ALT gedrück ist ...
+        if (pressedKeys[18] == true) {
+            cindy.evokeCS('executeTests()');
+        }
+    }
+    //Wenn "z" gedrückt wird...
+    if (evt.key === "z") {
+        //...während CTRL gedrück ist ...
+        if (pressedKeys[17] == true) {
+            cindy.evokeCS('undo()');
+        }
+    }
+    //Wenn "y" gedrückt wird...
+    if (evt.key === "y") {
+        //...während CTRL gedrück ist ...
+        if (pressedKeys[17] == true) {
+            cindy.evokeCS('redo()');
+        }
+    }
+    //pressed keys get saved
+    pressedKeys[evt.keyCode] = true;
+  };
+  
+  document.onkeyup = function(evt) {
+    //released keys get deleted from pressed keys
+    pressedKeys[evt.keyCode] = false;
+  };
+</script>
+</head>
+
+
+<body style="background-color: #e8eef7;">
+  <div class="UI-container" id="UIrow1">
+    <div class="" style="display: inline-flex; width: 30%;" id="view-options">
+      <div class="button-container">
+        <input type="button" name="action" value="ZoomIn" id="ZoomIn" onclick="cindy.evokeCS('pørt.trafo = [[1.2,0,0],[0,1.2,0],[0,0,1]] * pørt.trafo; updatePørt();');">
+        <label for="ZoomIn"><img src="symbols/ZoomIn.svg"></label>
+        <span>Zoom In</span>
+      </div>
+      <div class="button-container">
+        <input type="button" name="action" value="ZoomOut" id="ZoomOut" onclick="cindy.evokeCS('pørt.trafo = [[1/1.2,0,0],[0,1/1.2,0],[0,0,1]] * pørt.trafo; updatePørt();');">
+        <label for="ZoomOut"><img src="symbols/ZoomOut.svg"></label>
+        <span>Zoom Out</span>
+      </div>  
+      <div class="button-container">
+        <input type="button" name="action" value="Center" id="Center" onclick="cindy.evokeCS('pørt.trafo = [[1,0,0],[0,1,0],[0,0,1]]; updatePørt();');">
+        <label for="Center"><img src="symbols/Center.svg"></label>
+        <span>Reset View</span>
+      </div>
+      <div class="button-container">
+        <input type="radio" name="mode-type" value="TranslateView" id="TranslateView" onclick="setm('translateView');">
+        <label for="TranslateView"><img src="symbols/Translate.svg" style="height: 30px; width: auto;"></label>
+        <span>Move View</span>
+      </div>
+    </div>
+
+    <div style="display: inline-flex; width: 40%;">
+      <div class="button-container">
+        <input type="radio" name="mode-category" value="cat1" id="cat1" onclick="setm('singleLine'); document.getElementById('addln').checked = true;" checked>
+        <label for="cat1"><img src="symbols/LineCategory.svg"></label>
+        <span>Lines</span>
+      </div>
+      <div class="button-container">
+        <input type="radio" name="mode-category" value="cat2" id="cat2" onclick="setm('circleMP'); document.getElementById('addcirclemp').checked = true;">
+        <label for="cat2"><img src="symbols/ConicCategory.svg"></label>
+        <span>Conics</span>
+      </div>
+      <!--div class="button-container">
+        <input type="radio" name="mode-category" value="cat3" id="cat3">
+        <label for="cat3"><img src="symbols/Metric.svg" style="width:50px; height:auto;"></label>
+        <span>Metric Elements</span>
+      </div-->
+      <!--div class="button-container">
+        <input type="radio" name="mode-category" value="cat4" id="cat4" disabled>
+        <label for="cat4"><img src="symbols/Transform.svg"></label>
+        <span>Transformations</span>
+      </div-->
+      <div class="button-container">
+        <input type="radio" name="mode-category" value="cat5" id="cat5" onclick="setm('cubicBy9'); document.getElementById('addcubicBy9').checked = true;">
+        <label for="cat5"><img src="symbols/CubicCategory.svg"></label>
+        <span>Cubics</span>
+      </div>
+    </div>
+
+    <div style="display: inline-flex; width: 30%;">
+      <div class="button-container">
+        <input type="checkbox" name="action" value="DrawAxes" id="DrawAxes">
+        <label for="DrawAxes"><img src="symbols/Axes.svg"></label>
+        <span>Draw Axes</span>
+      </div>
+      <div class="button-container">
+        <input type="checkbox" name="action" value="DrawGrid" id="DrawGrid">
+        <label for="DrawGrid"><img src="symbols/Grid.svg"></label>
+        <span>Draw Grid</span>
+      </div>
+      <div class="button-container">
+        <input type="checkbox" name="action" value="Snap" id="Snap" disabled>
+        <label for="Snap"><img src="symbols/Snap.svg"></label>
+        <span>Snap to Grid</span>
+      </div>
+      <div class="button-container">
+      <input type="checkbox" name="action" value="export" id="export" onclick="showHideExport();">
+      <label for="export"><img src="symbols/Export.svg" style="width:auto; height:40px;"></label>
+      <span>Export</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="UI-container" id="UIrow2">
+    
+    <div class="button-container">
+      <input type="radio" name="mode-type" value="move" id="move" onclick="setm('move');" checked>
+      <label for="move"><img src="symbols/Move.svg" style="height: 30px; width: auto;"></label>
+      <span>Move</span>
+    </div>
+    <div class="button-container">
+      <input id="addpt" type="radio" name="mode-type" value="addpt"  onclick="setm('singlePoint')">
+      <label class="mode addpt" for="addpt"><img src="symbols/singlepoint.svg"></label>
+      <!-- <label class="mode addpt" for="addpt" style="background-image:url('images/single-add.png');"></label> -->
+      <span>Point</span>
+    </div>
+    <div class="button-container">
+        <input id="addmid" type="radio" name="mode-type" value="addmid"  onclick="setm('middle')">
+        <label class="mode addmid" for="addmid"><img src="symbols/mid.svg"></label>
+        <span>Midpoint</span>
+    </div>
+
+    <div style="display: inline-block; height: 40px; margin:8px; border-left: 1px solid black; border-right: 1px solid black;"></div>
+
+    <div class="cat cat1">
+      <div class="button-container">
+        <input id="addln" type="radio" name="mode-type" value="addln"  onclick="setm('singleLine')">
+        <label class="mode addln" for="addln"><img src="symbols/singleline.svg"></label>
+        <span>Line</span>
+      </div>
+      <div class="button-container">
+        <input id="addseg" type="radio" name="mode-type" value="addseg"  onclick="setm('singleSegment')">
+        <label class="mode addseg" for="addseg"><img src="symbols/segment.svg"></label>
+        <span>Segment</span>
+      </div>
+      <div class="button-container">
+        <input id="addpara" type="radio" name="mode-type" value="addpara"  onclick="setm('parallel')">
+        <label class="mode addpara" for="addpara"><img src="symbols/parallel.svg"></label>
+        <span>Parallel</span>
+      </div>
+      <div class="button-container">
+        <input id="addperp" type="radio" name="mode-type" value="addperp"  onclick="setm('perpendicular')">
+        <label class="mode addperp" for="addperp"><img src="symbols/perpendicular.svg"></label>
+        <span>Perpendicular</span>
+      </div>
+    </div>
+
+    <div class="cat cat2 hidden">
+      <div class="button-container">
+        <input id="addarc" type="radio" name="mode-type" value="addarc"  onclick="setm('singleArc')">
+        <label class="mode addarc" for="addarc"><img src="symbols/arc.svg"></label>
+        <span>Arc</span>
+      </div>
+      <div class="button-container">
+        <input id="addcirclemr" type="radio" name="mode-type" value="addcirclemr"  onclick="setm('circleMR')">
+        <label class="mode addcirclemr" for="addcirclemr"><img src="symbols/circlemr.svg"></label>
+        <span>Circle by 1P</span>
+      </div>
+      <div class="button-container">
+        <input id="addcirclemp" type="radio" name="mode-type" value="addcirclemp"  onclick="setm('circleMP')">
+        <label class="mode addcirclemp" for="addcirclemp"><img src="symbols/circlemp.svg"></label>
+        <span>Circle by 2P</span>
+      </div>
+      <div class="button-container">
+        <input id="addcircleby3" type="radio" name="mode-type" value="addcircleby3"  onclick="setm('circleBy3')">
+        <label class="mode addcircleby3" for="addcircleby3"><img src="symbols/circleby3.svg"></label>
+        <span>Circle by 3P</span>
+      </div>
+      <div class="button-container">
+        <input id="addconicby5" type="radio" name="mode-type" value="addconicby5"  onclick="setm('conicBy5')">
+        <label class="mode addconicby5" for="addconicby5"><img src="symbols/conicby5.svg"></label>
+        <span>Conic by 5P</span>
+      </div>
+      <div class="button-container">
+        <input id="addpolar" type="radio" name="mode-type" value="addpolar"  onclick="setm('polar')">
+        <label class="mode addpolar" for="addpolar"><img src="symbols/polar.svg"></label>
+        <span>Polarity</span>
+      </div>
+    </div>
+
+    <div class="cat cat3">
+      <!--div class="button-container">
+        <input id="addmid" type="radio" name="mode-type" value="addmid"  onclick="setm('middle')">
+        <label class="mode addmid" for="addmid"><img src="symbols/mid.svg"></label>
+        <span>Midpoint</span>
+      </div-->
+      <div class="button-container">
+        <input id="ruler" type="radio" name="mode-type" value="ruler"  onclick="setm('ruler')" disabled>
+        <label class="mode ruler" for="ruler"><img src="symbols/Ruler.svg"></label>
+        <span>Ruler</span>
+      </div>
+      <div class="button-container">
+        <input id="compass" type="radio" name="mode-type" value="compass"  onclick="setm('compass')" disabled>
+        <label class="mode compass" for="compass"><img src="symbols/Compass.svg"></label>
+        <span>Compass</span>
+      </div>
+    </div>
+
+    <div class="cat cat4 hidden">
+      <div class="button-container">
+        <input id="translation" type="radio" name="mode-type" value="translation"  onclick="setm('translation')" disabled>
+        <label class="mode translation" for="translation"><img src="symbols/Translation.svg"></label>
+        <span>Translation</span>
+      </div>
+      <div class="button-container">
+        <input id="rotation" type="radio" name="mode-type" value="rotation"  onclick="setm('rotation')" disabled>
+        <label class="mode rotation" for="rotation"><img src="symbols/Rotation.svg"></label>
+        <span>Rotation</span>
+      </div>
+      <div class="button-container">
+        <input id="similarity" type="radio" name="mode-type" value="similarity"  onclick="setm('similarity')" disabled>
+        <label class="mode similarity" for="similarity"><img src="symbols/Similarity.svg"></label>
+        <span>Similarity</span>
+      </div>
+      <div class="button-container">
+        <input id="affinetrafo" type="radio" name="mode-type" value="affinetrafo"  onclick="setm('affinetrafo')" disabled>
+        <label class="mode affinetrafo" for="affinetrafo"><img src="symbols/AffineTrafo.svg"></label>
+        <span>Affine Trafo</span>
+      </div>
+      <div class="button-container">
+        <input id="projtrafo" type="radio" name="mode-type" value="projtrafo"  onclick="setm('projtrafo')" disabled>
+        <label class="mode projtrafo" for="projtrafo"><img src="symbols/ProjectiveTrafo.svg"></label>
+        <span>Projective Trafo</span>
+      </div>
+      <div class="button-container">
+        <input id="moebtrafo" type="radio" name="mode-type" value="moebtrafo"  onclick="setm('moebtrafo')" disabled>
+        <label class="mode moebtrafo" for="moebtrafo"><img src="symbols/Möbius.svg"></label>
+        <span>Möbius Trafo</span>
+      </div>
+    </div>
+
+    <div class="cat cat5 hidden">
+      <div class="button-container" title="select 9 points">
+        <input id="addcubicBy9" type="radio" name="mode-type" value="addcubicBy9"  onclick="setm('cubicBy9')">
+        <label class="mode addcubicBy9" for="addcubicBy9">9P</label>
+        <span>Cubic</span>
+      </div>
+      <div class="button-container" title="select 4 lines and 1 point">
+        <input id="addcubicBy4" type="radio" name="mode-type" value="addcubicBy4"  onclick="setm('cubicBy4')">
+        <label class="mode addcubicBy4" for="addcubicBy4">1P 4L</label>
+        <span>Cubic</span>
+      </div>
+      <div class="button-container" title="select 8 points">
+        <input id="addcayleybacharach" type="radio" name="mode-type" value="addcayleybacharach"  onclick="setm('cayleyBacharach')">
+        <label class="mode addcayleybacharach" for="addcayleybacharach">8P</label>
+        <span>Cayley-Bacharach</span>
+      </div>
+      <div class="button-container" title="select 1 point and 1 cubic">
+        <input id="addcubicpolarline" type="radio" name="mode-type" value="addcubicpolarline"  onclick="setm('cubicPolarLine')">
+        <label class="mode addcubicpolarline" for="addcubicpolarline">1P 1Cub</label>
+        <span>Polar Line</span>
+      </div>
+      <div class="button-container" title="select 1 point and 1 cubic">
+        <input id="addcubicpolarconic" type="radio" name="mode-type" value="addcubicpolarconic"  onclick="setm('cubicPolarConic')">
+        <label class="mode addcubicpolarconic" for="addcubicpolarconic">1P 1Cub</label>
+        <span>Polar Conic</span>
+      </div>
+      <!--div class="button-container">
+        <input id="addlocus" type="radio" name="mode-type" value="addlocus" onclick="setm('locus')" disabled>
+        <label class="mode addlocus" for="addlocus"><img src="symbols/locus.svg"></label>
+        <span>Locus</span>
+      </div-->
+    </div>
+
+    <div style="display: inline-block; height: 40px; margin:8px; border-left: 1px solid black; border-right: 1px solid black;"></div>
+
+    <div class="button-container">
+      <input type="radio" name="mode-type" value="erase" id="erase" onclick="setm('erase')">
+      <label for="erase"><img src="symbols/Erase.svg" style="height: 30px"></label>
+      <span>Erase</span>
+    </div>
+    <div class="button-container">
+      <input type="button" name="action" value="undo" id="undo" onclick="cindy.evokeCS('undo();');">
+      <label for="undo"><img src="symbols/Undo.svg"></label>
+      <span>Undo</span>
+    </div>
+    <div class="button-container">
+      <input type="button" name="action" value="redo" id="redo" onclick="cindy.evokeCS('redo();');">
+      <label for="redo"><img src="symbols/Redo.svg"></label>
+      <span>Redo</span>
+    </div>
+    <div class="button-container">
+      <input type="checkbox" name="action" value="info" id="info" onclick="toggleInfo();">
+      <label for="info"><img src="symbols/Info.svg"></label>
+      <span>Properties</span>
+    </div>
+    <div class="button-container">
+      <input type="checkbox" name="action" value="sett" id="sett" onclick="toggleSettings();">
+      <label for="sett"><img src="symbols/Settings.svg"></label>
+      <span>Settings</span>
+    </div>
+
+  </div>
+
+  <div id="property-menu">
+    <!-- ELEMENT PROPERTIES -->
+    <div class="section-header" style="margin: 0px 8px 8px 8px;">Element Properties</div>
+    <div id="element-section">
+      <!-- Color Picker -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Color</div>
+        <div class="information-menu-control color-picker">
+          <div class="color-swatch" style="--ownColor: var(--pointColor);"></div>
+          <div class="color-swatch" style="--ownColor: var(--lineColor);"></div>
+          <div class="color-swatch" style="--ownColor: var(--cubicColor);"></div>
+          <div class="color-swatch" style="--ownColor: var(--InfoBorderColor);"></div>
+          <div class="color-swatch" style="--ownColor: #e74c3c;"></div>
+          <div class="color-swatch" style="--ownColor: #27ae60;"></div>
+          <div class="color-swatch" style="--ownColor: #2980b9;"></div>
+          <div class="color-swatch" style="--ownColor: #f1c40f;"></div>
+          <div class="color-swatch" style="--ownColor: #8e44ad;"></div>
+          <div class="color-swatch" style="--ownColor: rgb(255,255,255);"></div>
+          <div class="color-swatch" style="--ownColor: rgb(0,0,0);"></div>
+          <div class="color-swatch color-swatch-add"></div>
+        </div>
+      </div>
+      <!-- Opacity (stepless slider) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Opacity</div>
+        <div class="information-menu-control">
+          <input type="range" id="opacity-slider" min="0" max="1" step="any" value="1"/>
+        </div>
+      </div>
+      <!-- Visibility (on/off switch) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Visibility</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="visibility-toggle" onclick="cindy.evokeCS(`apply(allSelectedElements(), #.visibool = ${checked}); cømmunicateJS();`);" checked />
+          <label for="visibility-toggle" class="switch"></label>
+          <input type="button" id="visibility-button"
+            onclick="cindy.evokeCS('selectInvisibles();'); document.getElementById('visibility-toggle').checked = ((communicationCS.selection || []).length == 0);"/>
+          <label for="visibility-button">Select Invisibles</label>
+        </div>
+      </div>
+      <!-- Draggable (on/off switch) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Draggable</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="draggable-toggle" onclick="cindy.evokeCS(`apply(selectiøn.pts, #.draggable = ${this.checked}); cømmunicateJS();`);"/>
+          <label for="draggable-toggle" class="switch"></label>
+        </div>
+      </div>
+      <!-- Size (stepped slider) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Size</div>
+        <div class="information-menu-control">
+          <input type="range" id="size-slider" min="1" max="15" step="1" value="8"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- ELEMENT INFO -->
+    <div class="section-header">Element Info</div>
+    <div id="info-section">
+      <div class="information-menu-row">
+        <div class="information-menu-label">Name</div>
+        <div class="information-menu-control"><span id="info-name"></span></div>
+      </div>
+      <div class="information-menu-row">
+        <div class="information-menu-label">Type</div>
+        <div class="information-menu-control"><span id="info-type"></span></div>
+      </div>
+      <div class="information-menu-row">
+        <div class="information-menu-label">Algorithm</div>
+        <div class="information-menu-control"><span id="info-alg"></span></div>
+      </div>
+      <div class="information-menu-row">
+        <div class="information-menu-label">Arguments</div>
+        <div class="information-menu-control"><span id="info-parents"></span></div>
+      </div>
+      <!--div class="information-menu-row">
+        <div class="information-menu-label">Position</div>
+        <div class="information-menu-control"><span id="info-pos"></span></div>
+      </div-->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Incidences</div>
+        <div class="information-menu-control"><span id="info-inc"></span></div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <div id="settings">
+    <!-- GLOBAL SETTINGS -->
+    <div class="section-header" style="margin: 0px 8px 8px 8px;">Global Settings</div>
+    <div id="global-section">
+      <!-- Border (on/off switch) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Point Borders</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="border-toggle" onclick="cindy.evokeCS('pointBorder = !pointBorder');"/>
+          <label for="border-toggle" class="switch"></label>
+        </div>
+      </div>
+      <!-- Point Labels (on/off switch) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Point Labels</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="label-toggle" onclick="cindy.evokeCS('drawLabels = !drawLabels');" checked />
+          <label for="label-toggle" class="switch"></label>
+        </div>
+      </div>
+      <!-- Darken Dependent Points (on/off switch) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Darken Dep.</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="darken-toggle" onclick="cindy.evokeCS('darkenDependent = !darkenDependent');" checked />
+          <label for="darken-toggle" class="switch"></label>
+        </div>
+      </div>
+      <!-- Text Mode (on/off switch) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">LaTeX Mode</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="math-mode-toggle" onclick="cindy.evokeCS('mathMode = !mathMode');" />
+          <label for="math-mode-toggle" class="switch"></label>
+        </div>
+      </div>
+      <!-- Debug Mode (on/off switch) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Debugging</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="debugging-toggle" onclick="cindy.evokeCS('debugMode = !debugMode');" />
+          <label for="debugging-toggle" class="switch"></label>
+        </div>
+      </div>
+      <!-- Draw Duals Mode (on/off switch) -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Draw Duals</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="duals-toggle" onclick="cindy.evokeCS('drawDual = !drawDual');" />
+          <label for="duals-toggle" class="switch"></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEFAULTS -->
+    <!--div class="section-header">Defaults</div>
+    <div id="theme-section">
+    
+    </div-->
+
+    <!-- THEMES -->
+    <div class="section-header">Themes</div>
+    <div id="theme-section">
+      <div class="information-menu-control">
+        <input type="radio" name="themes" value="theme1" id="theme1" onclick="setTheme(CinderellaTheme)">
+        <label for="theme1">Cinderella</label>
+      </div>
+      <div class="information-menu-control">
+        <input type="radio" name="themes" value="theme2" id="theme2" onclick="setTheme(TimTheme)" checked>
+        <label for="theme2">Tim</label>
+      </div>
+      <div class="information-menu-control">
+        <input type="radio" name="themes" value="theme3" id="theme3" onclick="setTheme(DarkTheme)">
+        <label for="theme3">Dark</label>
+      </div>
+      <div class="information-menu-control">
+        <input type="radio" name="themes" value="theme4" id="theme4" onclick="setTheme(CyberpunkTheme)">
+        <label for="theme4">CyPunk</label>
+      </div>
+      <!--
+      <div class="information-menu-control">
+        <input type="radio" name="themes" value="theme5" id="theme5" onclick="setTheme(ArtDecoTheme)">
+        <label for="theme5">Art Deco</label>
+      </div>
+      <div class="information-menu-control">
+        <input type="radio" name="themes" value="theme6" id="theme6" onclick="setTheme(GardenTheme)">
+        <label for="theme6">Garden</label>
+      </div>
+      -->
+    </div>
+
+    <!-- TORIC MOMENT MAP -->
+    <div class="section-header">Toric Moment Map</div>
+    <div id="toric-section">
+      <!-- Toric Moment Map -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Active</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="toric-draw-toggle" onclick="cindy.evokeCS('tøric.drawPicture = !tøric.drawPicture; resetToricPicture();');" />
+          <label for="toric-draw-toggle" class="switch"></label>
+        </div>
+      </div>
+      <!-- Size -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Size</div>
+        <div class="information-menu-control">
+          <input type="range" style="width: 75%" id="toric-size-slider" min="0.8" max="2.5" step="any" value="1"/>
+        </div>
+      </div>
+      <!-- Resolution -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Resolution</div>
+        <div class="information-menu-control">
+          <input type="range" style="width: 75%" id="toric-resolution-slider" min="500" max="1000" step="50" value="500"/>
+        </div>
+      </div>
+      <!-- Sample Points -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">#(Points)</div>
+        <div class="information-menu-control">
+          <input type="range" style="width: 75%" id="toric-points-slider" min="10000" max="50000" step="1000" value="10000"/>
+        </div>
+      </div>
+      <!-- Quadratic Moments -->
+      <div class="information-menu-row">
+        <div class="information-menu-label">Quadratic</div>
+        <div class="information-menu-control">
+          <input type="checkbox" id="toric-quadratic-toggle" onclick="cindy.evokeCS('tøric.quadratic = !tøric.quadratic; resetToricPicture();');" />
+          <label for="toric-quadratic-toggle" class="switch"></label>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div id="context-menu">
+    <div class="context-menu-grid">
+      <!-- Axes (switch) -->
+      <div class="context-menu-row" id="context-axes">
+        <div class="context-menu-label">Axes</div>
+        <div class="context-menu-control">
+          <input type="checkbox" id="axes-toggle" />
+          <label for="axes-toggle" class="switch"></label>
+        </div>
+      </div>
+      <!-- Grid (switch) -->
+      <div class="context-menu-row" id="context-grid">
+        <div class="context-menu-label">Grid</div>
+        <div class="context-menu-control">
+          <input type="checkbox" id="grid-toggle" />
+          <label for="grid-toggle" class="switch"></label>
+        </div>
+      </div>
+      <!-- Snap (switch) -->
+      <div class="context-menu-row" id="context-snap">
+        <div class="context-menu-label">Snap</div>
+        <div class="context-menu-control">
+          <input type="checkbox" id="snap-toggle" disabled />
+          <label for="snap-toggle" class="switch"></label>
+        </div>
+      </div>
+    </div>
+    <div class="context-menu-list">
+      <!-- Name Box (text) -->
+      <div class="context-menu-item" id="context-name">
+        <div class="context-menu-label" id="context-name-label" style="font-weight: bold;"></div>
+      </div>
+      <!-- Info (button) -->
+      <div class="context-menu-item" id="context-info">
+        <input type="button" id="context-info-button" onclick="contextMenu.style.display='none'; info.checked=true; toggleInfo();" />
+        <label for="context-info-button">Show Info</label>
+      </div>
+      <!-- Delete (button) -->
+      <div class="context-menu-item" id="context-delete">
+        <input type="button" id="context-delete-button" onclick="contextMenu.style.display='none'; cindy.evokeCS('erase(allSelectedElements());');" />
+        <label for="context-delete-button">Erase</label>
+      </div>
+    </div>
+  </div>
+
+  <div id="CindyContainer">
+  <div id="CindyCanvas" oncontextmenu="showMenu(event)" onpointerdown="shiftDetect(event)" ondrop="dropHandler(event)"></div>
+  </div>
+
+  <div class="export-container hidden" id="export-container">
+    <input class="export-text" type="text" id="filenameinput" placeholder="Filename">
+    <input class="hidden" type="text" id="filename" onchange="setfilename()" value="backupfilename">
+    <div class="button-container">
+      <input type="button" id="startExport">
+      <label for="startExport"><img src="symbols/Export.svg" style="width:auto; height:40px;"></label>
+      <span>Export</span>
+    </div>
+    <div class="button-container">
+      <label for="export"><img src="symbols/Stop.svg"></label>
+      <span>Stop</span>
+    </div>
+  </div>
+
+  <form method="post" accept-charset="utf-8" name="form1">
+    <input name="post_data" id="post_data" type="hidden">
+  </form>
+
+  <script type="text/javascript" src="Themes.js"></script> <!--Wait until all svgs loaded!-->
+  <script type="text/javascript" src="UI.js"></script> <!--Wait until all divs defined!-->
+</body>
+</html>
