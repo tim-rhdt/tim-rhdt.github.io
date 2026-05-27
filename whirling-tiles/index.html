@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="https://cindyjs.org/dist/latest/Cindy.js"></script>
+    <title>Kites</title>
+
+    <script type="text/javascript">
+    // Prevent right clicks
+    document.addEventListener('contextmenu', function(e) {e.preventDefault();}, false);
+    // Prevent dragging on everything except range inputs
+    document.addEventListener("dragstart", function (e) {e.preventDefault();});
+
+    window.addEventListener("load", function () {
+      const canvasContainer = document.getElementById("CSCanvas");
+      const zoomSlider = document.getElementById("zoom-slider");
+      if (!canvasContainer || !zoomSlider) return;
+      const zoomTuning = {
+        deadzone: 2,
+        impulseGain: 0.24,
+        damping: 0.6,
+        maxPending: 220,
+        maxVelocity: 0.03,
+        stopVelocity: 0.0006,
+        tailIgnoreDelayMs: 55
+      };
+      let pendingWheel = 0;
+      let zoomVelocity = 0;
+      let wheelFrame = null;
+      let momentumFrame = null;
+      let lastStrongWheelTime = 0;
+
+      function applyZoomDelta(delta) {
+        const min = parseFloat(zoomSlider.min);
+        const max = parseFloat(zoomSlider.max);
+        const current = parseFloat(zoomSlider.value);
+        let next = current + delta;
+        next = Math.max(min, Math.min(max, next));
+        if (next !== current) {
+          zoomSlider.value = next;
+          zoomSlider.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+      }
+
+      function runZoomMomentum() {
+        zoomVelocity *= zoomTuning.damping;
+        if (Math.abs(zoomVelocity) < zoomTuning.stopVelocity) {
+          zoomVelocity = 0;
+          momentumFrame = null;
+          return;
+        }
+        applyZoomDelta(zoomVelocity);
+        momentumFrame = requestAnimationFrame(runZoomMomentum);
+      }
+
+      function flushWheel() {
+        wheelFrame = null;
+        if (Math.abs(pendingWheel) < 0.001) return;
+        const min = parseFloat(zoomSlider.min);
+        const max = parseFloat(zoomSlider.max);
+        const span = max - min;
+        const raw = pendingWheel;
+        pendingWheel = 0;
+        const impulseStrength = Math.log1p(Math.abs(raw) / 24);
+        const impulse = -Math.sign(raw) * zoomTuning.impulseGain * (span / 22) * impulseStrength;
+        applyZoomDelta(impulse);
+        zoomVelocity = Math.max(-zoomTuning.maxVelocity, Math.min(zoomTuning.maxVelocity, zoomVelocity + impulse * 0.65));
+        if (momentumFrame === null) {
+          momentumFrame = requestAnimationFrame(runZoomMomentum);
+        }
+      }
+
+      canvasContainer.addEventListener("wheel", function (event) {
+        event.preventDefault();
+        const now = performance.now();
+        const modeScale = event.deltaMode === 1 ? 16 : (event.deltaMode === 2 ? 120 : 1);
+        const deltaY = event.deltaY * modeScale;
+        const absDeltaY = Math.abs(deltaY);
+        if (absDeltaY > zoomTuning.deadzone) lastStrongWheelTime = now;
+        if (absDeltaY < zoomTuning.deadzone && now - lastStrongWheelTime > zoomTuning.tailIgnoreDelayMs) return;
+        pendingWheel = Math.max(-zoomTuning.maxPending, Math.min(zoomTuning.maxPending, pendingWheel + deltaY));
+        if (wheelFrame === null) {
+          wheelFrame = requestAnimationFrame(flushWheel);
+        }
+      }, { passive: false });
+    });
+
+    function hexToRGB(hex) {
+      return [
+        parseInt(hex.substr(1, 2), 16) / 255,
+        parseInt(hex.substr(3, 2), 16) / 255,
+        parseInt(hex.substr(5, 2), 16) / 255
+      ];
+    }
+    function setColor(target, hex) {
+      const rgb = hexToRGB(hex);
+      cindy.evokeCS(`${target} = [${rgb.join(",")}];`);
+    }
+    function syncColorInputs(name, hex, target) {
+      document.querySelectorAll(`input[data-sync-color="${name}"]`).forEach(input => {
+        input.value = hex;
+      });
+      setColor(target, hex);
+    }
+    function toggleOutlineNewTiling(mode) {
+      const group = document.getElementById('outline-new-tiling');
+      const checkbox = document.getElementById('outline-new-tiling-box');
+      const isCustom = (mode === 2);
+      group.classList.toggle('disabled', isCustom);
+      checkbox.disabled = isCustom;
+    }
+
+    var cindy = CindyJS({
+      scripts: "cs*",
+      autoplay: false,
+      geometry: [ {name: "A", type: "Free", pos: [-1, 0, 1], size: 6, color: [0.0, 0.0, 0.0], alpha: 0, labeled: false, border: false}],
+      ports: [ {id: "CSCanvas", width: 1000, height: 1000, transform: [{ visibleRect: [-20, 20, 20, -20] }] } ]
+    });
+    </script>
+
+    <script id="csinit" type="text/x-cindyscript">
+      //===== LIST REDUCTION =====
+      normalize3(point) := if(point_3 == 0, point, point/point_3);
+      removeDuplicates(transformations) := (
+        regional(result, images, pt);
+        result = []; images = [];
+        forall(transformations, M,
+          pt = normalize3(M * [0,0,1]);
+          if(length(images) == 0,
+            images = append(images, pt);
+            result = append(result, M);
+          , // else
+            if(min(apply(images, p, |p - pt|)) > 0.01,
+              images = append(images, pt);
+              result = append(result, M);
+            );
+          );
+        );
+        result
+      );
+
+      selectVisible(transformations) := select(transformations, trafo,
+        // assumes centered origin of visibleRect, security overflow factor of 1.15
+        |normalize3(trafo * [0,0,1])_1| <= 1.15 * |normalize3(screenbounds()_1)_1| &
+        |normalize3(trafo * [0,0,1])_2| <= 1.15 * |normalize3(screenbounds()_1)_2|
+      );
+      
+      //===== STYLE and UI =====
+      style = {
+        "anticlockwiseColor": [68,159,188]/255,
+        "clockwiseColor": [1,1,1],
+        "kiteColorMode": 0,
+        "kiteCustomColor": [255,127,80]/255,
+        "kiteBorderBool": true,
+        "kiteBorderColor": [178,178,178]/255,
+        "kiteBorderSize": 2,
+        "kiteDiagonalBool": false,
+        "kiteDiagonalColor": [178,178,178]/255,
+        "kiteDiagonalSize": 1,
+        "originalTilingBool": false,
+        "originalTilingColor": [100,100,230]/255,
+        "originalTilingSize": 1,
+        "newTilingBool": false,
+        "newTilingColor": [0,0,0],
+        "newTilingSize": 2,
+        "UIColor": [225,91,28]/255,
+        "zoom": [[1,0,0], [0,1,0], [0,0,0.4]]
+      };
+
+      kiteColor() := (
+        if(style.kiteColorMode == 0, style.anticlockwiseColor,
+        if(style.kiteColorMode == 1, style.clockwiseColor, style.kiteCustomColor))
+      );
+
+      UI = {
+        "visiBool": false,
+        "size": 2,
+        "scale": 3,
+        "basePoint": [0,0],
+        "shift": [0,0],
+        "anchor": [0,0],
+        "angleRange": [0,0],
+        "orientation": 0,
+        "overhang": 1.2
+      };
+      updateUI(angle, zoom) := (
+        UI.anchor = 1/zoom_3_3 * (UI.basePoint + floor(20 * zoom_3_3 / |UI.shift|) * UI.shift);
+        UI.sliderPoints = apply([UI.angleRange_1, (UI.angleRange_1 + UI.angleRange_2)/2, UI.angleRange_2], angle, gauss(exp(i*(angle + UI.orientation))));
+        UI.arc = apply(UI.scale * UI.sliderPoints, arcpt, arcpt + UI.anchor);
+        A.xy = UI.anchor + UI.scale * rotate(UI.orientation, gauss(exp(i * angle)));
+      );
+
+      drawUI() := if(UI.visiBool,
+        drawarc(UI.arc_1, UI.arc_2, UI.arc_3, color->style.UIColor, size->UI.size);
+        draw(UI.anchor, UI.anchor + UI.overhang * (UI.arc_1 - UI.anchor), color->style.UIColor, size->UI.size);
+        draw(UI.anchor, UI.anchor + UI.overhang * (UI.arc_3 - UI.anchor), color->style.UIColor, size->UI.size);
+        draw(UI.anchor, UI.anchor + UI.overhang * (A.xy - UI.anchor), color->style.UIColor, size->UI.size);
+        draw(A.xy, color->style.UIColor, size->A.size, border->false);
+      );
+
+      //===== ANGLE HANDLING =====
+      rotate(angle, input) := [[cos(angle), -sin(angle)],[sin(angle), cos(angle)]] * input;
+      updateAngle() := (
+        A.xy = UI.anchor + UI.scale * rotate(UI.orientation, gauss(
+          exp(i * max(min((arctan2(rotate(-UI.orientation, A.xy-UI.anchor))), UI.angleRange_2), UI.angleRange_1)) 
+        ));
+        tilings.theta = arctan2(rotate(-UI.orientation, A.xy-UI.anchor));
+        javascript(
+          "document.getElementById('angle-slider').value = " +
+          text((tilings.theta - UI.angleRange_1) / (UI.angleRange_2 - UI.angleRange_1)) + ";"
+        );
+      );
+
+      //===== GEOMETRY INPUT =====
+      // the descriptions are local and kind of dumb as I use only the interiors of each tile
+      // it works well except for if I want to draw the resulting tilings which require global-ish information
+      // therefore: hardcode some global information via "problematicEdge" to avoid redoing everything
+      hexagon = {
+        "clockwise": false,
+        "euclUnitVertices": [[2,0], [1,sqrt(3)], [-1,sqrt(3)], [-2,0], [-1,-sqrt(3)], [1,-sqrt(3)]]/2,
+        "sidelength": 2
+      };
+      hexagon.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          // sidelength * (lam * [3/2 + sqrt(3)/2, 1/2 + sqrt(3)/2] + mu * [0, 1 + sqrt(3)])
+          [[1, 0, hexagon.sidelength * lam * (3+sqrt(3))/2], [0, 1, hexagon.sidelength * (lam * (1+sqrt(3))/2 + mu * (1+sqrt(3)))], [0, 0, 1]]
+        )))
+      ));
+      
+      square = {
+        "clockwise": true,
+        "euclUnitVertices": [[1,1], [1,-1], [-1,-1], [-1,1]]/2,
+        "sidelength": 2
+      };
+      square.simpleTransformations = apply(0..5, k,
+        [[cos(2*pi*k/6), -sin(2*pi*k/6), -square.sidelength * (1+sqrt(3))/2 * sin(2*pi*k/6)],
+         [sin(2*pi*k/6), cos(2*pi*k/6), square.sidelength * (1+sqrt(3))/2 * cos(2*pi*k/6)],
+         [0, 0, 1]]
+      );
+      square.transformations = removeDuplicates(flatten(apply(hexagon.transformations, translation,
+        apply(square.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+      
+      triangle = {
+        "clockwise": false,
+        "euclUnitVertices": [[-3, -sqrt(3)], [3, -sqrt(3)], [0, 2*sqrt(3)]]/6,
+        "sidelength": 2
+      };
+      triangle.simpleTransformations = apply(0..5, k,
+        [[cos(2*pi*k/6 + pi/2), -sin(2*pi*k/6 + pi/2), triangle.sidelength * (1 + sqrt(3)/3) * cos(2*pi*k/6)],
+         [sin(2*pi*k/6 + pi/2), cos(2*pi*k/6 + pi/2), triangle.sidelength * (1 + sqrt(3)/3) * sin(2*pi*k/6)],
+         [0, 0, 1]]
+      );
+      triangle.transformations = removeDuplicates(flatten(apply(hexagon.transformations, translation,
+        apply(triangle.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+
+
+      bourgoin047star = {
+        "clockwise": false,
+        "euclUnitVertices": [[2,0], [3,sqrt(3)], [1,sqrt(3)], [0,2*sqrt(3)], [-1,sqrt(3)], [-3,sqrt(3)], [-2,0], [-3,-sqrt(3)], [-1,-sqrt(3)], [0,-2*sqrt(3)], [1,-sqrt(3)], [3,-sqrt(3)]]/2,
+        "sidelength": 2
+      }; 
+      bourgoin047star.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-6..6, lam,
+        apply(-6..6, mu,
+          [[1, 0, bourgoin047star.sidelength * (lam * 3 + mu * 3)], [0, 1, bourgoin047star.sidelength * (lam * sqrt(3) - mu * sqrt(3))], [0, 0, 1]]
+        )))
+      ));
+
+      bourgoin047hex = {
+        "clockwise": true,
+        "euclUnitVertices": [[2,0], [1,-sqrt(3)], [-1,-sqrt(3)], [-2,0], [-1,sqrt(3)], [1,sqrt(3)]]/2,
+        "problematicEdge": [false, true, false, true, false, true],
+        "sidelength": 2
+      };
+      bourgoin047hex.simpleTransformations = apply(0..5, k,
+        [[cos(2*pi*k/6), -sin(2*pi*k/6), bourgoin047hex.sidelength * 2 * cos(2*pi*k/6)],
+         [sin(2*pi*k/6), cos(2*pi*k/6), bourgoin047hex.sidelength * 2 * sin(2*pi*k/6)],
+         [0, 0, 1]]
+      ); // rotation of tile important for "problematic" edges
+      bourgoin047hex.transformations = removeDuplicates(flatten(apply(bourgoin047star.transformations, translation,
+        apply(bourgoin047hex.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+
+
+      square1 = {
+        "clockwise": true,
+        "euclUnitVertices": [[1,1], [1,-1], [-1,-1], [-1,1]]/2,
+        "sidelength": 4
+      };
+      square1.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          if(mod(lam+mu,2) == 0,
+            [[1, 0, square1.sidelength * lam], [0, 1, square1.sidelength * mu], [0, 0, 1]],
+            [[1,0,0], [0,1,0], [0,0,1]]
+          );
+        )))
+      ));
+      
+      square2 = {
+        "clockwise": false,
+        "euclUnitVertices": [[1,1], [-1,1], [-1,-1], [1,-1]]/2,
+        "sidelength": 4
+      };
+      square2.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          if(mod(lam+mu,2) == 1,
+            [[1, 0, square2.sidelength * lam], [0, 1, square2.sidelength * mu], [0, 0, 1]],
+            [[1,0,square2.sidelength], [0,1,0], [0,0,1]]
+          );
+        )))
+      ));
+
+      triangle1 = {
+        "clockwise": false,
+        "euclUnitVertices": [[-3, -sqrt(3)], [3, -sqrt(3)], [0, 2*sqrt(3)]]/6,
+        "sidelength": 6
+      };
+      triangle1.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[1, 0, triangle1.sidelength * (lam + mu/2)],
+           [0, 1, triangle1.sidelength * (mu * sqrt(3)/2)],
+           [0, 0, 1]]
+        ))
+      )));
+
+      triangle2 = {
+        "clockwise": true,
+        "euclUnitVertices": [[-3, sqrt(3)], [3, sqrt(3)], [0, -2*sqrt(3)]]/6,
+        "sidelength": 6
+      };
+      triangle2.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[1, 0, triangle2.sidelength * (lam + mu/2)],
+           [0, 1, triangle2.sidelength * (mu * sqrt(3)/2 - sqrt(3)/3)],
+           [0, 0, 1]]
+        ))
+      )));
+
+
+      bourgoin088star = {
+        "clockwise": false,
+        "euclUnitVertices": [[0, 6 - 4*sqrt(2)], [sqrt(2) - 2, 2 - sqrt(2)], [4*sqrt(2) - 6, 0], [sqrt(2) - 2, sqrt(2) - 2],
+                             [0, 4*sqrt(2) - 6], [2 - sqrt(2), sqrt(2) - 2], [6 - 4*sqrt(2), 0], [2 - sqrt(2), 2 - sqrt(2)]],
+        "sidelength": 2
+      };
+      bourgoin088star.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[1, 0, bourgoin088star.sidelength * (4 * lam + 2)], [0, 1, bourgoin088star.sidelength * (4 * mu + 2)], [0, 0, 1]];
+        ));
+      )));
+
+      s = sqrt(2)-1;
+      bourgoin088wheel = {
+        "clockwise": true,
+        "euclUnitVertices": [[0, 2*s],[s, 1],[1-s, 1-s],[1, s],[2*s, 0],[1, -s],[1-s, s-1],[s, -1],[0, -2*s],[-s, -1],[s-1, s-1],[-1, -s],[-2*s, 0],[-1, s],[s-1, 1-s],[-s, 1]],
+        "sidelength": 2
+      };
+      bourgoin088wheel.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[1, 0, bourgoin088wheel.sidelength * 4 * lam], [0, 1, bourgoin088wheel.sidelength * 4 * mu], [0, 0, 1]];
+        ));
+      )));
+
+      bourgoin088kite = {
+        "clockwise": false,
+        "euclUnitVertices": [[0, -s], [1, 0], [0, s], [2*s-1, 0]],
+        "problematicEdge": [false, false, false, true],
+        "sidelength": 2
+      };
+      bourgoin088kite.simpleTransformations = apply(0..7, k,
+        [[cos(2*pi*k/8), -sin(2*pi*k/8), bourgoin088kite.sidelength * cos(2*pi*k/8)],
+         [sin(2*pi*k/8), cos(2*pi*k/8), bourgoin088kite.sidelength * sin(2*pi*k/8)],
+         [0, 0, 1]]
+      );
+      bourgoin088kite.transformations = removeDuplicates(flatten(apply(bourgoin088wheel.transformations, translation,
+        apply(bourgoin088kite.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+
+      bourgoin088hex = {
+        "clockwise": true,
+        "euclUnitVertices": [[0, (-47 + 46*sqrt(2))/21], [2 - sqrt(2), (37 - 17*sqrt(2))/21], [1, (16 - 17*sqrt(2))/21],
+                             [0, (37 - 38*sqrt(2))/21], [-1, (16 - 17*sqrt(2))/21], [-2 + sqrt(2), (37 - 17*sqrt(2))/21]],
+        "problematicEdge": [true, false, false, false, false, false],
+        "sidelength": 2
+      };
+      bourgoin088hex.simpleTransformations = apply(0..3, k,
+        [[cos(2*pi*k/4 + pi), -sin(2*pi*k/4 + pi), rotate(2*pi*k/4, bourgoin088hex.sidelength * [2, -(38*sqrt(2)-37)/21])_1],
+         [sin(2*pi*k/4 + pi), cos(2*pi*k/4 + pi), rotate(2*pi*k/4, bourgoin088hex.sidelength * [2, -(38*sqrt(2)-37)/21])_2],
+         [0, 0, 1]]
+      ) ++ apply(0..3, k,
+        [[cos(2*pi*k/4), -sin(2*pi*k/4), rotate(2*pi*k/4, bourgoin088hex.sidelength * [2, (38*sqrt(2)-37)/21])_1],
+         [sin(2*pi*k/4), cos(2*pi*k/4), rotate(2*pi*k/4, bourgoin088hex.sidelength * [2, (38*sqrt(2)-37)/21])_2],
+         [0, 0, 1]]
+      );
+      bourgoin088hex.transformations = removeDuplicates(flatten(apply(bourgoin088wheel.transformations, translation,
+        apply(bourgoin088hex.simpleTransformations, similarity,
+          translation * similarity
+        ))
+      ));
+
+      cairoPentagon1 = {
+        "clockwise": false,
+        "euclUnitVertices": [[-(sqrt(3)+1), 0], [-sqrt(3), -sqrt(3)], [0, (1-sqrt(3))], [sqrt(3), -sqrt(3)],
+                            [(sqrt(3)+1), 0], [sqrt(3), sqrt(3)], [0, (sqrt(3)-1)], [-sqrt(3), sqrt(3)]],
+        "problematicEdge": [true, false, false, false, true, false, false, false],
+        "sidelength": 1
+      };
+      cairoPentagon1.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[cos(pi/4), -sin(pi/4), cairoPentagon1.sidelength * 2 * sqrt(6) * lam],
+          [sin(pi/4), cos(pi/4), cairoPentagon1.sidelength * 2 * sqrt(6) * mu],
+          [0, 0, 1]]
+        ))
+      )));
+
+      cairoPentagon2 = {
+        "clockwise": true,
+        "euclUnitVertices": [[0, -(sqrt(3)+1)], [-sqrt(3), -sqrt(3)], [(1-sqrt(3)), 0], [-sqrt(3), sqrt(3)],
+                             [0, (sqrt(3)+1)], [sqrt(3), sqrt(3)], [(sqrt(3)-1), 0], [sqrt(3), -sqrt(3)]],
+        "problematicEdge": [true, false, false, false, true, false, false, false],
+        "sidelength": 1
+      };
+      cairoPentagon2.transformations = removeDuplicates(selectVisible(flatten(
+        apply(-10..10, lam,
+        apply(-10..10, mu,
+          [[cos(pi/4), -sin(pi/4), cairoPentagon2.sidelength * sqrt(6) * (2 * lam + 1)],
+          [sin(pi/4), cos(pi/4), cairoPentagon2.sidelength * sqrt(6) * (2 * mu + 1)],
+          [0, 0, 1]]
+        ))
+      )));
+
+
+      // Bourgoin 221 (OBJ-exact canonical polygons + periodic motif/lattice transforms)
+      b221Scale = 5;
+      a221 = sqrt((5 + sqrt(5))/10);
+      b221 = sqrt((5 - sqrt(5))/10);
+      c221 = (3 - sqrt(5))/4;
+      d221 = sqrt(10 - 2*sqrt(5))/4;
+      e221 = (1 + sqrt(5))/4;
+      f221 = (sqrt(5) - 1)/2;
+      g221 = (7 - sqrt(5))/4;
+      h221 = (5 - sqrt(5))/2;
+      k221 = (sqrt(5) - 2) * a221;
+      b221ShiftY = a221 + b221;
+      b221LatticeX = 2 * b221Scale;
+      b221LatticeY = 2 * b221ShiftY * b221Scale;
+      b221ScaleTranslation(trafo) := [[trafo_1_1, trafo_1_2, b221Scale * trafo_1_3],
+                                      [trafo_2_1, trafo_2_2, b221Scale * trafo_2_3],
+                                      [0, 0, 1]];
+      // Keep motif translations unculled; visibility culling happens after tile-specific offsets.
+      b221MotifTransformations = removeDuplicates(flatten(
+        apply(-12..12, lam,
+        apply(-12..12, mu,
+          [[1, 0, b221LatticeX * lam], [0, 1, b221LatticeY * mu], [0, 0, 1]]
+        ))
+      ));
+
+      bourgoin221kite = {
+        "clockwise": false,
+        "euclUnitVertices": [[0, a221], [-c221, d221], [0, b221], [c221, d221]],
+        "problematicEdge": [false, false, true, false],
+        "sidelength": b221Scale
+      };
+      bourgoin221kite.simpleTransformations = [
+        [[cos(0), -sin(0), 0], [sin(0), cos(0), 0], [0, 0, 1]],
+        [[cos(-pi/5), -sin(-pi/5), 0], [sin(-pi/5), cos(-pi/5), 0], [0, 0, 1]],
+        [[cos(-2*pi/5), -sin(-2*pi/5), 0], [sin(-2*pi/5), cos(-2*pi/5), 0], [0, 0, 1]],
+        [[cos(-3*pi/5), -sin(-3*pi/5), 0], [sin(-3*pi/5), cos(-3*pi/5), 0], [0, 0, 1]],
+        [[cos(-4*pi/5), -sin(-4*pi/5), 0], [sin(-4*pi/5), cos(-4*pi/5), 0], [0, 0, 1]],
+        [[cos(-pi), -sin(-pi), 0], [sin(-pi), cos(-pi), 0], [0, 0, 1]],
+        [[cos(-6*pi/5), -sin(-6*pi/5), 0], [sin(-6*pi/5), cos(-6*pi/5), 0], [0, 0, 1]],
+        [[cos(-7*pi/5), -sin(-7*pi/5), 0], [sin(-7*pi/5), cos(-7*pi/5), 0], [0, 0, 1]],
+        [[cos(-8*pi/5), -sin(-8*pi/5), 0], [sin(-8*pi/5), cos(-8*pi/5), 0], [0, 0, 1]],
+        [[cos(-9*pi/5), -sin(-9*pi/5), 0], [sin(-9*pi/5), cos(-9*pi/5), 0], [0, 0, 1]],
+        [[cos(pi), -sin(pi), 0], [sin(pi), cos(pi), 2*a221], [0, 0, 1]],
+        [[cos(0), -sin(0), 0], [sin(0), cos(0), -2*a221], [0, 0, 1]],
+        [[cos(-3*pi/5), -sin(-3*pi/5), -1], [sin(-3*pi/5), cos(-3*pi/5), b221ShiftY], [0, 0, 1]],
+        [[cos(-4*pi/5), -sin(-4*pi/5), -1], [sin(-4*pi/5), cos(-4*pi/5), b221ShiftY], [0, 0, 1]],
+        [[cos(pi), -sin(pi), 1], [sin(pi), cos(pi), b221ShiftY], [0, 0, 1]],
+        [[cos(4*pi/5), -sin(4*pi/5), 1], [sin(4*pi/5), cos(4*pi/5), b221ShiftY], [0, 0, 1]],
+        [[cos(3*pi/5), -sin(3*pi/5), 1], [sin(3*pi/5), cos(3*pi/5), b221ShiftY], [0, 0, 1]],
+        [[cos(0), -sin(0), 1], [sin(0), cos(0), -(a221-b221)], [0, 0, 1]],
+        [[cos(2*pi/5), -sin(2*pi/5), 1], [sin(2*pi/5), cos(2*pi/5), -b221ShiftY], [0, 0, 1]],
+        [[cos(pi/5), -sin(pi/5), 1], [sin(pi/5), cos(pi/5), -b221ShiftY], [0, 0, 1]],
+        [[cos(0), -sin(0), 1], [sin(0), cos(0), -b221ShiftY], [0, 0, 1]],
+        [[cos(pi), -sin(pi), 1], [sin(pi), cos(pi), a221-b221], [0, 0, 1]],
+        [[cos(-pi/5), -sin(-pi/5), -1], [sin(-pi/5), cos(-pi/5), -b221ShiftY], [0, 0, 1]],
+        [[cos(-2*pi/5), -sin(-2*pi/5), -1], [sin(-2*pi/5), cos(-2*pi/5), -b221ShiftY], [0, 0, 1]]
+      ];
+      bourgoin221kite.transformations = selectVisible(flatten(apply(b221MotifTransformations, translation,
+        apply(bourgoin221kite.simpleTransformations, similarity,
+          translation * b221ScaleTranslation(similarity)
+        ))
+      ));
+
+      bourgoin221wheel = {
+        "clockwise": true,
+        "euclUnitVertices": [[f221, 0], [1/2, (b221-a221)/2], [1/2, (a221-3*b221)/2], [f221/2, -a221/2],
+                             [c221, -d221], [0, -b221], [-c221, -d221], [-f221/2, -a221/2],
+                             [-1/2, (a221-3*b221)/2], [-1/2, (b221-a221)/2], [-f221, 0], [-1/2, (a221-b221)/2],
+                             [-1/2, (3*b221-a221)/2], [-f221/2, a221/2], [-c221, d221], [0, b221],
+                             [c221, d221], [f221/2, a221/2], [1/2, (3*b221-a221)/2], [1/2, (a221-b221)/2]],
+        "sidelength": b221Scale
+      };
+      bourgoin221wheel.simpleTransformations = [
+        [[cos(-3*pi/5), -sin(-3*pi/5), 0], [sin(-3*pi/5), cos(-3*pi/5), 0], [0, 0, 1]],
+        [[cos(3*pi/5), -sin(3*pi/5), 1], [sin(3*pi/5), cos(3*pi/5), b221ShiftY], [0, 0, 1]]
+      ];
+      bourgoin221wheel.transformations = selectVisible(flatten(apply(b221MotifTransformations, translation,
+        apply(bourgoin221wheel.simpleTransformations, similarity,
+          translation * b221ScaleTranslation(similarity)
+        ))
+      ));
+
+      bourgoin221octagon = {
+        "clockwise": true,
+        "euclUnitVertices": [[e221, b221/2], [1, k221], [g221, b221/2], [h221, 0],
+                             [g221, -b221/2], [1, -k221], [e221, -b221/2], [f221, 0]],
+        "sidelength": b221Scale
+      };
+      bourgoin221octagon.simpleTransformations = [
+        [[cos(0), -sin(0), 0], [sin(0), cos(0), 0], [0, 0, 1]],
+        [[cos(0), -sin(0), -1], [sin(0), cos(0), b221ShiftY], [0, 0, 1]]
+      ];
+      bourgoin221octagon.transformations = selectVisible(flatten(apply(b221MotifTransformations, translation,
+        apply(bourgoin221octagon.simpleTransformations, similarity,
+          translation * b221ScaleTranslation(similarity)
+        ))
+      ));
+
+      bourgoin221pentagon = {
+        "clockwise": true,
+        "euclUnitVertices": [[-1, b221], [-e221, 3*b221/2], [-1/2, (a221+b221)/2], [-1/2, (3*b221-a221)/2], [-e221, b221/2]],
+        "sidelength": b221Scale
+      };
+      bourgoin221pentagon.simpleTransformations = [
+        [[cos(-2*pi/5), -sin(-2*pi/5), -1], [sin(-2*pi/5), cos(-2*pi/5), -(a221-b221)], [0, 0, 1]],
+        [[cos(pi), -sin(pi), -1], [sin(pi), cos(pi), b221ShiftY], [0, 0, 1]],
+        [[cos(-4*pi/5), -sin(-4*pi/5), -f221], [sin(-4*pi/5), cos(-4*pi/5), a221], [0, 0, 1]],
+        [[cos(pi), -sin(pi), 0], [sin(pi), cos(pi), 2*b221], [0, 0, 1]],
+        [[cos(3*pi/5), -sin(3*pi/5), 1], [sin(3*pi/5), cos(3*pi/5), a221-b221], [0, 0, 1]],
+        [[cos(0), -sin(0), 1], [sin(0), cos(0), -b221ShiftY], [0, 0, 1]],
+        [[cos(pi/5), -sin(pi/5), f221], [sin(pi/5), cos(pi/5), -a221], [0, 0, 1]],
+        [[cos(0), -sin(0), 0], [sin(0), cos(0), -2*b221], [0, 0, 1]]
+      ];
+      bourgoin221pentagon.transformations = selectVisible(flatten(apply(b221MotifTransformations, translation,
+        apply(bourgoin221pentagon.simpleTransformations, similarity,
+          translation * b221ScaleTranslation(similarity)
+        ))
+      ));
+      
+      // Bourgoin 216 (OBJ-based standalone patch + lattice extension)
+      b216Scale = 10;
+      b216Lattice1 = [1, 1];
+      b216Lattice2 = [1, -1];
+      b216ScaleTranslation(trafo) := [[trafo_1_1, trafo_1_2, b216Scale * trafo_1_3],
+                                      [trafo_2_1, trafo_2_2, b216Scale * trafo_2_3],
+                                      [0, 0, 1]];
+      b216LatticeTransformations = removeDuplicates(flatten(
+        apply(-6..6, lam,
+        apply(-6..6, mu,
+          [[1, 0, b216Lattice1_1 * lam + b216Lattice2_1 * mu], [0, 1, b216Lattice1_2 * lam + b216Lattice2_2 * mu], [0, 0, 1]]
+        ))
+      ));
+      b216BaseTransformations = selectVisible(apply(b216LatticeTransformations, trafo, b216ScaleTranslation(trafo)));
+      b216CounterclockwisePolygons = [
+        [[0.14873189, 0], [0, 0.11860972], [-0.14873189, 0], [0, -0.11860972]],
+        [[-0.14873189, 0], [-0.23801991, 0.07120483], [-0.23801991, 0.1854085], [-0.34936026, 0.1599958], [-0.43864828, 0.23120062], [-0.4881994, 0.12830666], [-0.59953976, 0.10289396], [-0.5499886, 0], [-0.59953976, -0.10289396], [-0.4881994, -0.12830666], [-0.43864828, -0.23120062], [-0.34936026, -0.1599958], [-0.23801991, -0.1854085], [-0.23801991, -0.07120483]],
+        [[0.14873189, 0], [0.23801991, -0.07120483], [0.23801991, -0.1854085], [0.34936026, -0.1599958], [0.43864828, -0.23120062], [0.4881994, -0.12830666], [0.59953976, -0.10289396], [0.5499886, 0], [0.59953976, 0.10289396], [0.4881994, 0.12830666], [0.43864828, 0.23120062], [0.34936026, 0.1599958], [0.23801991, 0.1854085], [0.23801991, 0.07120483]],
+        [[-0.23120062, 0.5613517], [-0.12830666, 0.5118006], [-0.10289396, 0.40046024], [0, 0.45001134], [0.10289396, 0.40046024], [0.12830666, 0.5118006], [0.23120062, 0.5613517], [0.1599958, 0.6506397], [0.1854085, 0.76198006], [0.07120483, 0.76198006], [0, 0.8512681], [-0.07120483, 0.76198006], [-0.1854085, 0.76198006], [-0.1599958, 0.6506397]],
+        [[-0.1599958, -0.6506397], [-0.1854085, -0.76198006], [-0.07120483, -0.76198006], [0, -0.8512681], [0.07120483, -0.76198006], [0.1854085, -0.76198006], [0.1599958, -0.6506397], [0.23120062, -0.5613517], [0.12830666, -0.5118006], [0.10289396, -0.40046024], [0, -0.45001134], [-0.10289396, -0.40046024], [-0.12830666, -0.5118006], [-0.23120062, -0.5613517]],
+        [[-0.46297368, -0.3377771], [-0.6490909, -0.20578791], [-0.59953976, -0.10289396], [-0.77462864, -0.06293107], [-0.8145915, -0.23801991], [-0.70038784, -0.23801991], [-0.66222286, -0.46297368], [-0.5885273, -0.35910955]],
+        [[-0.3377771, -0.53702635], [-0.20578791, -0.3509091], [-0.10289396, -0.40046024], [-0.06293107, -0.22537139], [-0.23801991, -0.1854085], [-0.23801991, -0.29961216], [-0.46297368, -0.3377771], [-0.35910952, -0.41147265]],
+        [[-0.3377771, -0.53702635], [-0.41147265, -0.6408905], [-0.5370263, -0.66222286], [-0.3509091, -0.7942121], [-0.40046024, -0.89710605], [-0.22537139, -0.93706894], [-0.1854085, -0.76198006], [-0.29961216, -0.76198006]],
+        [[-0.5370263, -0.66222286], [-0.6408905, -0.5885273], [-0.66222286, -0.46297368], [-0.7942121, -0.6490909], [-0.89710605, -0.59953976], [-0.93706894, -0.77462864], [-0.76198006, -0.8145915], [-0.76198006, -0.70038784]],
+        [[-0.5885273, 0.35910955], [-0.66222286, 0.46297368], [-0.70038784, 0.23801991], [-0.8145915, 0.23801991], [-0.77462864, 0.06293107], [-0.59953976, 0.10289396], [-0.6490909, 0.20578791], [-0.46297368, 0.3377771]],
+        [[-0.35910952, 0.41147265], [-0.46297368, 0.3377771], [-0.23801991, 0.29961216], [-0.23801991, 0.1854085], [-0.06293107, 0.22537139], [-0.10289396, 0.40046024], [-0.20578791, 0.3509091], [-0.3377771, 0.53702635]],
+        [[-0.29961216, 0.76198006], [-0.1854085, 0.76198006], [-0.22537139, 0.93706894], [-0.40046024, 0.89710605], [-0.3509091, 0.7942121], [-0.5370263, 0.66222286], [-0.41147265, 0.6408905], [-0.3377771, 0.53702635]],
+        [[-0.76198006, 0.70038784], [-0.76198006, 0.8145915], [-0.93706894, 0.77462864], [-0.89710605, 0.59953976], [-0.7942121, 0.6490909], [-0.66222286, 0.46297368], [-0.6408905, 0.5885273], [-0.5370263, 0.66222286]],
+        [[0.8716933, -0.4881994], [0.89710605, -0.59953976], [1, -0.5499886], [1.102894, -0.59953976], [1.1283066, -0.4881994], [1.2312006, -0.43864828], [1.1599958, -0.34936026], [1.1854085, -0.23801991], [1.0712048, -0.23801991], [1, -0.14873189], [0.92879516, -0.23801991], [0.8145915, -0.23801991], [0.8400042, -0.34936026], [0.76879936, -0.43864828]],
+        [[0.5885273, -0.35910955], [0.66222286, -0.46297368], [0.70038784, -0.23801991], [0.8145915, -0.23801991], [0.77462864, -0.06293107], [0.59953976, -0.10289396], [0.6490909, -0.20578791], [0.46297368, -0.3377771]],
+        [[0.35910952, -0.41147265], [0.46297368, -0.3377771], [0.23801991, -0.29961216], [0.23801991, -0.1854085], [0.06293107, -0.22537139], [0.10289396, -0.40046024], [0.20578791, -0.3509091], [0.3377771, -0.53702635]],
+        [[0.29961216, -0.76198006], [0.1854085, -0.76198006], [0.22537139, -0.93706894], [0.40046024, -0.89710605], [0.3509091, -0.7942121], [0.5370263, -0.66222286], [0.41147265, -0.6408905], [0.3377771, -0.53702635]],
+        [[0.76198006, -0.70038784], [0.76198006, -0.8145915], [0.93706894, -0.77462864], [0.89710605, -0.59953976], [0.7942121, -0.6490909], [0.66222286, -0.46297368], [0.6408905, -0.5885273], [0.5370263, -0.66222286]],
+        [[0.8813903, 0], [1, -0.14873189], [1.1186097, 0], [1, 0.14873189]],
+        [[0.76879936, 0.43864828], [0.8400042, 0.34936026], [0.8145915, 0.23801991], [0.92879516, 0.23801991], [1, 0.14873189], [1.0712048, 0.23801991], [1.1854085, 0.23801991], [1.1599958, 0.34936026], [1.2312006, 0.43864828], [1.1283066, 0.4881994], [1.102894, 0.59953976], [1, 0.5499886], [0.89710605, 0.59953976], [0.8716933, 0.4881994]],
+        [[0.46297368, 0.3377771], [0.6490909, 0.20578791], [0.59953976, 0.10289396], [0.77462864, 0.06293107], [0.8145915, 0.23801991], [0.70038784, 0.23801991], [0.66222286, 0.46297368], [0.5885273, 0.35910955]],
+        [[0.3377771, 0.53702635], [0.20578791, 0.3509091], [0.10289396, 0.40046024], [0.06293107, 0.22537139], [0.23801991, 0.1854085], [0.23801991, 0.29961216], [0.46297368, 0.3377771], [0.35910952, 0.41147265]],
+        [[0.3377771, 0.53702635], [0.41147265, 0.6408905], [0.5370263, 0.66222286], [0.3509091, 0.7942121], [0.40046024, 0.89710605], [0.22537139, 0.93706894], [0.1854085, 0.76198006], [0.29961216, 0.76198006]],
+        [[0.5370263, 0.66222286], [0.6408905, 0.5885273], [0.66222286, 0.46297368], [0.7942121, 0.6490909], [0.89710605, 0.59953976], [0.93706894, 0.77462864], [0.76198006, 0.8145915], [0.76198006, 0.70038784]],
+        [[-0.40046024, 1.102894], [-0.5118006, 1.1283066], [-0.5613517, 1.2312006], [-0.6506397, 1.1599958], [-0.76198006, 1.1854085], [-0.76198006, 1.0712048], [-0.8512681, 1], [-0.76198006, 0.92879516], [-0.76198006, 0.8145915], [-0.6506397, 0.8400042], [-0.5613517, 0.76879936], [-0.5118006, 0.8716933], [-0.40046024, 0.89710605], [-0.45001134, 1]],
+        [[0.45001134, 1], [0.40046024, 0.89710605], [0.5118006, 0.8716933], [0.5613517, 0.76879936], [0.6506397, 0.8400042], [0.76198006, 0.8145915], [0.76198006, 0.92879516], [0.8512681, 1], [0.76198006, 1.0712048], [0.76198006, 1.1854085], [0.6506397, 1.1599958], [0.5613517, 1.2312006], [0.5118006, 1.1283066], [0.40046024, 1.102894]],
+        [[-0.11860972, 1], [0, 0.8512681], [0.11860972, 1], [0, 1.148732]],
+        [[1, 1.1186097], [0.8512681, 1], [1, 0.8813903], [1.148732, 1]]
+      ];
+      b216ClockwisePolygons = [
+        [[-0.5885273, -0.35910955], [-0.46297368, -0.3377771], [-0.35910952, -0.41147265], [-0.3377771, -0.53702635], [-0.41147265, -0.6408905], [-0.5370263, -0.66222286], [-0.6408905, -0.5885273], [-0.66222286, -0.46297368]],
+        [[-0.66222286, 0.46297368], [-0.6408905, 0.5885273], [-0.5370263, 0.66222286], [-0.41147265, 0.6408905], [-0.3377771, 0.53702635], [-0.35910952, 0.41147265], [-0.46297368, 0.3377771], [-0.5885273, 0.35910955]],
+        [[0.66222286, -0.46297368], [0.6408905, -0.5885273], [0.5370263, -0.66222286], [0.41147265, -0.6408905], [0.3377771, -0.53702635], [0.35910952, -0.41147265], [0.46297368, -0.3377771], [0.5885273, -0.35910955]],
+        [[0.5885273, 0.35910955], [0.46297368, 0.3377771], [0.35910952, 0.41147265], [0.3377771, 0.53702635], [0.41147265, 0.6408905], [0.5370263, 0.66222286], [0.6408905, 0.5885273], [0.66222286, 0.46297368]],
+        [[-0.59953976, -0.10289396], [-0.77462864, -0.06293107], [-0.8145915, -0.23801991], [-0.92879516, -0.23801991], [-1, -0.14873189], [-0.8813903, 0], [-1, 0.14873189], [-0.92879516, 0.23801991], [-0.8145915, 0.23801991], [-0.77462864, 0.06293107], [-0.59953976, 0.10289396], [-0.5499886, 0]],
+        [[0, -0.11860972], [0.14873189, 0], [0.23801991, -0.07120483], [0.23801991, -0.1854085], [0.06293107, -0.22537139], [0.10289396, -0.40046024], [0, -0.45001134], [-0.10289396, -0.40046024], [-0.06293107, -0.22537139], [-0.23801991, -0.1854085], [-0.23801991, -0.07120483], [-0.14873189, 0]],
+        [[-0.06293107, 0.22537139], [-0.10289396, 0.40046024], [0, 0.45001134], [0.10289396, 0.40046024], [0.06293107, 0.22537139], [0.23801991, 0.1854085], [0.23801991, 0.07120483], [0.14873189, 0], [0, 0.11860972], [-0.14873189, 0], [-0.23801991, 0.07120483], [-0.23801991, 0.1854085]],
+        [[0.77462864, 0.06293107], [0.8145915, 0.23801991], [0.92879516, 0.23801991], [1, 0.14873189], [0.8813903, 0], [1, -0.14873189], [0.92879516, -0.23801991], [0.8145915, -0.23801991], [0.77462864, -0.06293107], [0.59953976, -0.10289396], [0.5499886, 0], [0.59953976, 0.10289396]],
+        [[0.70038784, 0.23801991], [0.66222286, 0.46297368], [0.7942121, 0.6490909], [0.89710605, 0.59953976], [0.8716933, 0.4881994], [0.76879936, 0.43864828], [0.8400042, 0.34936026], [0.8145915, 0.23801991]],
+        [[0.5370263, 0.66222286], [0.3509091, 0.7942121], [0.40046024, 0.89710605], [0.5118006, 0.8716933], [0.5613517, 0.76879936], [0.6506397, 0.8400042], [0.76198006, 0.8145915], [0.76198006, 0.70038784]],
+        [[0.3377771, 0.53702635], [0.20578791, 0.3509091], [0.10289396, 0.40046024], [0.12830666, 0.5118006], [0.23120062, 0.5613517], [0.1599958, 0.6506397], [0.1854085, 0.76198006], [0.29961216, 0.76198006]],
+        [[0.6490909, 0.20578791], [0.59953976, 0.10289396], [0.4881994, 0.12830666], [0.43864828, 0.23120062], [0.34936026, 0.1599958], [0.23801991, 0.1854085], [0.23801991, 0.29961216], [0.46297368, 0.3377771]],
+        [[-0.8145915, 0.23801991], [-0.8400042, 0.34936026], [-0.76879936, 0.43864828], [-0.8716933, 0.4881994], [-0.89710605, 0.59953976], [-0.7942121, 0.6490909], [-0.66222286, 0.46297368], [-0.70038784, 0.23801991]],
+        [[-0.76198006, 0.70038784], [-0.76198006, 0.8145915], [-0.6506397, 0.8400042], [-0.5613517, 0.76879936], [-0.5118006, 0.8716933], [-0.40046024, 0.89710605], [-0.3509091, 0.7942121], [-0.5370263, 0.66222286]],
+        [[-0.29961216, 0.76198006], [-0.1854085, 0.76198006], [-0.1599958, 0.6506397], [-0.23120062, 0.5613517], [-0.12830666, 0.5118006], [-0.10289396, 0.40046024], [-0.20578791, 0.3509091], [-0.3377771, 0.53702635]],
+        [[-0.46297368, 0.3377771], [-0.23801991, 0.29961216], [-0.23801991, 0.1854085], [-0.34936026, 0.1599958], [-0.43864828, 0.23120062], [-0.4881994, 0.12830666], [-0.59953976, 0.10289396], [-0.6490909, 0.20578791]],
+        [[0.8145915, -0.23801991], [0.8400042, -0.34936026], [0.76879936, -0.43864828], [0.8716933, -0.4881994], [0.89710605, -0.59953976], [0.7942121, -0.6490909], [0.66222286, -0.46297368], [0.70038784, -0.23801991]],
+        [[0.76198006, -0.70038784], [0.76198006, -0.8145915], [0.6506397, -0.8400042], [0.5613517, -0.76879936], [0.5118006, -0.8716933], [0.40046024, -0.89710605], [0.3509091, -0.7942121], [0.5370263, -0.66222286]],
+        [[0.29961216, -0.76198006], [0.1854085, -0.76198006], [0.1599958, -0.6506397], [0.23120062, -0.5613517], [0.12830666, -0.5118006], [0.10289396, -0.40046024], [0.20578791, -0.3509091], [0.3377771, -0.53702635]],
+        [[0.46297368, -0.3377771], [0.23801991, -0.29961216], [0.23801991, -0.1854085], [0.34936026, -0.1599958], [0.43864828, -0.23120062], [0.4881994, -0.12830666], [0.59953976, -0.10289396], [0.6490909, -0.20578791]],
+        [[-0.70038784, -0.23801991], [-0.66222286, -0.46297368], [-0.7942121, -0.6490909], [-0.89710605, -0.59953976], [-0.8716933, -0.4881994], [-0.76879936, -0.43864828], [-0.8400042, -0.34936026], [-0.8145915, -0.23801991]],
+        [[-0.5370263, -0.66222286], [-0.3509091, -0.7942121], [-0.40046024, -0.89710605], [-0.5118006, -0.8716933], [-0.5613517, -0.76879936], [-0.6506397, -0.8400042], [-0.76198006, -0.8145915], [-0.76198006, -0.70038784]],
+        [[-0.3377771, -0.53702635], [-0.20578791, -0.3509091], [-0.10289396, -0.40046024], [-0.12830666, -0.5118006], [-0.23120062, -0.5613517], [-0.1599958, -0.6506397], [-0.1854085, -0.76198006], [-0.29961216, -0.76198006]],
+        [[-0.6490909, -0.20578791], [-0.59953976, -0.10289396], [-0.4881994, -0.12830666], [-0.43864828, -0.23120062], [-0.34936026, -0.1599958], [-0.23801991, -0.1854085], [-0.23801991, -0.29961216], [-0.46297368, -0.3377771]],
+        [[0.93706894, -0.77462864], [0.89710605, -0.59953976], [1, -0.5499886], [1.102894, -0.59953976], [1.0629311, -0.77462864], [1.23802, -0.8145915], [1.23802, -0.92879516], [1.148732, -1], [1, -0.8813903], [0.8512681, -1], [0.76198006, -0.92879516], [0.76198006, -0.8145915]],
+        [[0, 0.8512681], [-0.07120483, 0.76198006], [-0.1854085, 0.76198006], [-0.22537139, 0.93706894], [-0.40046024, 0.89710605], [-0.45001134, 1], [-0.40046024, 1.102894], [-0.22537139, 1.0629311], [-0.1854085, 1.23802], [-0.07120483, 1.23802], [0, 1.148732], [-0.11860972, 1]],
+        [[0, 0.8512681], [0.11860972, 1], [0, 1.148732], [0.07120483, 1.23802], [0.1854085, 1.23802], [0.22537139, 1.0629311], [0.40046024, 1.102894], [0.45001134, 1], [0.40046024, 0.89710605], [0.22537139, 0.93706894], [0.1854085, 0.76198006], [0.07120483, 0.76198006]],
+        [[0.76198006, 0.8145915], [0.76198006, 0.92879516], [0.8512681, 1], [1, 0.8813903], [1.148732, 1], [1.23802, 0.92879516], [1.23802, 0.8145915], [1.0629311, 0.77462864], [1.102894, 0.59953976], [1, 0.5499886], [0.89710605, 0.59953976], [0.93706894, 0.77462864]]
+      ];
+      b216CounterclockwiseProblematicEdges = [
+  [0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0]
+];
+      b216ClockwiseProblematicEdges = [
+  [1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0],
+  [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0],
+  [0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+];
+      b216CounterclockwiseTiles = apply(1..length(b216CounterclockwisePolygons), idx,
+        {"clockwise": false, "euclUnitVertices": b216CounterclockwisePolygons_idx, "sidelength": b216Scale, "problematicEdge": b216CounterclockwiseProblematicEdges_idx}
+      );
+      b216ClockwiseTiles = apply(1..length(b216ClockwisePolygons), idx,
+        {"clockwise": true, "euclUnitVertices": b216ClockwisePolygons_idx, "sidelength": b216Scale, "problematicEdge": b216ClockwiseProblematicEdges_idx}
+      );
+      forall(b216CounterclockwiseTiles, tile, tile.transformations = b216BaseTransformations);
+      forall(b216ClockwiseTiles, tile, tile.transformations = b216BaseTransformations);
+      b216Tiles = flatten([b216CounterclockwiseTiles, b216ClockwiseTiles]);
+
+      // Topkapi Panel 42 (OBJ-based standalone patch + lattice extension)
+      topkapi42Scale = 2.5;
+      topkapi42Lattice1 = [5.4, 6.3];
+      topkapi42Lattice2 = [5.4, -6.3];
+      topkapi42ScaleTranslation(trafo) := [[trafo_1_1, trafo_1_2, topkapi42Scale * trafo_1_3],
+                                           [trafo_2_1, trafo_2_2, topkapi42Scale * trafo_2_3],
+                                           [0, 0, 1]];
+      topkapi42LatticeTransformations = removeDuplicates(flatten(
+        apply(-2..2, lam,
+        apply(-2..2, mu,
+          [[1, 0, topkapi42Lattice1_1 * lam + topkapi42Lattice2_1 * mu], [0, 1, topkapi42Lattice1_2 * lam + topkapi42Lattice2_2 * mu], [0, 0, 1]]
+        ))
+      ));
+      topkapi42BaseTransformations = selectVisible(apply(topkapi42LatticeTransformations, trafo, topkapi42ScaleTranslation(trafo)));
+      topkapi42CounterclockwisePolygons = [
+        [[-1.0104765, 0.1885747], [-1.7718036, 0.5638784], [-2.0139709, 0.33919793], [-1.8382638, 0.04491668]],
+        [[-1.1664557, 1.125517], [-2.0054593, 1.0352463], [-2.0905895, 0.7210271], [-1.7718036, 0.5638784]],
+        [[-1.7823919, 1.8585898], [-2.4389954, 1.3373272], [-2.3275173, 1.000594], [-2.0054593, 1.0352463]],
+        [[-2.2214072, -1.1981549], [-2.1935654, -0.34342474], [-2.507453, -0.2074731], [-2.7, -0.49190715]],
+        [[-1.4015899, -0.68644315], [-1.8382638, 0.04491668], [-2.1828632, -0.01488679], [-2.1935654, -0.34342474]],
+        [[-1.8521625, -3.15], [-2.3011396, -3.003855], [-2.278331, -2.559307], [-2.7, -3.15], [-2.278331, -3.7406929], [-2.3011396, -3.296145]],
+        [[-2.7, -1.838618], [-2.2488272, -1.9858333], [-2.278331, -2.559307], [-1.9603307, -2.1136248], [-1.5326861, -2.2794178], [-1.7978841, -1.8625684], [-1.4899138, -1.5000962], [-1.9500002, -1.5987839], [-2.2214072, -1.1981549], [-2.2373564, -1.6877836]],
+        [[-1.5326861, -2.2794178], [-1.1286538, -2.914493], [-0.87531257, -2.832029], [-0.83434564, -2.5501602]],
+        [[-0.72827506, -1.8202946], [-0.83434564, -2.5501602], [-0.572631, -2.6516197], [-0.3730948, -2.4763012]],
+        [[0.20031755, -1.9724523], [-0.3730948, -2.4763012], [-0.24217334, -2.7180943], [0.03612695, -2.70918]],
+        [[0.7962803, -2.6848202], [0.03612695, -2.70918], [-0.02384152, -2.9782264], [0.19732873, -3.15]],
+        [[-0.72827506, -1.8202946], [-0.6593757, -1.3462079], [-0.1714061, -1.2727296], [-0.6650287, -1.0228206], [-0.6022276, -0.57447517], [-0.9325632, -0.8895874], [-1.4015899, -0.68644315], [-1.152732, -1.1032405], [-1.4899138, -1.5000962], [-0.96285325, -1.3870435]],
+        [[-1.0104765, 0.1885747], [-0.52861774, -0.04896228], [-0.6022276, -0.57447517], [0, 0], [-0.41660947, 0.73753047], [-0.5178302, 0.27407107]],
+        [[0.6022276, 0.57447517], [0, 0], [0.41660947, -0.73753047], [0.5178302, -0.27407107], [1.0104765, -0.1885747], [0.52861774, 0.04896228]],
+        [[0.41660947, -0.73753047], [0.3157372, -1.1993773], [-0.1714061, -1.2727296], [0.3027636, -1.5127887], [0.20031755, -1.9724523], [0.56226575, -1.6544191], [0.99467796, -1.906055], [0.80350983, -1.4622558], [1.1664557, -1.125517], [0.66618454, -1.179343]],
+        [[0.99467796, -1.906055], [1.1963063, -2.3741372], [0.7962803, -2.6848202], [1.2867494, -2.6691043], [1.4450883, -3.15], [1.605241, -2.6635947], [2.0133486, -2.6408293], [1.6445522, -2.3673563], [1.7823919, -1.8585898], [1.4147086, -2.1504846]],
+        [[2.7, -2.1257396], [2.539184, -2.6114967], [2.0133486, -2.6408293], [2.7, -3.15], [3.3866513, -2.6408293], [2.860816, -2.6114967]],
+        [[1.7823919, -1.8585898], [2.4389954, -1.3373272], [2.3275173, -1.000594], [2.0054593, -1.0352463]],
+        [[1.1664557, -1.125517], [2.0054593, -1.0352463], [2.0905895, -0.7210271], [1.7718036, -0.5638784]],
+        [[1.0104765, -0.1885747], [1.7718036, -0.5638784], [2.0139709, -0.33919793], [1.8382638, -0.04491668]],
+        [[1.4015899, 0.68644315], [1.8382638, -0.04491668], [2.1828632, 0.01488679], [2.1935654, 0.34342474]],
+        [[2.2214072, 1.1981549], [2.1935654, 0.34342474], [2.507453, 0.2074731], [2.7, 0.49190715]],
+        [[2.2214072, 1.1981549], [2.2373564, 1.6877836], [2.7, 1.838618], [2.2488272, 1.9858333], [2.278331, 2.559307], [1.9603307, 2.1136248], [1.5326861, 2.2794178], [1.7978841, 1.8625684], [1.4899138, 1.5000962], [1.9500002, 1.5987839]],
+        [[1.4899138, 1.5000962], [0.96285325, 1.3870435], [0.72827506, 1.8202946], [0.6593757, 1.3462079], [0.1714061, 1.2727296], [0.6650287, 1.0228206], [0.6022276, 0.57447517], [0.9325632, 0.8895874], [1.4015899, 0.68644315], [1.152732, 1.1032405]],
+        [[-0.20031755, 1.9724523], [-0.56226575, 1.6544191], [-0.99467796, 1.906055], [-0.80350983, 1.4622558], [-1.1664557, 1.125517], [-0.66618454, 1.179343], [-0.41660947, 0.73753047], [-0.3157372, 1.1993773], [0.1714061, 1.2727296], [-0.3027636, 1.5127887]],
+        [[1.8521625, 3.15], [2.3011396, 3.003855], [2.278331, 2.559307], [2.7, 3.15], [2.278331, 3.7406929], [2.3011396, 3.296145]],
+        [[1.5326861, 2.2794178], [1.1286538, 2.914493], [0.87531257, 2.832029], [0.83434564, 2.5501602]],
+        [[0.72827506, 1.8202946], [0.83434564, 2.5501602], [0.572631, 2.6516197], [0.3730948, 2.4763012]],
+        [[-0.20031755, 1.9724523], [0.3730948, 2.4763012], [0.24217334, 2.7180943], [-0.03612695, 2.70918]],
+        [[-0.7962803, 2.6848202], [-0.03612695, 2.70918], [0.02384152, 2.9782264], [-0.19732873, 3.15]],
+        [[-0.7962803, 2.6848202], [-1.2867494, 2.6691043], [-1.4450883, 3.15], [-1.605241, 2.6635947], [-2.0133486, 2.6408293], [-1.6445522, 2.3673563], [-1.7823919, 1.8585898], [-1.4147086, 2.1504846], [-0.99467796, 1.906055], [-1.1963063, 2.3741372]],
+        [[-2.7, 2.1257396], [-2.539184, 2.6114967], [-2.0133486, 2.6408293], [-2.7, 3.15], [-3.3866513, 2.6408293], [-2.860816, 2.6114967]],
+        [[-2.7, 1.1301203], [-2.4389954, 1.3373272], [-2.7, 2.1257396], [-2.9610047, 1.3373272]],
+        [[-0.97882485, -3.15], [-1.1286538, -2.914493], [-1.8521625, -3.15], [-1.1286538, -3.3855069]],
+        [[2.7, -1.1301203], [2.4389954, -1.3373272], [2.7, -2.1257396], [2.9610047, -1.3373272]],
+        [[0.97882485, 3.15], [1.1286538, 2.914493], [1.8521625, 3.15], [1.1286538, 3.3855069]],
+        [[-3.5617363, 0.04491668], [-3.386029, 0.33919793], [-3.6281965, 0.5638784], [-4.3895235, 0.1885747]],
+        [[-3.6281965, 0.5638784], [-3.3094103, 0.7210271], [-3.3945405, 1.0352463], [-4.2335443, 1.125517]],
+        [[-3.3945405, 1.0352463], [-3.0724828, 1.000594], [-2.9610047, 1.3373272], [-3.617608, 1.8585898]],
+        [[-2.7, -0.49190715], [-2.892547, -0.2074731], [-3.2064347, -0.34342474], [-3.178593, -1.1981549]],
+        [[-3.2064347, -0.34342474], [-3.2171369, -0.01488679], [-3.5617363, 0.04491668], [-3.9984102, -0.68644315]],
+        [[-2.7, -3.15], [-3.1216688, -2.559307], [-3.0988603, -3.003855], [-3.5478375, -3.15], [-3.0988603, -3.296145], [-3.1216688, -3.7406929]],
+        [[-3.1626434, -1.6877836], [-3.178593, -1.1981549], [-3.4499998, -1.5987839], [-3.9100862, -1.5000962], [-3.6021159, -1.8625684], [-3.8673139, -2.2794178], [-3.4396694, -2.1136248], [-3.1216688, -2.559307], [-3.1511726, -1.9858333], [-2.7, -1.838618]],
+        [[-4.5656543, -2.5501602], [-4.5246873, -2.832029], [-4.271346, -2.914493], [-3.8673139, -2.2794178]],
+        [[-5.026905, -2.4763012], [-4.827369, -2.6516197], [-4.5656543, -2.5501602], [-4.671725, -1.8202946]],
+        [[-4.4371467, -1.3870435], [-3.9100862, -1.5000962], [-4.2472677, -1.1032405], [-3.9984102, -0.68644315], [-4.467437, -0.8895874], [-4.7977724, -0.57447517], [-4.734971, -1.0228206], [-5.228594, -1.2727296], [-4.7406244, -1.3462079], [-4.671725, -1.8202946]],
+        [[-4.8821697, 0.27407107], [-4.9833903, 0.73753047], [-5.4, 0], [-4.7977724, -0.57447517], [-4.871382, -0.04896228], [-4.3895235, 0.1885747]],
+        [[-5.097236, 1.5127887], [-5.571406, 1.2727296], [-5.084263, 1.1993773], [-4.9833903, 0.73753047], [-4.7338157, 1.179343], [-4.2335443, 1.125517], [-4.59649, 1.4622558], [-4.405322, 1.906055], [-4.837734, 1.6544191], [-5.199682, 1.9724523]],
+        [[-5.363873, 2.70918], [-5.6421733, 2.7180943], [-5.7730947, 2.4763012], [-5.199682, 1.9724523]],
+        [[-5.202671, 3.15], [-5.4238415, 2.9782264], [-5.363873, 2.70918], [-4.6037197, 2.6848202]],
+        [[-4.203694, 2.3741372], [-4.405322, 1.906055], [-3.9852912, 2.1504846], [-3.617608, 1.8585898], [-3.7554479, 2.3673563], [-3.3866513, 2.6408293], [-3.794759, 2.6635947], [-3.9549117, 3.15], [-4.1132507, 2.6691043], [-4.6037197, 2.6848202]],
+        [[-3.5478375, -3.15], [-4.271346, -2.914493], [-4.421175, -3.15], [-4.271346, -3.3855069]],
+        [[5.363873, -2.70918], [5.6421733, -2.7180943], [5.7730947, -2.4763012], [5.199682, -1.9724523]],
+        [[5.202671, -3.15], [5.4238415, -2.9782264], [5.363873, -2.70918], [4.6037197, -2.6848202]],
+        [[4.871382, 0.04896228], [4.3895235, -0.1885747], [4.8821697, -0.27407107], [4.9833903, -0.73753047], [5.4, 0], [4.7977724, 0.57447517]],
+        [[4.7338157, -1.179343], [4.2335443, -1.125517], [4.59649, -1.4622558], [4.405322, -1.906055], [4.837734, -1.6544191], [5.199682, -1.9724523], [5.097236, -1.5127887], [5.571406, -1.2727296], [5.084263, -1.1993773], [4.9833903, -0.73753047]],
+        [[3.9852912, -2.1504846], [3.617608, -1.8585898], [3.7554479, -2.3673563], [3.3866513, -2.6408293], [3.794759, -2.6635947], [3.9549117, -3.15], [4.1132507, -2.6691043], [4.6037197, -2.6848202], [4.203694, -2.3741372], [4.405322, -1.906055]],
+        [[3.3945405, -1.0352463], [3.0724828, -1.000594], [2.9610047, -1.3373272], [3.617608, -1.8585898]],
+        [[3.6281965, -0.5638784], [3.3094103, -0.7210271], [3.3945405, -1.0352463], [4.2335443, -1.125517]],
+        [[3.5617363, -0.04491668], [3.386029, -0.33919793], [3.6281965, -0.5638784], [4.3895235, -0.1885747]],
+        [[3.2064347, 0.34342474], [3.2171369, 0.01488679], [3.5617363, -0.04491668], [3.9984102, 0.68644315]],
+        [[2.7, 0.49190715], [2.892547, 0.2074731], [3.2064347, 0.34342474], [3.178593, 1.1981549]],
+        [[3.4499998, 1.5987839], [3.9100862, 1.5000962], [3.6021159, 1.8625684], [3.8673139, 2.2794178], [3.4396694, 2.1136248], [3.1216688, 2.559307], [3.1511726, 1.9858333], [2.7, 1.838618], [3.1626434, 1.6877836], [3.178593, 1.1981549]],
+        [[4.2472677, 1.1032405], [3.9984102, 0.68644315], [4.467437, 0.8895874], [4.7977724, 0.57447517], [4.734971, 1.0228206], [5.228594, 1.2727296], [4.7406244, 1.3462079], [4.671725, 1.8202946], [4.4371467, 1.3870435], [3.9100862, 1.5000962]],
+        [[2.7, 3.15], [3.1216688, 2.559307], [3.0988603, 3.003855], [3.5478375, 3.15], [3.0988603, 3.296145], [3.1216688, 3.7406929]],
+        [[4.5656543, 2.5501602], [4.5246873, 2.832029], [4.271346, 2.914493], [3.8673139, 2.2794178]],
+        [[5.026905, 2.4763012], [4.827369, 2.6516197], [4.5656543, 2.5501602], [4.671725, 1.8202946]],
+        [[3.5478375, 3.15], [4.271346, 2.914493], [4.421175, 3.15], [4.271346, 3.3855069]],
+        [[-2.7, -5.808093], [-2.507453, -6.092527], [-2.1935654, -5.9565754], [-2.2214072, -5.1018453]],
+        [[-2.1935654, -5.9565754], [-2.1828632, -6.2851133], [-1.8382638, -6.344917], [-1.4015899, -5.613557]],
+        [[-2.2373564, -4.6122165], [-2.2214072, -5.1018453], [-1.9500002, -4.701216], [-1.4899138, -4.799904], [-1.7978841, -4.437432], [-1.5326861, -4.020582], [-1.9603307, -4.186375], [-2.278331, -3.7406929], [-2.2488272, -4.3141665], [-2.7, -4.461382]],
+        [[-0.83434564, -3.7498398], [-0.87531257, -3.4679708], [-1.1286538, -3.3855069], [-1.5326861, -4.020582]],
+        [[-0.3730948, -3.823699], [-0.572631, -3.6483805], [-0.83434564, -3.7498398], [-0.72827506, -4.4797053]],
+        [[0.03612695, -3.59082], [-0.24217334, -3.5819056], [-0.3730948, -3.823699], [0.20031755, -4.3275476]],
+        [[0.19732873, -3.15], [-0.02384152, -3.3217735], [0.03612695, -3.59082], [0.7962803, -3.61518]],
+        [[-0.96285325, -4.9129567], [-1.4899138, -4.799904], [-1.152732, -5.1967597], [-1.4015899, -5.613557], [-0.9325632, -5.410413], [-0.6022276, -5.725525], [-0.6650287, -5.2771792], [-0.1714061, -5.0272703], [-0.6593757, -4.953792], [-0.72827506, -4.4797053]],
+        [[0.66618454, -5.120657], [1.1664557, -5.174483], [0.80350983, -4.837744], [0.99467796, -4.393945], [0.56226575, -4.645581], [0.20031755, -4.3275476], [0.3027636, -4.7872114], [-0.1714061, -5.0272703], [0.3157372, -5.1006227], [0.41660947, -5.5624695]],
+        [[1.4147086, -4.1495156], [1.7823919, -4.44141], [1.6445522, -3.9326437], [2.0133486, -3.6591706], [1.605241, -3.6364055], [1.4450883, -3.15], [1.2867494, -3.6308956], [0.7962803, -3.61518], [1.1963063, -3.925863], [0.99467796, -4.393945]],
+        [[2.7, -3.15], [2.0133486, -3.6591706], [2.539184, -3.6885033], [2.7, -4.1742606], [2.860816, -3.6885033], [3.3866513, -3.6591706]],
+        [[2.0054593, -5.264754], [2.3275173, -5.299406], [2.4389954, -4.9626727], [1.7823919, -4.44141]],
+        [[1.7718036, -5.7361217], [2.0905895, -5.578973], [2.0054593, -5.264754], [1.1664557, -5.174483]],
+        [[2.7, -4.1742606], [2.4389954, -4.9626727], [2.7, -5.16988], [2.9610047, -4.9626727]],
+        [[-3.178593, -5.1018453], [-3.2064347, -5.9565754], [-2.892547, -6.092527], [-2.7, -5.808093]],
+        [[-3.9984102, -5.613557], [-3.5617363, -6.344917], [-3.2171369, -6.2851133], [-3.2064347, -5.9565754]],
+        [[-2.7, -4.461382], [-3.1511726, -4.3141665], [-3.1216688, -3.7406929], [-3.4396694, -4.186375], [-3.8673139, -4.020582], [-3.6021159, -4.437432], [-3.9100862, -4.799904], [-3.4499998, -4.701216], [-3.178593, -5.1018453], [-3.1626434, -4.6122165]],
+        [[-3.8673139, -4.020582], [-4.271346, -3.3855069], [-4.5246873, -3.4679708], [-4.5656543, -3.7498398]],
+        [[-4.671725, -4.4797053], [-4.5656543, -3.7498398], [-4.827369, -3.6483805], [-5.026905, -3.823699]],
+        [[-4.671725, -4.4797053], [-4.7406244, -4.953792], [-5.228594, -5.0272703], [-4.734971, -5.2771792], [-4.7977724, -5.725525], [-4.467437, -5.410413], [-3.9984102, -5.613557], [-4.2472677, -5.1967597], [-3.9100862, -4.799904], [-4.4371467, -4.9129567]],
+        [[5.199682, -4.3275476], [5.7730947, -3.823699], [5.6421733, -3.5819056], [5.363873, -3.59082]],
+        [[4.6037197, -3.61518], [5.363873, -3.59082], [5.4238415, -3.3217735], [5.202671, -3.15]],
+        [[4.9833903, -5.5624695], [5.084263, -5.1006227], [5.571406, -5.0272703], [5.097236, -4.7872114], [5.199682, -4.3275476], [4.837734, -4.645581], [4.405322, -4.393945], [4.59649, -4.837744], [4.2335443, -5.174483], [4.7338157, -5.120657]],
+        [[4.405322, -4.393945], [4.203694, -3.925863], [4.6037197, -3.61518], [4.1132507, -3.6308956], [3.9549117, -3.15], [3.794759, -3.6364055], [3.3866513, -3.6591706], [3.7554479, -3.9326437], [3.617608, -4.44141], [3.9852912, -4.1495156]],
+        [[3.617608, -4.44141], [2.9610047, -4.9626727], [3.0724828, -5.299406], [3.3945405, -5.264754]],
+        [[4.2335443, -5.174483], [3.3945405, -5.264754], [3.3094103, -5.578973], [3.6281965, -5.7361217]],
+        [[-1.8382638, 6.2550836], [-2.0139709, 5.960802], [-1.7718036, 5.7361217], [-1.0104765, 6.1114254]],
+        [[-1.7718036, 5.7361217], [-2.0905895, 5.578973], [-2.0054593, 5.264754], [-1.1664557, 5.174483]],
+        [[-2.0054593, 5.264754], [-2.3275173, 5.299406], [-2.4389954, 4.9626727], [-1.7823919, 4.44141]],
+        [[-0.5178302, 6.025929], [-0.41660947, 5.5624695], [0, 6.3], [-0.6022276, 6.874475], [-0.52861774, 6.3489623], [-1.0104765, 6.1114254]],
+        [[0.52861774, 6.2510376], [1.0104765, 6.4885745], [0.5178302, 6.574071], [0.41660947, 7.0375304], [0, 6.3], [0.6022276, 5.725525]],
+        [[1.8382638, 6.344917], [2.0139709, 6.639198], [1.7718036, 6.8638783], [1.0104765, 6.4885745]],
+        [[2.1935654, 5.9565754], [2.1828632, 6.2851133], [1.8382638, 6.344917], [1.4015899, 5.613557]],
+        [[2.7, 5.808093], [2.507453, 6.092527], [2.1935654, 5.9565754], [2.2214072, 5.1018453]],
+        [[1.9500002, 4.701216], [1.4899138, 4.799904], [1.7978841, 4.437432], [1.5326861, 4.020582], [1.9603307, 4.186375], [2.278331, 3.7406929], [2.2488272, 4.3141665], [2.7, 4.461382], [2.2373564, 4.6122165], [2.2214072, 5.1018453]],
+        [[1.152732, 5.1967597], [1.4015899, 5.613557], [0.9325632, 5.410413], [0.6022276, 5.725525], [0.6650287, 5.2771792], [0.1714061, 5.0272703], [0.6593757, 4.953792], [0.72827506, 4.4797053], [0.96285325, 4.9129567], [1.4899138, 4.799904]],
+        [[-0.3027636, 4.7872114], [0.1714061, 5.0272703], [-0.3157372, 5.1006227], [-0.41660947, 5.5624695], [-0.66618454, 5.120657], [-1.1664557, 5.174483], [-0.80350983, 4.837744], [-0.99467796, 4.393945], [-0.56226575, 4.645581], [-0.20031755, 4.3275476]],
+        [[0.83434564, 3.7498398], [0.87531257, 3.4679708], [1.1286538, 3.3855069], [1.5326861, 4.020582]],
+        [[0.3730948, 3.823699], [0.572631, 3.6483805], [0.83434564, 3.7498398], [0.72827506, 4.4797053]],
+        [[-0.03612695, 3.59082], [0.24217334, 3.5819056], [0.3730948, 3.823699], [-0.20031755, 4.3275476]],
+        [[-0.19732873, 3.15], [0.02384152, 3.3217735], [-0.03612695, 3.59082], [-0.7962803, 3.61518]],
+        [[-1.1963063, 3.925863], [-0.99467796, 4.393945], [-1.4147086, 4.1495156], [-1.7823919, 4.44141], [-1.6445522, 3.9326437], [-2.0133486, 3.6591706], [-1.605241, 3.6364055], [-1.4450883, 3.15], [-1.2867494, 3.6308956], [-0.7962803, 3.61518]],
+        [[-2.7, 3.15], [-2.0133486, 3.6591706], [-2.539184, 3.6885033], [-2.7, 4.1742606], [-2.860816, 3.6885033], [-3.3866513, 3.6591706]],
+        [[-2.7, 4.1742606], [-2.4389954, 4.9626727], [-2.7, 5.16988], [-2.9610047, 4.9626727]],
+        [[-4.3895235, 6.1114254], [-3.6281965, 5.7361217], [-3.386029, 5.960802], [-3.5617363, 6.2550836]],
+        [[-4.2335443, 5.174483], [-3.3945405, 5.264754], [-3.3094103, 5.578973], [-3.6281965, 5.7361217]],
+        [[-3.617608, 4.44141], [-2.9610047, 4.9626727], [-3.0724828, 5.299406], [-3.3945405, 5.264754]],
+        [[-4.3895235, 6.1114254], [-4.871382, 6.3489623], [-4.7977724, 6.874475], [-5.4, 6.3], [-4.9833903, 5.5624695], [-4.8821697, 6.025929]],
+        [[-5.199682, 4.3275476], [-4.837734, 4.645581], [-4.405322, 4.393945], [-4.59649, 4.837744], [-4.2335443, 5.174483], [-4.7338157, 5.120657], [-4.9833903, 5.5624695], [-5.084263, 5.1006227], [-5.571406, 5.0272703], [-5.097236, 4.7872114]],
+        [[-5.199682, 4.3275476], [-5.7730947, 3.823699], [-5.6421733, 3.5819056], [-5.363873, 3.59082]],
+        [[-4.6037197, 3.61518], [-5.363873, 3.59082], [-5.4238415, 3.3217735], [-5.202671, 3.15]],
+        [[-4.6037197, 3.61518], [-4.1132507, 3.6308956], [-3.9549117, 3.15], [-3.794759, 3.6364055], [-3.3866513, 3.6591706], [-3.7554479, 3.9326437], [-3.617608, 4.44141], [-3.9852912, 4.1495156], [-4.405322, 4.393945], [-4.203694, 3.925863]],
+        [[4.7977724, 5.725525], [5.4, 6.3], [4.9833903, 7.0375304], [4.8821697, 6.574071], [4.3895235, 6.4885745], [4.871382, 6.2510376]],
+        [[4.3895235, 6.4885745], [3.6281965, 6.8638783], [3.386029, 6.639198], [3.5617363, 6.344917]],
+        [[3.9984102, 5.613557], [3.5617363, 6.344917], [3.2171369, 6.2851133], [3.2064347, 5.9565754]],
+        [[3.178593, 5.1018453], [3.2064347, 5.9565754], [2.892547, 6.092527], [2.7, 5.808093]],
+        [[3.178593, 5.1018453], [3.1626434, 4.6122165], [2.7, 4.461382], [3.1511726, 4.3141665], [3.1216688, 3.7406929], [3.4396694, 4.186375], [3.8673139, 4.020582], [3.6021159, 4.437432], [3.9100862, 4.799904], [3.4499998, 4.701216]],
+        [[3.9100862, 4.799904], [4.4371467, 4.9129567], [4.671725, 4.4797053], [4.7406244, 4.953792], [5.228594, 5.0272703], [4.734971, 5.2771792], [4.7977724, 5.725525], [4.467437, 5.410413], [3.9984102, 5.613557], [4.2472677, 5.1967597]],
+        [[3.8673139, 4.020582], [4.271346, 3.3855069], [4.5246873, 3.4679708], [4.5656543, 3.7498398]],
+        [[4.671725, 4.4797053], [4.5656543, 3.7498398], [4.827369, 3.6483805], [5.026905, 3.823699]]
+      ];
+      topkapi42ClockwisePolygons = [
+        [[-0.41660947, 0.73753047], [-0.3157372, 1.1993773], [0.1714061, 1.2727296], [0.6650287, 1.0228206], [0.6022276, 0.57447517], [0, 0]],
+        [[-1.1664557, 1.125517], [-0.66618454, 1.179343], [-0.41660947, 0.73753047], [-0.5178302, 0.27407107], [-1.0104765, 0.1885747], [-1.7718036, 0.5638784]],
+        [[-1.7823919, 1.8585898], [-1.4147086, 2.1504846], [-0.99467796, 1.906055], [-0.80350983, 1.4622558], [-1.1664557, 1.125517], [-2.0054593, 1.0352463]],
+        [[-2.7, 2.1257396], [-2.539184, 2.6114967], [-2.0133486, 2.6408293], [-1.6445522, 2.3673563], [-1.7823919, 1.8585898], [-2.4389954, 1.3373272]],
+        [[-2.3275173, 1.000594], [-2.0054593, 1.0352463], [-2.0905895, 0.7210271], [-1.7718036, 0.5638784], [-2.0139709, 0.33919793], [-1.8382638, 0.04491668], [-2.1828632, -0.01488679], [-2.1935654, -0.34342474], [-2.507453, -0.2074731], [-2.7, -0.49190715], [-2.892547, -0.2074731], [-3.2064347, -0.34342474], [-3.2171369, -0.01488679], [-3.5617363, 0.04491668], [-3.386029, 0.33919793], [-3.6281965, 0.5638784], [-3.3094103, 0.7210271], [-3.3945405, 1.0352463], [-3.0724828, 1.000594], [-2.9610047, 1.3373272], [-2.7, 1.1301203], [-2.4389954, 1.3373272]],
+        [[-0.20031755, 1.9724523], [-0.56226575, 1.6544191], [-0.99467796, 1.906055], [-1.1963063, 2.3741372], [-0.7962803, 2.6848202], [-0.03612695, 2.70918]],
+        [[-0.7962803, 2.6848202], [-1.2867494, 2.6691043], [-1.4450883, 3.15], [-1.2867494, 3.6308956], [-0.7962803, 3.61518], [-0.19732873, 3.15]],
+        [[-2.0133486, 3.6591706], [-1.605241, 3.6364055], [-1.4450883, 3.15], [-1.605241, 2.6635947], [-2.0133486, 2.6408293], [-2.7, 3.15]],
+        [[-0.03612695, 3.59082], [0.24217334, 3.5819056], [0.3730948, 3.823699], [0.572631, 3.6483805], [0.83434564, 3.7498398], [0.87531257, 3.4679708], [1.1286538, 3.3855069], [0.97882485, 3.15], [1.1286538, 2.914493], [0.87531257, 2.832029], [0.83434564, 2.5501602], [0.572631, 2.6516197], [0.3730948, 2.4763012], [0.24217334, 2.7180943], [-0.03612695, 2.70918], [0.02384152, 2.9782264], [-0.19732873, 3.15], [0.02384152, 3.3217735]],
+        [[1.8521625, 3.15], [2.3011396, 3.003855], [2.278331, 2.559307], [1.9603307, 2.1136248], [1.5326861, 2.2794178], [1.1286538, 2.914493]],
+        [[1.5326861, 2.2794178], [1.7978841, 1.8625684], [1.4899138, 1.5000962], [0.96285325, 1.3870435], [0.72827506, 1.8202946], [0.83434564, 2.5501602]],
+        [[0.72827506, 1.8202946], [0.6593757, 1.3462079], [0.1714061, 1.2727296], [-0.3027636, 1.5127887], [-0.20031755, 1.9724523], [0.3730948, 2.4763012]],
+        [[-2.2214072, -1.1981549], [-2.2373564, -1.6877836], [-2.7, -1.838618], [-3.1626434, -1.6877836], [-3.178593, -1.1981549], [-2.7, -0.49190715]],
+        [[-1.4015899, -0.68644315], [-1.152732, -1.1032405], [-1.4899138, -1.5000962], [-1.9500002, -1.5987839], [-2.2214072, -1.1981549], [-2.1935654, -0.34342474]],
+        [[-1.0104765, 0.1885747], [-0.52861774, -0.04896228], [-0.6022276, -0.57447517], [-0.9325632, -0.8895874], [-1.4015899, -0.68644315], [-1.8382638, 0.04491668]],
+        [[-2.2488272, -1.9858333], [-2.278331, -2.559307], [-2.7, -3.15], [-3.1216688, -2.559307], [-3.1511726, -1.9858333], [-2.7, -1.838618]],
+        [[0.41660947, -0.73753047], [0.3157372, -1.1993773], [-0.1714061, -1.2727296], [-0.6650287, -1.0228206], [-0.6022276, -0.57447517], [0, 0]],
+        [[1.1664557, -1.125517], [0.66618454, -1.179343], [0.41660947, -0.73753047], [0.5178302, -0.27407107], [1.0104765, -0.1885747], [1.7718036, -0.5638784]],
+        [[1.7823919, -1.8585898], [1.4147086, -2.1504846], [0.99467796, -1.906055], [0.80350983, -1.4622558], [1.1664557, -1.125517], [2.0054593, -1.0352463]],
+        [[2.7, -2.1257396], [2.539184, -2.6114967], [2.0133486, -2.6408293], [1.6445522, -2.3673563], [1.7823919, -1.8585898], [2.4389954, -1.3373272]],
+        [[2.3275173, -1.000594], [2.0054593, -1.0352463], [2.0905895, -0.7210271], [1.7718036, -0.5638784], [2.0139709, -0.33919793], [1.8382638, -0.04491668], [2.1828632, 0.01488679], [2.1935654, 0.34342474], [2.507453, 0.2074731], [2.7, 0.49190715], [2.892547, 0.2074731], [3.2064347, 0.34342474], [3.2171369, 0.01488679], [3.5617363, -0.04491668], [3.386029, -0.33919793], [3.6281965, -0.5638784], [3.3094103, -0.7210271], [3.3945405, -1.0352463], [3.0724828, -1.000594], [2.9610047, -1.3373272], [2.7, -1.1301203], [2.4389954, -1.3373272]],
+        [[0.20031755, -1.9724523], [0.56226575, -1.6544191], [0.99467796, -1.906055], [1.1963063, -2.3741372], [0.7962803, -2.6848202], [0.03612695, -2.70918]],
+        [[0.7962803, -2.6848202], [1.2867494, -2.6691043], [1.4450883, -3.15], [1.2867494, -3.6308956], [0.7962803, -3.61518], [0.19732873, -3.15]],
+        [[2.0133486, -3.6591706], [1.605241, -3.6364055], [1.4450883, -3.15], [1.605241, -2.6635947], [2.0133486, -2.6408293], [2.7, -3.15]],
+        [[0.03612695, -3.59082], [-0.24217334, -3.5819056], [-0.3730948, -3.823699], [-0.572631, -3.6483805], [-0.83434564, -3.7498398], [-0.87531257, -3.4679708], [-1.1286538, -3.3855069], [-0.97882485, -3.15], [-1.1286538, -2.914493], [-0.87531257, -2.832029], [-0.83434564, -2.5501602], [-0.572631, -2.6516197], [-0.3730948, -2.4763012], [-0.24217334, -2.7180943], [0.03612695, -2.70918], [-0.02384152, -2.9782264], [0.19732873, -3.15], [-0.02384152, -3.3217735]],
+        [[-1.8521625, -3.15], [-2.3011396, -3.003855], [-2.278331, -2.559307], [-1.9603307, -2.1136248], [-1.5326861, -2.2794178], [-1.1286538, -2.914493]],
+        [[-1.5326861, -2.2794178], [-1.7978841, -1.8625684], [-1.4899138, -1.5000962], [-0.96285325, -1.3870435], [-0.72827506, -1.8202946], [-0.83434564, -2.5501602]],
+        [[-0.72827506, -1.8202946], [-0.6593757, -1.3462079], [-0.1714061, -1.2727296], [0.3027636, -1.5127887], [0.20031755, -1.9724523], [-0.3730948, -2.4763012]],
+        [[2.2214072, 1.1981549], [2.2373564, 1.6877836], [2.7, 1.838618], [3.1626434, 1.6877836], [3.178593, 1.1981549], [2.7, 0.49190715]],
+        [[1.4015899, 0.68644315], [1.152732, 1.1032405], [1.4899138, 1.5000962], [1.9500002, 1.5987839], [2.2214072, 1.1981549], [2.1935654, 0.34342474]],
+        [[1.0104765, -0.1885747], [0.52861774, 0.04896228], [0.6022276, 0.57447517], [0.9325632, 0.8895874], [1.4015899, 0.68644315], [1.8382638, -0.04491668]],
+        [[2.2488272, 1.9858333], [2.278331, 2.559307], [2.7, 3.15], [3.1216688, 2.559307], [3.1511726, 1.9858333], [2.7, 1.838618]],
+        [[5.4, 0], [4.7977724, 0.57447517], [4.734971, 1.0228206], [5.228594, 1.2727296], [5.7157373, 1.1993773], [5.8166094, 0.73753047]],
+        [[5.3761587, 3.3217735], [5.5973287, 3.15], [5.3761587, 2.9782264], [5.436127, 2.70918], [5.1578264, 2.7180943], [5.026905, 2.4763012], [4.827369, 2.6516197], [4.5656543, 2.5501602], [4.5246873, 2.832029], [4.271346, 2.914493], [4.421175, 3.15], [4.271346, 3.3855069], [4.5246873, 3.4679708], [4.5656543, 3.7498398], [4.827369, 3.6483805], [5.026905, 3.823699], [5.1578264, 3.5819056], [5.436127, 3.59082]],
+        [[4.271346, 2.914493], [3.8673139, 2.2794178], [3.4396694, 2.1136248], [3.1216688, 2.559307], [3.0988603, 3.003855], [3.5478375, 3.15]],
+        [[4.5656543, 2.5501602], [4.671725, 1.8202946], [4.4371467, 1.3870435], [3.9100862, 1.5000962], [3.6021159, 1.8625684], [3.8673139, 2.2794178]],
+        [[5.026905, 2.4763012], [5.6003175, 1.9724523], [5.7027636, 1.5127887], [5.228594, 1.2727296], [4.7406244, 1.3462079], [4.671725, 1.8202946]],
+        [[5.4, 0], [6.002228, -0.57447517], [6.0650287, -1.0228206], [5.571406, -1.2727296], [5.084263, -1.1993773], [4.9833903, -0.73753047]],
+        [[3.6281965, -0.5638784], [4.3895235, -0.1885747], [4.8821697, -0.27407107], [4.9833903, -0.73753047], [4.7338157, -1.179343], [4.2335443, -1.125517]],
+        [[3.3945405, -1.0352463], [4.2335443, -1.125517], [4.59649, -1.4622558], [4.405322, -1.906055], [3.9852912, -2.1504846], [3.617608, -1.8585898]],
+        [[2.9610047, -1.3373272], [3.617608, -1.8585898], [3.7554479, -2.3673563], [3.3866513, -2.6408293], [2.860816, -2.6114967], [2.7, -2.1257396]],
+        [[5.363873, -2.70918], [4.6037197, -2.6848202], [4.203694, -2.3741372], [4.405322, -1.906055], [4.837734, -1.6544191], [5.199682, -1.9724523]],
+        [[5.202671, -3.15], [4.6037197, -3.61518], [4.1132507, -3.6308956], [3.9549117, -3.15], [4.1132507, -2.6691043], [4.6037197, -2.6848202]],
+        [[2.7, -3.15], [3.3866513, -2.6408293], [3.794759, -2.6635947], [3.9549117, -3.15], [3.794759, -3.6364055], [3.3866513, -3.6591706]],
+        [[5.4238415, -3.3217735], [5.202671, -3.15], [5.4238415, -2.9782264], [5.363873, -2.70918], [5.6421733, -2.7180943], [5.7730947, -2.4763012], [5.972631, -2.6516197], [6.2343454, -2.5501602], [6.2753124, -2.832029], [6.5286536, -2.914493], [6.3788247, -3.15], [6.5286536, -3.3855069], [6.2753124, -3.4679708], [6.2343454, -3.7498398], [5.972631, -3.6483805], [5.7730947, -3.823699], [5.6421733, -3.5819056], [5.363873, -3.59082]],
+        [[5.7730947, -2.4763012], [5.199682, -1.9724523], [5.097236, -1.5127887], [5.571406, -1.2727296], [6.059376, -1.3462079], [6.128275, -1.8202946]],
+        [[3.2064347, 0.34342474], [3.178593, 1.1981549], [3.4499998, 1.5987839], [3.9100862, 1.5000962], [4.2472677, 1.1032405], [3.9984102, 0.68644315]],
+        [[3.5617363, -0.04491668], [3.9984102, 0.68644315], [4.467437, 0.8895874], [4.7977724, 0.57447517], [4.871382, 0.04896228], [4.3895235, -0.1885747]],
+        [[-3.6281965, 0.5638784], [-4.3895235, 0.1885747], [-4.8821697, 0.27407107], [-4.9833903, 0.73753047], [-4.7338157, 1.179343], [-4.2335443, 1.125517]],
+        [[-3.3945405, 1.0352463], [-4.2335443, 1.125517], [-4.59649, 1.4622558], [-4.405322, 1.906055], [-3.9852912, 2.1504846], [-3.617608, 1.8585898]],
+        [[-2.9610047, 1.3373272], [-3.617608, 1.8585898], [-3.7554479, 2.3673563], [-3.3866513, 2.6408293], [-2.860816, 2.6114967], [-2.7, 2.1257396]],
+        [[-5.363873, 2.70918], [-4.6037197, 2.6848202], [-4.203694, 2.3741372], [-4.405322, 1.906055], [-4.837734, 1.6544191], [-5.199682, 1.9724523]],
+        [[-5.202671, 3.15], [-4.6037197, 3.61518], [-4.1132507, 3.6308956], [-3.9549117, 3.15], [-4.1132507, 2.6691043], [-4.6037197, 2.6848202]],
+        [[-2.7, 3.15], [-3.3866513, 2.6408293], [-3.794759, 2.6635947], [-3.9549117, 3.15], [-3.794759, 3.6364055], [-3.3866513, 3.6591706]],
+        [[-3.2064347, -0.34342474], [-3.178593, -1.1981549], [-3.4499998, -1.5987839], [-3.9100862, -1.5000962], [-4.2472677, -1.1032405], [-3.9984102, -0.68644315]],
+        [[-3.5617363, 0.04491668], [-3.9984102, -0.68644315], [-4.467437, -0.8895874], [-4.7977724, -0.57447517], [-4.871382, -0.04896228], [-4.3895235, 0.1885747]],
+        [[-4.271346, -2.914493], [-3.8673139, -2.2794178], [-3.4396694, -2.1136248], [-3.1216688, -2.559307], [-3.0988603, -3.003855], [-3.5478375, -3.15]],
+        [[-4.5656543, -2.5501602], [-4.671725, -1.8202946], [-4.4371467, -1.3870435], [-3.9100862, -1.5000962], [-3.6021159, -1.8625684], [-3.8673139, -2.2794178]],
+        [[-2.7, -5.808093], [-3.178593, -5.1018453], [-3.1626434, -4.6122165], [-2.7, -4.461382], [-2.2373564, -4.6122165], [-2.2214072, -5.1018453]],
+        [[-2.1935654, -5.9565754], [-2.2214072, -5.1018453], [-1.9500002, -4.701216], [-1.4899138, -4.799904], [-1.152732, -5.1967597], [-1.4015899, -5.613557]],
+        [[-1.8382638, -6.344917], [-1.4015899, -5.613557], [-0.9325632, -5.410413], [-0.6022276, -5.725525], [-0.52861774, -6.2510376], [-1.0104765, -6.4885745]],
+        [[-2.7, -4.461382], [-3.1511726, -4.3141665], [-3.1216688, -3.7406929], [-2.7, -3.15], [-2.278331, -3.7406929], [-2.2488272, -4.3141665]],
+        [[0, -6.3], [-0.6022276, -5.725525], [-0.6650287, -5.2771792], [-0.1714061, -5.0272703], [0.3157372, -5.1006227], [0.41660947, -5.5624695]],
+        [[1.7718036, -5.7361217], [1.0104765, -6.1114254], [0.5178302, -6.025929], [0.41660947, -5.5624695], [0.66618454, -5.120657], [1.1664557, -5.174483]],
+        [[2.0054593, -5.264754], [1.1664557, -5.174483], [0.80350983, -4.837744], [0.99467796, -4.393945], [1.4147086, -4.1495156], [1.7823919, -4.44141]],
+        [[2.4389954, -4.9626727], [1.7823919, -4.44141], [1.6445522, -3.9326437], [2.0133486, -3.6591706], [2.539184, -3.6885033], [2.7, -4.1742606]],
+        [[0.03612695, -3.59082], [0.7962803, -3.61518], [1.1963063, -3.925863], [0.99467796, -4.393945], [0.56226575, -4.645581], [0.20031755, -4.3275476]],
+        [[-1.1286538, -3.3855069], [-1.5326861, -4.020582], [-1.9603307, -4.186375], [-2.278331, -3.7406929], [-2.3011396, -3.296145], [-1.8521625, -3.15]],
+        [[-0.83434564, -3.7498398], [-0.72827506, -4.4797053], [-0.96285325, -4.9129567], [-1.4899138, -4.799904], [-1.7978841, -4.437432], [-1.5326861, -4.020582]],
+        [[-0.3730948, -3.823699], [0.20031755, -4.3275476], [0.3027636, -4.7872114], [-0.1714061, -5.0272703], [-0.6593757, -4.953792], [-0.72827506, -4.4797053]],
+        [[0, 6.3], [0.6022276, 5.725525], [0.6650287, 5.2771792], [0.1714061, 5.0272703], [-0.3157372, 5.1006227], [-0.41660947, 5.5624695]],
+        [[-1.7718036, 5.7361217], [-1.0104765, 6.1114254], [-0.5178302, 6.025929], [-0.41660947, 5.5624695], [-0.66618454, 5.120657], [-1.1664557, 5.174483]],
+        [[-2.0054593, 5.264754], [-1.1664557, 5.174483], [-0.80350983, 4.837744], [-0.99467796, 4.393945], [-1.4147086, 4.1495156], [-1.7823919, 4.44141]],
+        [[-2.4389954, 4.9626727], [-1.7823919, 4.44141], [-1.6445522, 3.9326437], [-2.0133486, 3.6591706], [-2.539184, 3.6885033], [-2.7, 4.1742606]],
+        [[-2.4389954, 4.9626727], [-2.7, 5.16988], [-2.9610047, 4.9626727], [-3.0724828, 5.299406], [-3.3945405, 5.264754], [-3.3094103, 5.578973], [-3.6281965, 5.7361217], [-3.386029, 5.960802], [-3.5617363, 6.2550836], [-3.2171369, 6.3148866], [-3.2064347, 6.6434245], [-2.892547, 6.507473], [-2.7, 6.7919073], [-2.507453, 6.507473], [-2.1935654, 6.6434245], [-2.1828632, 6.3148866], [-1.8382638, 6.2550836], [-2.0139709, 5.960802], [-1.7718036, 5.7361217], [-2.0905895, 5.578973], [-2.0054593, 5.264754], [-2.3275173, 5.299406]],
+        [[-0.03612695, 3.59082], [-0.7962803, 3.61518], [-1.1963063, 3.925863], [-0.99467796, 4.393945], [-0.56226575, 4.645581], [-0.20031755, 4.3275476]],
+        [[1.1286538, 3.3855069], [1.5326861, 4.020582], [1.9603307, 4.186375], [2.278331, 3.7406929], [2.3011396, 3.296145], [1.8521625, 3.15]],
+        [[0.83434564, 3.7498398], [0.72827506, 4.4797053], [0.96285325, 4.9129567], [1.4899138, 4.799904], [1.7978841, 4.437432], [1.5326861, 4.020582]],
+        [[0.3730948, 3.823699], [-0.20031755, 4.3275476], [-0.3027636, 4.7872114], [0.1714061, 5.0272703], [0.6593757, 4.953792], [0.72827506, 4.4797053]],
+        [[2.4389954, 7.637327], [2.7, 7.4301205], [2.9610047, 7.637327], [3.0724828, 7.300594], [3.3945405, 7.335246], [3.3094103, 7.021027], [3.6281965, 6.8638783], [3.386029, 6.639198], [3.5617363, 6.344917], [3.2171369, 6.2851133], [3.2064347, 5.9565754], [2.892547, 6.092527], [2.7, 5.808093], [2.507453, 6.092527], [2.1935654, 5.9565754], [2.1828632, 6.2851133], [1.8382638, 6.344917], [2.0139709, 6.639198], [1.7718036, 6.8638783], [2.0905895, 7.021027], [2.0054593, 7.335246], [2.3275173, 7.300594]],
+        [[2.7, 5.808093], [3.178593, 5.1018453], [3.1626434, 4.6122165], [2.7, 4.461382], [2.2373564, 4.6122165], [2.2214072, 5.1018453]],
+        [[2.1935654, 5.9565754], [2.2214072, 5.1018453], [1.9500002, 4.701216], [1.4899138, 4.799904], [1.152732, 5.1967597], [1.4015899, 5.613557]],
+        [[1.8382638, 6.344917], [1.4015899, 5.613557], [0.9325632, 5.410413], [0.6022276, 5.725525], [0.52861774, 6.2510376], [1.0104765, 6.4885745]],
+        [[2.7, 4.461382], [3.1511726, 4.3141665], [3.1216688, 3.7406929], [2.7, 3.15], [2.278331, 3.7406929], [2.2488272, 4.3141665]],
+        [[4.9833903, -5.5624695], [5.084263, -5.1006227], [5.571406, -5.0272703], [6.0650287, -5.2771792], [6.002228, -5.725525], [5.4, -6.3]],
+        [[4.2335443, -5.174483], [4.7338157, -5.120657], [4.9833903, -5.5624695], [4.8821697, -6.025929], [4.3895235, -6.1114254], [3.6281965, -5.7361217]],
+        [[3.617608, -4.44141], [3.9852912, -4.1495156], [4.405322, -4.393945], [4.59649, -4.837744], [4.2335443, -5.174483], [3.3945405, -5.264754]],
+        [[2.7, -4.1742606], [2.860816, -3.6885033], [3.3866513, -3.6591706], [3.7554479, -3.9326437], [3.617608, -4.44141], [2.9610047, -4.9626727]],
+        [[5.199682, -4.3275476], [4.837734, -4.645581], [4.405322, -4.393945], [4.203694, -3.925863], [4.6037197, -3.61518], [5.363873, -3.59082]],
+        [[6.128275, -4.4797053], [6.059376, -4.953792], [5.571406, -5.0272703], [5.097236, -4.7872114], [5.199682, -4.3275476], [5.7730947, -3.823699]],
+        [[3.9984102, 5.613557], [4.2472677, 5.1967597], [3.9100862, 4.799904], [3.4499998, 4.701216], [3.178593, 5.1018453], [3.2064347, 5.9565754]],
+        [[4.3895235, 6.4885745], [4.871382, 6.2510376], [4.7977724, 5.725525], [4.467437, 5.410413], [3.9984102, 5.613557], [3.5617363, 6.344917]],
+        [[5.8166094, 5.5624695], [5.7157373, 5.1006227], [5.228594, 5.0272703], [4.734971, 5.2771792], [4.7977724, 5.725525], [5.4, 6.3]],
+        [[3.5478375, 3.15], [3.0988603, 3.296145], [3.1216688, 3.7406929], [3.4396694, 4.186375], [3.8673139, 4.020582], [4.271346, 3.3855069]],
+        [[3.8673139, 4.020582], [3.6021159, 4.437432], [3.9100862, 4.799904], [4.4371467, 4.9129567], [4.671725, 4.4797053], [4.5656543, 3.7498398]],
+        [[4.671725, 4.4797053], [4.7406244, 4.953792], [5.228594, 5.0272703], [5.7027636, 4.7872114], [5.6003175, 4.3275476], [5.026905, 3.823699]],
+        [[-4.2335443, 5.174483], [-4.7338157, 5.120657], [-4.9833903, 5.5624695], [-4.8821697, 6.025929], [-4.3895235, 6.1114254], [-3.6281965, 5.7361217]],
+        [[-3.617608, 4.44141], [-3.9852912, 4.1495156], [-4.405322, 4.393945], [-4.59649, 4.837744], [-4.2335443, 5.174483], [-3.3945405, 5.264754]],
+        [[-2.7, 4.1742606], [-2.860816, 3.6885033], [-3.3866513, 3.6591706], [-3.7554479, 3.9326437], [-3.617608, 4.44141], [-2.9610047, 4.9626727]],
+        [[-5.199682, 4.3275476], [-4.837734, 4.645581], [-4.405322, 4.393945], [-4.203694, 3.925863], [-4.6037197, 3.61518], [-5.363873, 3.59082]],
+        [[-3.5478375, -3.15], [-3.0988603, -3.296145], [-3.1216688, -3.7406929], [-3.4396694, -4.186375], [-3.8673139, -4.020582], [-4.271346, -3.3855069]],
+        [[-3.8673139, -4.020582], [-3.6021159, -4.437432], [-3.9100862, -4.799904], [-4.4371467, -4.9129567], [-4.671725, -4.4797053], [-4.5656543, -3.7498398]],
+        [[-3.9984102, -5.613557], [-4.2472677, -5.1967597], [-3.9100862, -4.799904], [-3.4499998, -4.701216], [-3.178593, -5.1018453], [-3.2064347, -5.9565754]],
+        [[-4.3895235, -6.4885745], [-4.871382, -6.2510376], [-4.7977724, -5.725525], [-4.467437, -5.410413], [-3.9984102, -5.613557], [-3.5617363, -6.344917]]
+      ];
+      topkapi42CounterclockwiseProblematicEdges = [
+  [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0],
+  [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0],
+  [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0],
+  [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1], [1, 0, 1, 0], [1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1],
+  [0, 1, 0, 1], [1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0],
+  [1, 0, 1, 0], [0, 1, 0, 1], [0, 1, 0, 1], [1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1],
+  [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [0, 1, 0, 1], [1, 0, 1, 0], [1, 0, 1, 0],
+  [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0], [1, 0, 1, 0],
+  [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [1, 0, 1, 0], [1, 0, 1, 0],
+  [0, 1, 0, 1], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1],
+  [0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0], [1, 0, 1, 0],
+  [1, 0, 1, 0], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0], [0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1], [0, 1, 0, 1]
+];
+      topkapi42ClockwiseProblematicEdges = [
+  [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0],
+  [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0],
+  [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0],
+  [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1],
+  [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [1, 0, 1, 0, 1, 0], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1],
+  [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 0, 1]
+];
+      topkapi42CounterclockwiseTiles = apply(1..length(topkapi42CounterclockwisePolygons), idx,
+        {"clockwise": false, "euclUnitVertices": topkapi42CounterclockwisePolygons_idx, "sidelength": topkapi42Scale, "problematicEdge": topkapi42CounterclockwiseProblematicEdges_idx}
+      );
+      topkapi42ClockwiseTiles = apply(1..length(topkapi42ClockwisePolygons), idx,
+        {"clockwise": true, "euclUnitVertices": topkapi42ClockwisePolygons_idx, "sidelength": topkapi42Scale, "problematicEdge": topkapi42ClockwiseProblematicEdges_idx}
+      );
+      forall(topkapi42CounterclockwiseTiles, tile, tile.transformations = topkapi42BaseTransformations);
+      forall(topkapi42ClockwiseTiles, tile, tile.transformations = topkapi42BaseTransformations);
+      topkapi42Tiles = flatten([topkapi42CounterclockwiseTiles, topkapi42ClockwiseTiles]);
+
+      tilings = {
+        "theta": 0,
+        "selectedTiling": [],
+        "allTiles": flatten([hexagon, triangle, square, bourgoin047star, bourgoin047hex, square1, square2, triangle1, triangle2,
+                              bourgoin088kite, bourgoin088star, bourgoin088wheel, bourgoin088hex, cairoPentagon1, cairoPentagon2,
+                              bourgoin221kite, bourgoin221wheel, bourgoin221octagon, bourgoin221pentagon,
+                              b216Tiles, topkapi42Tiles]),
+        "1": {
+          "name": "squares",
+          "tiles": [square1, square2],
+          "UIbase": [-2, 2],
+          "UIshift": [-4, -4],
+          "UIangleRange": [0, pi/2],
+          "UIorientation": 0
+        },
+        "2": {
+          "name": "bourgoin047",
+          "tiles": [bourgoin047star, bourgoin047hex],
+          "UIbase": [-3, -sqrt(3)],
+          "UIshift": [-6, -2*sqrt(3)],
+          "UIangleRange": [0, pi/3],
+          "UIorientation": 0
+        },
+        "3": {
+          "name": "hexagons-triangles-squares",
+          "tiles": [hexagon, triangle, square],
+          "UIbase": [-2, 0],
+          "UIshift": [-3-sqrt(3), -1-sqrt(3)],
+          "UIangleRange": [0, pi/3],
+          "UIorientation": 5*pi/6
+        },
+        "4": {
+          "name": "bourgoin088",
+          "tiles": [bourgoin088kite, bourgoin088star, bourgoin088wheel, bourgoin088hex],
+          "UIbase": [-4, 0],
+          "UIshift": [-8,-8],
+          "UIangleRange": [0, 35*2*pi/360],
+          "UIorientation": 15/8 * pi
+        },
+        "5": {
+          "name": "cairo-pentagon",
+          "tiles": [cairoPentagon1, cairoPentagon2],
+          "UIbase": [-2*sqrt(6),-sqrt(6)],
+          "UIshift": [-4*sqrt(6), -2*sqrt(6)],
+          "UIangleRange": [0, pi/3],
+          "UIorientation": -285*2*pi/360
+        },
+        "6": {
+          "name": "triangles",
+          "tiles": [triangle1, triangle2],
+          "UIbase": [-3, -sqrt(3)],
+          "UIshift": [-9, -3*sqrt(3)],
+          "UIangleRange": [0, pi/3],
+          "UIorientation": 0
+        },
+        "7": {
+          "name": "bourgoin221",
+          "tiles": [bourgoin221kite, bourgoin221wheel, bourgoin221pentagon, bourgoin221octagon],
+          "UIbase": [-5.95491503, -3.94298334],
+          "UIshift": [b221LatticeX, b221LatticeY],
+          "UIangleRange": [0, pi/7],
+          "UIorientation": 9*pi/10
+        },
+        "8": {
+          "name": "bourgoin216",
+          "tiles": b216Tiles,
+          "UIbase": [-6.4089048, -5.8852735],
+          "UIshift": [2 * b216Scale, 0],
+          "UIangleRange": [0, pi/10],
+          "UIorientation": 1.73909127
+        },
+        "9": {
+          "name": "topkapi-panel42",
+          "tiles": topkapi42Tiles,
+          "UIbase": [-7.804172, -6.3982675],
+          "UIshift": [topkapi42Scale * topkapi42Lattice1_1, topkapi42Scale * topkapi42Lattice1_2],
+          "UIangleRange": [0, pi/10],
+          "UIorientation": -1.51953466
+        }
+      };
+
+      //finish tile initialization
+      forall(tilings.allTiles, tile,
+        tile.vertices = apply(tile.euclUnitVertices, v, [tile.sidelength * v_1, tile.sidelength * v_2, 1]);
+        tile.length = length(tile.vertices);
+        if(isundefined(tile.problematicEdge), tile.problematicEdge = apply(1..tile.length, false));
+      );
+
+
+      //===== DERIVED GEOMETRY =====
+
+      changeTiling(string) := (
+        forall(tilings, tiling,
+          if(string == tiling.name,
+            tilings.selectedTiling = tiling.tiles;
+            UI.basePoint = tiling.UIbase;
+            UI.shift = tiling.UIshift;
+            UI.angleRange = tiling.UIangleRange;
+            UI.orientation = tiling.UIorientation;
+          );
+        );
+        updateUI(UI.angleRange_1, style.zoom);
+      );
+      changeTiling("bourgoin047");
+      A.visible = false;
+
+      updateGeometry(tiling) := forall(tiling, tile,
+        tile.length = length(tile.vertices);
+        tile.edges = apply(1..tile.length, k, [tile.vertices_k, tile.vertices_(mod(k,tile.length)+1)]);
+        tile.triangles = apply(1..tile.length, k,
+          regional(edge, nextedge, kitevertex);
+          edge = tile.edges_k;
+          nextedge = tile.edges_(mod(k,tile.length)+1);
+          kitevertex = meet(
+            join(edge_1, ((edge_1).xy + rotate(if(tile.clockwise, -1, 1) * tilings.theta, (edge_2).xy - (edge_1).xy)).homog),
+            join(nextedge_1, ((nextedge_1).xy + rotate(if(tile.clockwise, -1, 1) * tilings.theta, (nextedge_2).xy - (nextedge_1).xy)).homog)
+          ).homog;
+          [edge_1, kitevertex, edge_2]
+        );
+      );
+
+      fillTiling(tiling, zoom) := (
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+          fillpoly(apply(tile.vertices, vertex, zoom * trafo * vertex),
+            color->if(tile.clockwise, style.clockwiseColor, style.anticlockwiseColor)
+          );
+        ));
+      );
+
+      fillKites(tiling, zoom) := (
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+        forall(tile.triangles, triangle,
+          fillpoly( apply(triangle, vertex, zoom * trafo * vertex), color->kiteColor());
+        )));
+      );
+
+      outlineKites(tiling, zoom) := if(style.kiteBorderBool % style.kiteDiagonalBool,
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+        forall(tile.triangles, triangle,
+          if(style.kiteBorderBool,
+            draw( apply(triangle, vertex, zoom * trafo * vertex)_[1,2], color->style.kiteBorderColor, size->style.kiteBorderSize);
+            draw( apply(triangle, vertex, zoom * trafo * vertex)_[2,3], color->style.kiteBorderColor, size->style.kiteBorderSize);
+          );
+          if(style.kiteDiagonalBool,
+            draw( apply(triangle, vertex, zoom * trafo * vertex)_[3,1], color->style.kiteDiagonalColor, size->style.kiteDiagonalSize);
+          );
+        )));
+      );
+
+      outlineOriginalTiling(tiling, zoom) := if(style.originalTilingBool,
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+        forall(tile.triangles, triangle,
+          draw( apply(triangle, vertex, zoom * trafo * vertex)_[3,1], color->style.originalTilingColor, size->style.originalTilingSize);
+        )));
+      );
+
+      outlineNewTiling(tiling, zoom) := if(style.newTilingBool & (style.kiteColorMode != 2),
+        forall(tiling, tile,
+        forall(tile.transformations, trafo,
+        forall(1..tile.length, k,
+          if( xor(tile.clockwise, style.kiteColorMode==1),
+            draw( zoom * trafo * tile.triangles_k_2, zoom * trafo * tile.triangles_(mod(k, tile.length)+1)_2, color->style.newTilingColor, size->style.newTilingSize);
+            if(tile.problematicEdge_k,
+              regional(previousTriangle);
+              previousTriangle = tile.triangles_(mod(k-2,tile.length)+1);
+              draw( zoom * trafo * previousTriangle_2, zoom * trafo * tile.triangles_k_2, color->style.newTilingColor, size->style.newTilingSize);
+              , //else
+              draw( zoom * trafo * tile.triangles_k_1, zoom * trafo * tile.triangles_k_2, color->style.newTilingColor, size->style.newTilingSize);
+            );
+          );
+        )));
+      );
+
+    </script>
+
+    <script id="csdraw" type="text/x-cindyscript">
+      updateAngle();
+      updateGeometry(tilings.selectedTiling);
+      fillTiling(tilings.selectedTiling, style.zoom);
+      fillKites(tilings.selectedTiling, style.zoom);
+      outlineKites(tilings.selectedTiling, style.zoom);
+      outlineOriginalTiling(tilings.selectedTiling, style.zoom);
+      outlineNewTiling(tilings.selectedTiling, style.zoom);
+      drawUI();
+    </script>
+  </head>
+
+<body>
+  <style>
+    body {font-family: system-ui, sans-serif; font-size: 16px; font-weight: 200; line-height: 1.4;}
+    .container {max-width: 1500px; display: flex; align-items: flex-start; gap: 28px;}
+    .controls {width: 280px; display: flex; flex-direction: column; gap: 12px;}
+    fieldset {margin: 0; padding: 8px 10px; box-sizing: border-box;}
+    legend {padding: 0 6px; font-weight: 800;}
+
+    .control-group {display: block; border: 1px solid #ddd; border-radius: 6px; padding: 6px 8px; margin: 8px 0; background: #fafafa; box-sizing: border-box;}
+    .control-group.highlight {border: 2px solid #000;}
+    .control-group.disabled {opacity: 0.4; pointer-events: none;}
+    .row-top, .row-bottom, .stack label {display: flex; align-items: center; gap: 8px;}
+    .row-bottom {margin-top: 6px; padding-left: 20px;}
+    .stack {flex-direction: column; align-items: flex-start; padding-left: 0; gap: 6px;}
+
+    select {width: 100%; box-sizing: border-box; font: inherit; color: inherit; background: transparent; border: 0; padding: 6px;}
+    select[size] option {font: inherit; padding: 2px;}
+    input[type="color"] {width: 44px; min-width: 44px; height: 26px; padding: 2px; box-sizing: border-box;}
+    input[type="range"].mini {width: 50%; flex: 0 0 auto;}
+  </style>
+
+  <div class="container">
+    <div class="controls">
+
+      <fieldset>
+        <legend>Tiling</legend>
+
+        <div class="control-group highlight">
+          <select size="4" onchange="cindy.evokeCS('changeTiling(&quot;' + this.value + '&quot;);')">
+            <option value="squares">Checkerboard</option>
+            <option value="triangles">Equilateral Triangles</option>
+            <option value="hexagons-triangles-squares">Archimedean 3-4-6-4</option>
+            <option value="cairo-pentagon">Cairo Pentagon</option>
+            <option value="bourgoin047" selected>Bourgoin 047</option>
+            <option value="bourgoin088">Bourgoin 088</option>
+            <option value="bourgoin221">Bourgoin 221</option>
+            <option value="bourgoin216">Bourgoin 216</option>
+            <option value="topkapi-panel42">Topkapi Panel 42</option>
+          </select>
+        </div>
+
+        <label class="control-group">
+          <div class="row-top">
+            <input type="checkbox" onchange="cindy.evokeCS('style.originalTilingBool=' + (this.checked ? 'true' : 'false'))">
+            <span>Outline Original Tiling:</span>
+          </div>
+          <div class="row-bottom">
+            <input type="color" value="#6464e6" oninput="setColor('style.originalTilingColor', this.value)">
+            <input type="range" class="mini" min="1" max="5" value="1" step="1"
+                   oninput="cindy.evokeCS('style.originalTilingSize = ' + this.value + ';');">
+          </div>
+        </label>
+
+        <label id="outline-new-tiling" class="control-group">
+          <div class="row-top">
+            <input id="outline-new-tiling-box" type="checkbox" onchange="cindy.evokeCS('style.newTilingBool=' + (this.checked ? 'true' : 'false'))">
+            <span>Outline New Tiling:</span>
+          </div>
+          <div class="row-bottom">
+            <input type="color" value="#000000" oninput="setColor('style.newTilingColor', this.value)">
+            <input type="range" class="mini" min="1" max="5" value="2" step="1"
+                   oninput="cindy.evokeCS('style.newTilingSize = ' + this.value + ';');">
+          </div>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Kites</legend>
+
+        <div class="control-group">
+          <div class="row-top">
+            <span>Kite Color:</span>
+          </div>
+          <div class="row-bottom stack">
+            <label>
+              <input type="radio" name="kite-color-mode" checked
+                     onchange="toggleOutlineNewTiling(0); cindy.evokeCS('style.kiteColorMode = 0;')">
+              <span>Color 1</span>
+              <input data-sync-color="color1" type="color" value="#449ebc"
+                     oninput="syncColorInputs('color1', this.value, 'style.anticlockwiseColor')">
+            </label>
+
+            <label>
+              <input type="radio" name="kite-color-mode"
+                     onchange="toggleOutlineNewTiling(1); cindy.evokeCS('style.kiteColorMode = 1;')">
+              <span>Color 2</span>
+              <input data-sync-color="color2" type="color" value="#ffffff"
+                     oninput="syncColorInputs('color2', this.value, 'style.clockwiseColor')">
+            </label>
+
+            <label>
+              <input type="radio" name="kite-color-mode"
+                     onchange="toggleOutlineNewTiling(2); cindy.evokeCS('style.kiteColorMode = 2;')">
+              <span>Custom</span>
+              <input type="color" value="#ff7f50"
+                     oninput="setColor('style.kiteCustomColor', this.value)">
+            </label>
+          </div>
+        </div>
+
+        <label class="control-group">
+          <div class="row-top">
+            <input type="checkbox" checked
+                   onchange="cindy.evokeCS('style.kiteBorderBool=' + (this.checked ? 'true' : 'false'))">
+            <span>Kite Borders:</span>
+          </div>
+          <div class="row-bottom">
+            <input type="color" value="#b2b2b2" oninput="setColor('style.kiteBorderColor', this.value)">
+            <input type="range" class="mini" min="1" max="5" value="2" step="1"
+                   oninput="cindy.evokeCS('style.kiteBorderSize = ' + this.value + ';');">
+          </div>
+        </label>
+
+        <label class="control-group">
+          <div class="row-top">
+            <input type="checkbox"
+                   onchange="cindy.evokeCS('style.kiteDiagonalBool=' + (this.checked ? 'true' : 'false'))">
+            <span>Kite Diagonals:</span>
+          </div>
+          <div class="row-bottom">
+            <input type="color" value="#b2b2b2" oninput="setColor('style.kiteDiagonalColor', this.value)">
+            <input type="range" class="mini" min="1" max="5" value="1" step="1"
+                   oninput="cindy.evokeCS('style.kiteDiagonalSize = ' + this.value + ';');">
+          </div>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Settings</legend>
+
+        <div class="control-group">
+          <div class="row-top">
+            <span>2-Coloring:</span>
+            <input data-sync-color="color1" type="color" value="#449ebc"
+                   oninput="syncColorInputs('color1', this.value, 'style.anticlockwiseColor')">
+            <input data-sync-color="color2" type="color" value="#ffffff"
+                   oninput="syncColorInputs('color2', this.value, 'style.clockwiseColor')">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="row-top">
+            <span>Zoom</span>
+            <input id="zoom-slider" type="range" min=".2" max="1" value=".8" step="any"
+                   oninput="cindy.evokeCS('style.zoom = [[1,0,0], [0,1,0], [0,0,1.2-' + this.value + ']]; updateUI(tilings.theta, style.zoom);');">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <div class="row-top">
+            <span>Kite Angle</span>
+            <input id="angle-slider" type="range" min="0" max="1" value="0" step="any"
+                   oninput="cindy.evokeCS('updateUI(UI.angleRange_1 + (UI.angleRange_2 - UI.angleRange_1) * ' + this.value + ', style.zoom);');">
+          </div>
+        </div>
+
+        <label class="control-group">
+          <div class="row-top">
+            <input type="checkbox"
+                   onchange="cindy.evokeCS('UI.visiBool=' + (this.checked ? 'true' : 'false') + '; A.visible=' + (this.checked ? 'true' : 'false') + ';')">
+            <span>Angle Selector:</span>
+            <input type="color" value="#e15a1c" oninput="setColor('style.UIColor', this.value)">
+          </div>
+          <div class="row-bottom">
+            <span>Size</span>
+            <input type="range" class="mini" min="1" max="8" value="3" step="1"
+                   oninput="cindy.evokeCS('UI.scale = ' + this.value + '; updateUI(tilings.theta, style.zoom);');">
+          </div>
+          <div class="row-bottom">
+            <span>Thickness</span>
+            <input type="range" class="mini" min="1" max="8" value="3" step="1"
+                   oninput="cindy.evokeCS('UI.size = ' + this.value + '; A.size = 3 +' + this.value + '; updateUI(tilings.theta, style.zoom);');">
+          </div>
+        </label>
+
+      </fieldset>
+
+    </div>
+    <div id="CSCanvas" style="border: 2px solid #000;"></div>
+  </div>
+</body>
+</html>
