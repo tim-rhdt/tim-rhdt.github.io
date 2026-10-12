@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>How to Build a Dynamic Geometry System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Slides of the talk “How to Build a Dynamic Geometry System” by Tim Reinhardt (Public talk, TUM, 23 June 2025).">
+  <link rel="stylesheet" href="../reveal/reveal.css">
+  <style>
+    @font-face {
+      font-family: "IBM Plex Mono";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("../../assets/fonts/ibm-plex-mono-latin.woff2") format("woff2");
+    }
+
+    @font-face {
+      font-family: "IBM Plex Mono";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("../../assets/fonts/ibm-plex-mono-arrows.woff2") format("woff2");
+      unicode-range: U+2190-2199;
+    }
+
+    html, body, .reveal-viewport { background: #161718; }
+
+    .reveal .controls,
+    .reveal .progress { color: #fff; }
+
+    .reveal .slides section { padding: 0; }
+
+    /* every build step is a full-slide image; later steps are fragments stacked on top */
+    .stage {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .stage img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    /* builds appear at once, as Keynote's "appear" builds do */
+    .reveal .slides .stage .fragment { transition: none; }
+
+    /* clips sit where Keynote had them; the still underneath is cut out of the step images,
+       and multiply keeps whatever Keynote drew on top of a clip (the clips have white backgrounds) */
+    .stage video {
+      position: absolute;
+      margin: 0;
+      object-fit: fill;
+      mix-blend-mode: multiply;
+    }
+
+    .stage .note {
+      position: absolute;
+      margin: 0;
+      font: 28px/1.4 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #8a8a8a;
+      text-align: center;
+    }
+
+    .stage .divider {
+      position: absolute;
+      left: 100px;
+      top: 50%;
+      margin: 0;
+      transform: translateY(-50%);
+      font: 700 80px/1.1 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      color: #000;
+      text-transform: none;
+    }
+
+    .reveal .slide-number,
+    .home {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 12px;
+      line-height: 1;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 5px 6px;
+    }
+
+    .home {
+      position: fixed;
+      left: 8px;
+      bottom: 8px;
+      z-index: 40;
+      text-decoration: none;
+      opacity: 0.75;
+      transition: opacity 0.2s ease;
+    }
+
+    .home:hover,
+    .home:focus-visible { opacity: 1; }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+  <a class="home" href="../../#talks">← Tim Reinhardt</a>
+
+  <div class="reveal">
+    <div class="slides">
+      <section aria-label="Slide 1">
+        <div class="stage">
+          <img data-src="slides/s01-1.webp" alt="">
+        </div>
+        <div class="sr-only">
+          <p>How to Build a Dynamic</p>
+          <p>Geometry System</p>
+          <p>Tim Reinhardt, 23.06.2025</p>
+        </div>
+      </section>
+      <section aria-label="Slide 2">
+        <div class="stage">
+          <img data-src="slides/s02-1.webp" alt="">
+        </div>
+        <div class="sr-only">
+          <p>Geometric Setup</p>
+          <p>2 2</p>
+          <p>Construct in ℝℙ , calculate in ℂℙ</p>
+          <p>Motivation</p>
+          <p>• beautiful theory</p>
+          <p>• removal of case distinctions</p>
+          <p>Geometric Objects</p>
+          <p>• Points: P ⊆ ℂℙ</p>
+          <p>• Lines: L ⊆ ℂℙ</p>
+          <p>5 drawn as point sets</p>
+          <p>• Conics: Q ⊆ ℂℙ }</p>
+          <p>• Cubics: C ⊆ ℂℙ</p>
+          <p>• Exceptional types: segments, arcs, loci</p>
+        </div>
+      </section>
+      <section aria-label="Slide 3">
+        <div class="stage">
+          <img data-src="slides/s03-1.webp" alt="">
+        </div>
+        <div class="sr-only">
+          <p>Basic Terms</p>
+          <p>Definition.</p>
+          <p>• An operation is a relation ω ⊆ I × … × I × O ∈ {P,L,Q,C}k+1 (k ∈ ℕ).</p>
+          <p>1 k</p>
+          <p>• For k = 0, we call ω ∈ {P,L,Q,C} a free operation.</p>
+          <p>• An operation ω is called algebraic if it is the set of all (i ,…,i ,o) which satisfy a system of polynomial</p>
+          <p>1 k</p>
+          <p>equations and which respect certain non-deneracy conditions.</p>
+          <p>• Moreover, we write p</p>
+          <p>ω(i ,…,i ) := {o ∈ O ∣ (i ,…,i ,o) ∈ ω}.</p>
+          <p>1 k 1 k</p>
+          <p>l q</p>
+          <p>Example. c</p>
+          <p>• Join: {(p,q,l) ∈ P × P × L ∣ pTl = 0 and qTl = 0}</p>
+          <p>Join: {(p,q,l) ∈ P ×P×L ∣ pTl = 0, qTl = 0 and p ≠ q} IntersectionConicLine(c,l) = {p,q}</p>
+          <p>•</p>
+          <p>• IntersectionConicLine: {(c,l,p) ∈ Q×L×P ∣ p lies on c, lTp = 0 and c non-degenerate}</p>
+        </div>
+      </section>
+      <section aria-label="Slide 4">
+        <div class="stage">
+          <img data-src="slides/s04-1.webp" alt="">
+        </div>
+        <div class="sr-only">
+          <p>Basic Terms</p>
+          <p>Definition.</p>
+          <p>• A (geometric) construction consists of</p>
+          <p>1. a sequence O , …,O ,O ,…,O ∈ {P,L,Q,C} of geometric types, and</p>
+          <p>1−m 0 1 n</p>
+          <p>2. a sequence ω , …,ω of corresponding operations where ω , …,ω are all free operations</p>
+          <p>1−m n 1−m 0</p>
+          <p>and ω ,…,ω only use free or already constructed objects as input.</p>
+          <p>1 n</p>
+          <p>• A (geometric) instance of a geometric construction is an element</p>
+          <p>o = (o , …,o ) ∈ O ×…×O</p>
+          <p>1−m n 1−m n</p>
+          <p>such that the corresponding subtuples of o are contained in each ω .</p>
+          <p>k</p>
+          <p>• The set of all instances of a construction is called the configuration space of the construction.</p>
+        </div>
+      </section>
+      <section aria-label="Slide 5">
+        <div class="stage">
+          <img data-src="slides/s05-1.webp" alt="">
+        </div>
+        <div class="sr-only">
+          <p>Fundamental Properties</p>
+          <p>Consistency. Determinism.</p>
+          <p>In every instance of a construction that is shown by In a DGP, the same movements from the same</p>
+          <p>the DGP, the geometric objects have the type and starting instances always yield the same motions</p>
+          <p>fulfill the relations determined by the construction. of dependent elements.</p>
+          <p>Conservatism. Continuity.</p>
+          <p>In a DGP, the ending instance is completely If the free elements of a construction move</p>
+          <p>determined by the starting instance and the continuously, the induced paths of dependent</p>
+          <p>ending positions of the free elements. elements are continuous as well.</p>
+        </div>
+      </section>
+      <section aria-label="Slide 6">
+        <div class="stage">
+          <img data-src="slides/s06-1.webp" alt="">
+        </div>
+        <div class="sr-only">
+          <p>Our Framework</p>
+          <p>Definition.</p>
+          <p>A map μ : [0,1] → T ∈ {P,L,Q,C} is called a movement if there exists an open neighborhood</p>
+          <p>[0,1] ⊂ U ⊆ ℂ and a holomorphic map φ : U → T with φ =μ.</p>
+          <p>∣[0,1]</p>
+          <p>Given a construction with m free objects and a starting instance o. Let</p>
+          <p>M={μ:[0,1]→O ×…×O ∣∀j:μ is movement with μ(0) = o}.</p>
+          <p>1−m 0 j j j</p>
+          <p>Moreover, let N = {ν : [0,1] → O × … × O }.</p>
+          <p>1 n</p>
+          <p>A dynamic geometry system (DGS) is a map M → N such that ∀t ∈ [0,1], (μ(t),ν(t)) is an instance of</p>
+          <p>the underlying geometric construction.</p>
+          <p>Observation.</p>
+          <p>This definition of a DGS automatically ensures consistency and determinism</p>
+          <p>(since ν decomposes into functions).</p>
+        </div>
+      </section>
+      <section aria-label="Slide 7">
+        <div class="stage">
+          <img data-src="slides/s07-1.webp" alt="">
+        </div>
+        <div class="sr-only">
+          <p>Conservatism vs. Continuity</p>
+          <p>Example.</p>
+          <p>Consider a DGS with the following operations:</p>
+          <p>FreePoint, Join(⋅,⋅), Meet(⋅,⋅), AngularBisector(⋅,⋅)</p>
+          <p>which is captured by</p>
+          <p>FreePoint, Join(⋅,⋅), Meet(⋅,⋅), CircleMidRadius(⋅,⋅), IntersectionCircleLine(⋅,⋅),</p>
+          <p>IntersectionCircleCircle(⋅,⋅).</p>
+          <p>⇒ Conservatism and continuity are mutually exclusive if sufficiently complex operations are admissible.</p>
+          <p>⇒ It is “likely” that not the whole configuration space is reachable in a conservative DGP.</p>
+        </div>
+      </section>
+      <section aria-label="Slide 8">
+        <div class="stage">
+          <img data-src="slides/s08-1.webp" alt="">
+        </div>
+        <div class="sr-only">
+          <p>Reachability</p>
+          <p>Reachability Problem in Dynamic Geometry.</p>
+          <p>Given two instances of an algebraic construction, is it possible to move continuously from one to the other</p>
+          <p>using only pathes of a certain type?</p>
+          <p>Theorem (Kortenkamp, Richter-Gebert).</p>
+          <p>The reachability problem is</p>
+          <p>• PSPACE-hard in general,</p>
+          <p>• NP-hard if FreePoint, Join(⋅,⋅), Meet(⋅,⋅), AngularBisector(⋅,⋅) are the admissible operations,</p>
+          <p>• undecidable if “algebraic” is dropped.</p>
+        </div>
+      </section>
+      <section aria-label="Slide 9">
+        <div class="stage">
+          <img data-src="slides/s09-1.webp" alt="">
+        </div>
+        <div class="sr-only">
+          <p>Continuous DG Systems</p>
+          <p>Continuity makes theorems possible!</p>
+          <p>A theorem in DG is an algebraic property that holds on an open neighborhood of an instance.</p>
+          <p>Theorem (Kortenkamp, Orendt, Richter-Gebert).</p>
+          <p>There exists a continuous DGS for every algebraic construction</p>
+          <p>(if the starting instance satisfies certain non-degeneracy constraints).</p>
+          <p>Key ideas.</p>
+          <p>• Complex detours: Use the neighborhood of a movement to avoid singularities.</p>
+          <p>• One then needs to show that the limit of smaller detours converging to [0,1] do not induce discontinuities</p>
+          <p>in the limit case.</p>
+          <p>• In practice: Path tracing problem</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="../reveal/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      width: 1920,
+      height: 1080,
+      margin: 0,
+      minScale: 0.05,
+      maxScale: 4,
+      center: false,
+      hash: true,
+      slideNumber: "c/t",
+      transition: "none",
+      backgroundTransition: "none",
+      viewDistance: 3,
+      mobileViewDistance: 2,
+    });
+
+    // clips that appear with a build start from the beginning when they appear
+    Reveal.on("fragmentshown", function (event) {
+      event.fragments.forEach(function (fragment) {
+        var videos = fragment.tagName === "VIDEO" ? [fragment] : fragment.querySelectorAll("video");
+        Array.prototype.forEach.call(videos, function (video) {
+          video.currentTime = 0;
+          video.play().catch(function () {});
+        });
+      });
+    });
+  </script>
+</body>
+</html>
