@@ -1,99 +1,329 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>IHP Outro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <script>
+    // Apply a saved dark theme before the first paint, so the page doesn't flash light
+    try {
+      if (localStorage.getItem("theme") === "dark") {
+        document.documentElement.dataset.theme = "dark";
+      }
+    } catch (e) {}
+  </script>
+
   <style>
     :root {
-      --bg: #0f172a;
+      color-scheme: light;
+      --bg-from: #f8fafc;
+      --bg-to: #e2e8f0;
+      --card: #ffffff;
+      --card-border: rgba(15, 23, 42, 0.07);
+      --item: #f1f5f9;
+      --text: #0f172a;
+      --muted: #475569;
+      --tag-border: #cbd5e1;
+      --accent: #0284c7;
+      --accent-text: #0369a1;
+      --accent-soft: rgba(2, 132, 199, 0.08);
+      --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 12px 32px rgba(15, 23, 42, 0.08);
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.1);
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg-from: #0f172a;
+      --bg-to: #1e293b;
       --card: #1e293b;
+      --card-border: rgba(255, 255, 255, 0.06);
+      --item: rgba(255, 255, 255, 0.05);
       --text: #e2e8f0;
+      --muted: #94a3b8;
+      --tag-border: rgba(255, 255, 255, 0.18);
       --accent: #38bdf8;
+      --accent-text: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.15);
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html {
+      background: var(--bg-to);
+    }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
-      background: linear-gradient(135deg, #0f172a, #1e293b);
+      background: linear-gradient(135deg, var(--bg-from), var(--bg-to));
       color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      min-height: 100dvh;
     }
 
     .container {
       max-width: 500px;
       width: 100%;
-      padding: 2rem;
-      text-align: center;
+      padding: 4.5rem 1rem 3rem;
     }
 
     h1 {
-      margin-bottom: 2rem;
+      margin: 0 0 2rem;
       font-size: 2rem;
       letter-spacing: 0.5px;
+      text-align: center;
     }
 
     .card {
       background: var(--card);
+      border: 1px solid var(--card-border);
       border-radius: 16px;
-      padding: 1.5rem;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      padding: 1rem;
+      box-shadow: var(--shadow);
     }
 
     ul {
       list-style: none;
       padding: 0;
       margin: 0;
+      display: grid;
+      gap: 0.75rem;
     }
 
-    li {
-      margin: 1rem 0;
-    }
-
-    a {
-      display: block;
-      padding: 1rem;
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
       border-radius: 10px;
-      text-decoration: none;
-      color: var(--text);
-      background: rgba(255,255,255,0.05);
-      transition: all 0.2s ease;
       border: 1px solid transparent;
+      background: var(--item);
+      color: var(--text);
+      font-weight: 500;
+      text-decoration: none;
+      transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
     }
 
-    a:hover {
-      background: rgba(56,189,248,0.15);
+    .item:hover {
+      background: var(--accent-soft);
       border-color: var(--accent);
       transform: translateY(-2px);
     }
 
+    .label {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem 0.6rem;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      line-height: 1;
+      margin: -0.25rem 0;
+      padding: 0.3rem 0.55rem;
+      border: 1px solid var(--tag-border);
+      border-radius: 999px;
+      color: var(--muted);
+    }
+
+    .icon {
+      width: 1.1rem;
+      height: 1.1rem;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .item .icon {
+      color: var(--muted);
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+
+    .item:hover .icon {
+      color: var(--accent);
+      transform: translate(2px, -2px);
+    }
+
+    .item:hover .icon.arrow {
+      transform: translateX(3px);
+    }
+
     footer {
       margin-top: 2rem;
-      font-size: 0.85rem;
-      opacity: 0.6;
+      text-align: center;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    footer a:hover {
+      color: var(--accent-text);
+    }
+
+    footer .icon {
+      width: 0.85rem;
+      height: 0.85rem;
+      margin-left: 0.25rem;
+      vertical-align: -0.1em;
+    }
+
+    .nowrap {
+      white-space: nowrap;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      display: grid;
+      place-items: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      border: 1px solid var(--card-border);
+      border-radius: 50%;
+      background: var(--card);
+      color: var(--muted);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .theme-toggle .sun,
+    :root[data-theme="dark"] .theme-toggle .moon {
+      display: none;
+    }
+
+    :root[data-theme="dark"] .theme-toggle .sun {
+      display: block;
+    }
+
+    .item:focus-visible,
+    footer a:focus-visible,
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .item,
+      .item .icon {
+        transition: none;
+      }
+
+      .item:hover,
+      .item:hover .icon,
+      .item:hover .icon.arrow {
+        transform: none;
+      }
     }
   </style>
 </head>
 
 <body>
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <symbol id="icon-external" viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+  </svg>
+
+  <button class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+    <svg class="icon moon" aria-hidden="true"><use href="#icon-moon"/></svg>
+    <svg class="icon sun" aria-hidden="true"><use href="#icon-sun"/></svg>
+  </button>
+
   <div class="container">
-    <h1>IHP Outro</h1>
+    <header>
+      <h1>IHP Outro</h1>
+    </header>
 
-    <div class="card">
+    <main class="card">
       <ul>
-        <li><a href="./dynamic-geometry/">Dynamic Geometry</a></li>
-        <li><a href="./whirling-tiles/">Whirling Tiles</a></li>
+        <li>
+          <a class="item" href="https://cindy-in-cindy-f218c4.pages.gitlab.lrz.de/">
+            <span class="label">Dynamic Geometry</span>
+            <svg class="icon" aria-hidden="true"><use href="#icon-external"/></svg>
+          </a>
+        </li>
+        <li>
+          <a class="item" href="./whirling-tiles/">
+            <span class="label">Whirling Tiles</span>
+            <svg class="icon arrow" aria-hidden="true"><use href="#icon-arrow"/></svg>
+          </a>
+        </li>
+        <li>
+          <a class="item" href="https://apps.apple.com/de/app/bubble-tiles/id6788320832">
+            <span class="label">Bubble Tiles <span class="tag">App Store</span></span>
+            <svg class="icon" aria-hidden="true"><use href="#icon-external"/></svg>
+          </a>
+        </li>
+        <li>
+          <a class="item" href="https://mathvisuals.org/Hyperbolization/">
+            <span class="label">Hyperbolization</span>
+            <svg class="icon" aria-hidden="true"><use href="#icon-external"/></svg>
+          </a>
+        </li>
       </ul>
-    </div>
+    </main>
 
+    <footer>
+      <a href="https://www.math.cit.tum.de/math/personen/wissenschaftliches-personal/reinhardt-tim/">
+        <span class="nowrap">Tim Reinhardt ·</span>
+        <span class="nowrap">Technical University of Munich<svg class="icon" aria-hidden="true"><use href="#icon-external"/></svg></span>
+      </a>
+    </footer>
   </div>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var toggle = document.querySelector(".theme-toggle");
+
+      function updateLabel() {
+        var label = root.dataset.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+        toggle.setAttribute("aria-label", label);
+        toggle.title = label;
+      }
+
+      toggle.addEventListener("click", function () {
+        var dark = root.dataset.theme !== "dark";
+        if (dark) {
+          root.dataset.theme = "dark";
+        } else {
+          delete root.dataset.theme;
+        }
+        try {
+          localStorage.setItem("theme", dark ? "dark" : "light");
+        } catch (e) {}
+        updateLabel();
+      });
+
+      updateLabel();
+    })();
+  </script>
 </body>
 </html>
