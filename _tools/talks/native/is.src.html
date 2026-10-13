@@ -1,0 +1,229 @@
+<!-- deck {
+  "slug": "discrete-conformal-maps",
+  "title": "Selected Convergence Results for Discrete Conformal Maps",
+  "event": "Public talk, TUM",
+  "date": "20 April 2022",
+  "styles": {
+    "b116t20": ["hn", 116.0, 700, false, -0.02],
+    "b30": ["hn", 30.0, 700, false],
+    "b30t-5": ["hn", 30.0, 700, false, 0.005],
+    "b36": ["hn", 36.0, 700, false],
+    "b55": ["hn", 55.0, 700, false],
+    "b80t20": ["hn", 80.0, 700, false, -0.02],
+    "b85t20": ["hn", 85.0, 700, false, -0.02],
+    "cb30": ["cn", 30.0, 700, false],
+    "cr30": ["cn", 30.0, 400, false],
+    "eq": ["hn", 0, 400, false],
+    "r30": ["hn", 30.0, 400, false],
+    "r36_9": ["hn", 36.9, 400, false],
+    "ri30": ["hn", 30.0, 400, true]
+  },
+  "css": ".stage { color: #5e5e5e; }\n"
+} -->
+<!--
+  Source of talks/discrete-conformal-maps/ (build: node build.mjs is.src.html ../../..).
+  Generated from the Keynote file by extract.py/writesrc.py, then edited by hand.
+  Lines: class = style (see "styles"), data-x / data-y = left edge and baseline in 1920×1080 slide
+  coordinates, data-m = size of the formulas in the line. Figures: fig/sNN-K.svg = what appears at build step K.
+-->
+
+<section aria-label="Selected Convergence Results">
+  <div class="stage">
+    <p class="ln b36" data-x="98" data-y="973">Tim Reinhardt, 20. April 2022</p>
+    <p class="ln b116t20" data-x="99" data-y="284">Selected Convergence Results</p>
+    <p class="ln b116t20" data-x="99" data-y="398">for Discrete Conformal Maps</p>
+    <p class="ln b55" data-x="99" data-y="485">Independent Studies (Public Talk, TUM)</p>
+    <img class="layer" data-src="fig/s01-0.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Motivation">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Motivation</p>
+    <p class="ln b30" data-x="104" data-y="236"><u>Riemann Mapping Theorem.</u></p>
+    <p class="ln r30" data-x="104" data-y="285" data-m="36.24">Every simply connected region \(\displaystyle U \neq \mathbb{C}\) is biholomorphically equivalent to the unit disk \(\displaystyle \mathbb{E} = \{ z \in \mathbb{C} \colon |z| < 1 \}\).</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s02-0.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Discrete Conformal Equivalence">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Discrete Conformal Equivalence</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="104" data-y="210" data-m="36.24">Consider Euclidean triangulation \(\displaystyle T\) in the plane \(\displaystyle \mathbb{R}^2 \cong \mathbb{C}\) equipped with discrete metric \(\displaystyle l\).</p>
+    <p class="ln r30 fragment" data-fragment-index="2" data-x="104" data-y="253" data-m="36.24">Let \(\displaystyle K \subset \mathbb{C}\) be compact and simply connected (usually: \(\displaystyle K = P\) for a polyhedron \(\displaystyle P\) or \(\displaystyle K = \mathbb{B}_2\)).</p>
+    <p class="ln r30 fragment" data-fragment-index="3" data-x="104" data-y="334" data-m="36.24">Usually define \(\displaystyle T\) by vertices \(\displaystyle V(T) = (\varepsilon \cdot \mathbb{Z}^2) \cap K\) (imagine small \(\displaystyle \varepsilon > 0\) as pixel size)</p>
+    <p class="ln r30 fragment" data-fragment-index="3" data-x="104" data-y="377" data-m="36.24">and \(\displaystyle l_{ij} = |v_i-v_j|\) (for vertices \(\displaystyle v_i \neq v_j\)).</p>
+    <p class="ln ri30 fragment" data-fragment-index="4" data-x="104" data-y="530"><span class="up"><b><u>Definition </u></b></span><u>(discrete conformal equivalence)</u><span class="up"><b><u>.</u></b></span></p>
+    <p class="ln r30 fragment" data-fragment-index="4" data-x="104" data-y="579" data-m="36.24">\(\displaystyle (T,l) \sim (T,\tilde{l})\) if</p>
+    <p class="ln r30 fragment" data-fragment-index="4" data-x="104" data-y="712" data-m="36.24">for some \(\displaystyle u \in \mathbb{R}_{>0}^{V(T)}\).</p>
+    <p class="ln r30 fragment" data-fragment-index="4" data-x="104" data-y="758">(This defines an equivalence relation.)</p>
+    <p class="ln r30 fragment" data-fragment-index="6" data-x="104" data-y="903"><b><u>Proposition </u></b><u>(Bobenko, Pinkall, Springborn)</u><b><u>.</u></b></p>
+    <p class="ln r30 fragment" data-fragment-index="6" data-x="104" data-y="955" data-m="36.24">\(\displaystyle (T,l) \sim (T,\tilde{l})\) if and only if for each interior edge \(\displaystyle ij \in E(T)\): \(\displaystyle \operatorname{lcr}_{ij} = \widetilde{\operatorname{lcr}_{ij}}\).</p>
+    <p class="ln eq fragment" data-fragment-index="4" data-x="177" data-y="640" data-m="36.24" data-kw="194">\(\displaystyle \tilde{l}_{ij} = u_i \cdot u_j \cdot l_{ij}\)</p>
+    <img class="layer fragment" data-fragment-index="6" data-src="fig/s03-0.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="6" data-x="1574" data-y="824" data-m="30" data-kw="9">\(\displaystyle i\)</p>
+    <p class="ln eq fragment" data-fragment-index="6" data-x="1577" data-y="580" data-m="30" data-kw="8">\(\displaystyle j\)</p>
+    <p class="ln eq fragment" data-fragment-index="6" data-x="1393" data-y="705" data-m="30" data-kw="13">\(\displaystyle k\)</p>
+    <p class="ln eq fragment" data-fragment-index="6" data-x="1747" data-y="705" data-m="30" data-kw="22">\(\displaystyle m\)</p>
+    <p class="ln eq fragment" data-fragment-index="6" data-x="1589" data-y="705" data-m="30" data-kw="16" style="color:#ee220c">\(\displaystyle ij\)</p>
+    <p class="ln ri30 fragment" data-fragment-index="5" data-x="979" data-y="531"><span class="up"><b><u>Definition </u></b></span><u>(length-cross-ratio)</u><span class="up"><b><u>.</u></b></span></p>
+    <p class="ln eq fragment" data-fragment-index="6" data-x="979" data-y="640" data-m="36.24" data-kw="170">\(\displaystyle \operatorname{lcr}_{ij} = \frac{l_{im} \, l_{jk}}{l_{mj} \, l_{ki}}\)</p>
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s03-1.svg" alt="">
+    <img class="layer" data-src="fig/s03-2.svg" alt="">
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s03-3.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1514" data-y="428" data-m="30" data-kw="233" style="color:#ee220c">\(\displaystyle V(T) = (\varepsilon \cdot \mathbb{Z}^2) \cap P\)</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1763" data-y="261" data-m="30" data-kw="19" style="color:#000000">\(\displaystyle P\)</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1762" data-y="157" data-m="30" data-kw="68">\(\displaystyle \varepsilon \cdot \mathbb{Z}^2\)</p>
+  </div>
+</section>
+
+<section aria-label="Discrete Conformal Equivalence">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Discrete Conformal Equivalence</p>
+    <p class="ln r30" data-x="104" data-y="322"><b><u>Proposition </u></b><u>(Bobenko, Pinkall, Springborn)</u><b><u>.</u></b></p>
+    <p class="ln r30" data-x="104" data-y="365">Discrete conformal equivalence is invariant under Möbius transformations.</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="104" data-y="474"><b><u>Theorem </u></b><u>(Bücking)</u><b><u>.</u></b></p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="104" data-y="523" data-m="36.24">Let \(\displaystyle f \colon D \rightarrow \mathbb{C}\) be conformal on a region \(\displaystyle D \supset K\). Define vertices \(\displaystyle V_K^\varepsilon := V(\varepsilon \cdot T) \cap K\).</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="104" data-y="570" data-m="36.24">Then for \(\displaystyle \varepsilon > 0\) small enough there exists a unique piecewise linear map \(\displaystyle f^\varepsilon\) defined by its values on \(\displaystyle V_K^\varepsilon\) such that</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="294" data-y="707">(discrete conformal equivalence)</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="312" data-y="778">(uniform convergence of maps)</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="770" data-y="706" data-m="36.24">\(\displaystyle \tilde{l}_{ij} := |f^\varepsilon(v_i)-f^\varepsilon(v_j)|\) and \(\displaystyle l\) are d.c.e.,</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="773" data-y="778" data-m="36.24">\(\displaystyle |f^\varepsilon(x) - f(x)| \leq C(K,f,T) \cdot \varepsilon\) for points \(\displaystyle x\) in the support of \(\displaystyle V_K^\varepsilon\).</p>
+  </div>
+</section>
+
+<section aria-label="Averaging-Algorithm">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Averaging-Algorithm</p>
+    <p class="ln b30t-5 fragment" data-fragment-index="3" data-x="1328" data-y="540"><u>Idea</u></p>
+    <p class="ln r36_9 fragment" data-fragment-index="3" data-x="1328" data-y="597">•</p>
+    <p class="ln r30 fragment" data-fragment-index="3" data-x="1358" data-y="594">Start with some reasonable</p>
+    <p class="ln r30 fragment" data-fragment-index="3" data-x="1362" data-y="630">mapping for initialization</p>
+    <p class="ln r36_9 fragment" data-fragment-index="3" data-x="1328" data-y="686">•</p>
+    <p class="ln r30 fragment" data-fragment-index="3" data-x="1358" data-y="684">“Force” the mapping to fulfil this</p>
+    <p class="ln r30 fragment" data-fragment-index="3" data-x="1370" data-y="720">property via neighbour averaging</p>
+    <p class="ln r36_9 fragment" data-fragment-index="3" data-x="1328" data-y="776">•</p>
+    <p class="ln r30 fragment" data-fragment-index="3" data-x="1358" data-y="773">Schwarz reflection on boundary</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="903" data-y="904" data-m="28.99" data-kw="749">\(\displaystyle f(p) \approx \tfrac{1}{4} \cdot \left( f(p+\big( \begin{smallmatrix} \varepsilon \\ 0\end{smallmatrix} \big)) + f(p+\big( \begin{smallmatrix} 0 \\ \varepsilon \end{smallmatrix} \big) ) + f(p+\big( \begin{smallmatrix} - \varepsilon \\ 0 \end{smallmatrix} \big) )+ f(p+\big( \begin{smallmatrix} 0\\ -\varepsilon \end{smallmatrix} \big) ) \right)\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="91" data-y="904" data-m="28.99" data-kw="676">\(\displaystyle p = \tfrac{1}{4} \cdot \left( (p+\big( \begin{smallmatrix} \varepsilon \\ 0\end{smallmatrix} \big) ) + (p+\big( \begin{smallmatrix} 0 \\ \varepsilon \end{smallmatrix} \big) ) + (p+\big( \begin{smallmatrix} -\varepsilon \\ 0 \end{smallmatrix} \big) )+ (p+\big( \begin{smallmatrix} 0\\ -\varepsilon \end{smallmatrix} \big) ) \right)\)</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s05-0.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="1" data-x="403" data-y="679" data-m="30" data-kw="16" style="color:#006c65">\(\displaystyle p\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="540" data-y="616" data-m="30" data-kw="123">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix}1 \\ 0\end{smallmatrix} \big)\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="201" data-y="616" data-m="30" data-kw="139">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix} -1 \\ 0\end{smallmatrix} \big)\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="371" data-y="781" data-m="30" data-kw="138">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix} 0 \\ -1 \end{smallmatrix} \big)\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="378" data-y="521" data-m="30" data-kw="123">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix} 0 \\ 1 \end{smallmatrix} \big)\)</p>
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s05-1.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="2" data-x="781" data-y="628" data-m="36.24" data-kw="10">\(\displaystyle f\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="979" data-y="672" data-m="30" data-kw="47" style="color:#006c65">\(\displaystyle f(p)\)</p>
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s05-2.svg" alt="">
+    <img class="layer" data-src="fig/s05-3.svg" alt="">
+    <p class="ln eq" data-x="1722" data-y="174" data-m="30" data-kw="110">\(\displaystyle \operatorname{arg}(f^\prime (z))\)</p>
+    <p class="ln eq" data-x="1544" data-y="238" data-m="30" data-kw="42">\(\displaystyle f(z)\)</p>
+    <p class="ln eq" data-x="1538" data-y="143" data-m="30" data-kw="109">\(\displaystyle |f^\prime (z)| \cdot r\)</p>
+    <p class="ln eq" data-x="1133" data-y="228" data-m="30" data-kw="11">\(\displaystyle z\)</p>
+    <p class="ln eq" data-x="1178" data-y="188" data-m="30" data-kw="11">\(\displaystyle r\)</p>
+    <p class="ln eq" data-x="1324" data-y="188" data-m="30" data-kw="21">\(\displaystyle \approx\)</p>
+    <p class="ln r30" data-x="1046" data-y="361">conformal maps are infinitesimal scale-rotations</p>
+    <img class="layer" data-src="fig/s05-4.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Averaging-Algorithm">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Averaging-Algorithm</p>
+    <img class="layer" data-src="fig/s06-0.svg" alt="">
+    <iframe class="clip applet" data-applet="../applets/heptagon.html" style="left:1059.8px;top:242.7px;width:533.2px;height:299.9px" title="Live applet: averaging maps a heptagon onto the disk"></iframe>
+    <img class="layer" data-src="fig/s06-1.svg" alt="">
+    <iframe class="clip applet" data-applet="../applets/disk-to-quad.html" style="left:1059.8px;top:671.2px;width:533.2px;height:299.9px" title="Live applet: the disk mapped onto a quadrilateral; drag its corners"></iframe>
+  </div>
+</section>
+
+<section aria-label="Error Estimates">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Error Estimates</p>
+    <p class="ln b30" data-x="281" data-y="248"><u>angle-based</u></p>
+    <img class="layer" data-src="fig/s07-0.svg" alt="">
+    <p class="ln eq" data-x="100" data-y="464" data-m="30" data-kw="15" style="color:#006c65">\(\displaystyle p\)</p>
+    <p class="ln cr30" data-x="122" data-y="539" data-m="29.64" style="color:#51525a">errcol(\(\displaystyle {\color{#006c65} p}\)):= <b>hue</b>( \(\displaystyle \big| \tfrac{n_1}{|n_1|} \cdot \tfrac{n_2}{|n_2|} \big| + \tfrac{1}{3}\))</p>
+    <p class="ln eq" data-x="460" data-y="452" data-m="30" data-kw="15" style="color:#006c65">\(\displaystyle p\)</p>
+    <p class="ln eq" data-x="578" data-y="417" data-m="20" data-kw="9" style="color:#ee220c">\(\displaystyle ?\)</p>
+    <p class="ln eq" data-x="619" data-y="404" data-m="30" data-kw="24" style="color:#929292">\(\displaystyle n_1\)</p>
+    <p class="ln eq" data-x="559" data-y="355" data-m="30" data-kw="25" style="color:#929292">\(\displaystyle n_2\)</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s07-1.svg" alt="">
+    <p class="ln cb30 fragment" data-fragment-index="1" data-x="858" data-y="473" data-m="29.64" style="color:#51525a">hue<span class="w400">(</span> \(\displaystyle \bullet + \tfrac{1}{3}\)<span class="w400">)</span></p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="763" data-y="610" data-m="29.64" data-kw="15" style="color:#51525a">\(\displaystyle 0\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="1096" data-y="610" data-m="29.64" data-kw="15" style="color:#51525a">\(\displaystyle 1\)</p>
+    <img class="layer fragment" data-fragment-index="5" data-src="fig/s07-2.svg" alt="">
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s07-3.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1453" data-y="362" data-m="30" data-kw="15" style="color:#006c65">\(\displaystyle p\)</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1416" data-y="278" data-m="30" data-kw="15" style="color:#ee220c">\(\displaystyle 1\)</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1484" data-y="264" data-m="30" data-kw="15" style="color:#ee220c">\(\displaystyle 2\)</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1529" data-y="327" data-m="30" data-kw="15" style="color:#ee220c">\(\displaystyle 3\)</p>
+    <p class="ln b30 fragment" data-fragment-index="3" data-x="1070" data-y="250" data-m="36.24">\(\displaystyle \operatorname{lcr}\)<u>-based</u></p>
+    <p class="ln cr30 fragment" data-fragment-index="3" data-x="1238" data-y="537" data-m="29.64" style="color:#51525a">errcol(\(\displaystyle {\color{#006c65} p}\)):= <b>hue</b>(\(\displaystyle \sum_{i=1}^3 |\operatorname{lcr}_i - \widetilde{\operatorname{lcr}_i}| + \tfrac{1}{3}\))</p>
+    <img class="layer fragment" data-fragment-index="4" data-src="fig/s07-4.svg" alt="">
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s07-5.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="A Different Type of Averaging">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">A Different Type of Averaging</p>
+    <img class="layer" data-src="fig/s08-0.svg" alt="">
+    <p class="ln eq" data-x="471" data-y="514" data-m="30" data-kw="16" style="color:#006c65">\(\displaystyle p\)</p>
+    <p class="ln eq" data-x="647" data-y="326" data-m="30" data-kw="123">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix}1 \\ 1\end{smallmatrix} \big)\)</p>
+    <p class="ln eq" data-x="647" data-y="514" data-m="30" data-kw="123">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix}1 \\ 0\end{smallmatrix} \big)\)</p>
+    <p class="ln eq" data-x="384" data-y="326" data-m="30" data-kw="123">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix} 0 \\ 1 \end{smallmatrix} \big)\)</p>
+    <img class="layer" data-src="fig/s08-1.svg" alt="">
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s08-2.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="1" data-x="907" data-y="399" data-m="36.24" data-kw="10">\(\displaystyle f\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="1076" data-y="573" data-m="30" data-kw="100" style="color:#006c65">\(\displaystyle f(p) = a\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="1221" data-y="275" data-m="30" data-kw="15">\(\displaystyle b\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="1030" data-y="380" data-m="30" data-kw="14">\(\displaystyle c\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="1323" data-y="458" data-m="30" data-kw="15">\(\displaystyle d\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="1066" data-y="673" data-m="36.24" data-kw="238">\(\displaystyle ( {\color{#006c65} a} ,b;c,d) \approx -1\)</p>
+    <p class="ln eq" data-x="321" data-y="669" data-m="36.24" data-kw="501">\(\displaystyle ( {\color{#006c65} p} ,p+\big( \begin{smallmatrix} \varepsilon \\ \varepsilon\end{smallmatrix}\big);p+\big( \begin{smallmatrix} 0 \\ \varepsilon\end{smallmatrix}\big),p+\big( \begin{smallmatrix} \varepsilon \\ 0\end{smallmatrix}\big)) = -1\)</p>
+    <p class="ln b30 fragment" data-fragment-index="4" data-x="1053" data-y="820"><u>Difficulties</u></p>
+    <p class="ln r36_9 fragment" data-fragment-index="4" data-x="1053" data-y="877">•</p>
+    <p class="ln r30 fragment" data-fragment-index="4" data-x="1083" data-y="874">CR is Möbius-invariant but Euclidean midpoint is not</p>
+    <p class="ln r36_9 fragment" data-fragment-index="4" data-x="1053" data-y="931">•</p>
+    <p class="ln r30 fragment" data-fragment-index="4" data-x="1083" data-y="928">CR-map may behave unpredictably (especially at</p>
+    <p class="ln r30 fragment" data-fragment-index="4" data-x="1086" data-y="964">acute-angled corners) under Schwarz reflection</p>
+    <p class="ln r36_9 fragment" data-fragment-index="4" data-x="1053" data-y="1020">•</p>
+    <p class="ln r30 fragment" data-fragment-index="4" data-x="1083" data-y="1018">Potentially numerically instable</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1353" data-y="669" data-m="36.24" data-kw="33">\(\displaystyle \Leftrightarrow\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1428" data-y="669" data-m="36.24" data-kw="314">\(\displaystyle {\color{#006c65} f(p) = a}\) \(\displaystyle \approx \tfrac{bc+bd-2cd}{2b-c-d}\)</p>
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s08-3.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="3" data-x="212" data-y="941" data-m="30" data-kw="15" style="color:#006c65">\(\displaystyle p\)</p>
+    <p class="ln r36_9 fragment" data-fragment-index="3" data-x="406" data-y="897">•</p>
+    <p class="ln r30 fragment" data-fragment-index="3" data-x="436" data-y="894" data-m="36.24">Do this for several circles containing \(\displaystyle {\color{#006c65} p}\)</p>
+    <p class="ln r36_9 fragment" data-fragment-index="3" data-x="406" data-y="952">•</p>
+    <p class="ln r30 fragment" data-fragment-index="3" data-x="436" data-y="949">Take Euclidean midpoint</p>
+  </div>
+</section>
+
+<section aria-label="Averaging Combined">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Averaging Combined</p>
+    <iframe class="clip applet" data-applet="../applets/averaging.html" style="left:172.3px;top:154.5px;width:1575.4px;height:886.2px" title="Live applet: dynamic averaging with error colouring"></iframe>
+  </div>
+</section>
+
+<section aria-label="Conclusion">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Conclusion</p>
+    <p class="ln b30" data-x="116" data-y="234"><u>Advantages of Algorithm</u></p>
+    <p class="ln r36_9" data-x="116" data-y="291">•</p>
+    <p class="ln r30" data-x="146" data-y="288">Dynamic Nature</p>
+    <p class="ln r36_9" data-x="116" data-y="344">•</p>
+    <p class="ln r30" data-x="146" data-y="342">View how the map improves at each iteration</p>
+    <iframe class="clip applet" data-applet="../applets/disk-to-quad.html#-1.0,-0.95,2.55,1.05" style="left:925.2px;top:407.6px;width:982.7px;height:552.7px" title="Live applet: the disk mapped onto a quadrilateral; drag its corners"></iframe>
+    <img class="layer" data-src="fig/s10-0.svg" alt="">
+    <p class="ln b30 fragment" data-fragment-index="2" data-x="892" data-y="234"><u>Future Work</u></p>
+    <p class="ln r36_9 fragment" data-fragment-index="2" data-x="892" data-y="291">•</p>
+    <p class="ln r30 fragment" data-fragment-index="2" data-x="922" data-y="288">Characterize “solution spaces” induced by two types of averaging</p>
+    <p class="ln r36_9 fragment" data-fragment-index="2" data-x="892" data-y="344">•</p>
+    <p class="ln r30 fragment" data-fragment-index="2" data-x="922" data-y="342">Work out connection to discrete conformality</p>
+    <p class="ln b80t20 fragment" data-fragment-index="3" data-x="949" data-y="1006">Thank you for listening.</p>
+  </div>
+</section>

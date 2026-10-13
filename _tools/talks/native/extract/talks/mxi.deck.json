@@ -1,0 +1,104 @@
+{
+ "slug": "simple-conformal-maps",
+ "title": "Real-Time Computation of Simple Conformal Maps",
+ "event": "Matrix × Imaginary, Paris",
+ "date": "31 August 2022",
+ "fonts": {
+  "sans": "hn",
+  "mono": "cn"
+ },
+ "slides": {
+  "1": {
+   "videos": [
+    {
+     "src": "../media/screen-recording-2022-08-26-at-18-02-51.pingpong.mp4",
+     "rect": [
+      1171.0,
+      -7.7,
+      847.5,
+      1095.5
+     ],
+     "step": 0,
+     "applet": "../applets/mxi-logo.html",
+     "title": "MATRIX × IMAGINARY logo animation"
+    }
+   ]
+  },
+  "7": {
+   "videos": [
+    {
+     "src": "../media/clip-forces-2.mp4",
+     "rect": [
+      1161.2,
+      765.0,
+      178.0,
+      179.0
+     ],
+     "loop": false
+    }
+   ]
+  },
+  "10": {
+   "videos": [
+    {
+     "src": "../media/screen-recording-2022-08-29-at-12-06-23.mp4",
+     "rect": [
+      1286.2,
+      411.8,
+      582.8,
+      324.7
+     ],
+     "loop": false
+    }
+   ]
+  },
+  "12": {
+   "videos": [
+    {
+     "src": "../media/dynamicnature.mp4",
+     "rect": [
+      1458.8,
+      447.6,
+      830.3,
+      467.0
+     ],
+     "applet": "../applets/disk-to-quad.html#-0.94,-0.95,1.03,1.05",
+     "title": "Live applet: the disk mapped onto a quadrilateral; drag its corners",
+     "frame": [
+      1458.8,
+      447.6,
+      461.2,
+      467.0
+     ]
+    },
+    {
+     "src": "../media/7ecktocirc.mp4",
+     "rect": [
+      1455.3,
+      202.0,
+      454.8,
+      255.8
+     ],
+     "applet": "../applets/heptagon.html",
+     "title": "Live applet: averaging maps a heptagon onto the disk"
+    }
+   ]
+  },
+  "13": {
+   "videos": [
+    {
+     "src": "../media/screen-recording-2022-08-26-at-18-02-51.pingpong.mp4",
+     "rect": [
+      1321.0,
+      -7.7,
+      847.5,
+      1095.5
+     ],
+     "step": 0,
+     "applet": "../applets/mxi-logo.html",
+     "title": "MATRIX × IMAGINARY logo animation"
+    }
+   ]
+  }
+ }
+}

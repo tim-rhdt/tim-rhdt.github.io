@@ -1,0 +1,97 @@
+{
+ "slug": "conformal-maps-gpu",
+ "title": "Approximation of Conformal Mappings on the GPU",
+ "event": "Master’s thesis, TUM",
+ "date": "2023",
+ "fonts": {
+  "sans": "hn",
+  "mono": "cn"
+ },
+ "slides": {
+  "4": {
+   "videos": []
+  },
+  "16": {
+   "videos": [
+    {
+     "src": "../media/clip-forces-2.mp4",
+     "rect": [
+      1496.4,
+      797.0,
+      178.0,
+      179.0
+     ],
+     "loop": false
+    }
+   ]
+  },
+  "20": {
+   "videos": [
+    {
+     "src": "../media/screen-recording-2022-08-29-at-12-06-23.mp4",
+     "rect": [
+      1286.2,
+      411.8,
+      582.8,
+      324.7
+     ],
+     "loop": false
+    }
+   ]
+  },
+  "28": {
+   "videos": [
+    {
+     "src": "../media/dynamicnature.mp4",
+     "rect": [
+      1450.4,
+      325.9,
+      966.0,
+      543.4
+     ],
+     "applet": "../applets/disk-to-quad.html#-0.81,-0.95,0.91,1.05",
+     "title": "Live applet: the disk mapped onto a quadrilateral; drag its corners",
+     "frame": [
+      1450.4,
+      325.9,
+      469.6,
+      543.4
+     ]
+    },
+    {
+     "src": "../media/7ecktocirc.mp4",
+     "rect": [
+      1446.3,
+      40.1,
+      529.1,
+      297.6
+     ],
+     "applet": "../applets/heptagon.html",
+     "title": "Live applet: averaging maps a heptagon onto the disk"
+    }
+   ]
+  }
+ },
+ "edits": [
+  [
+   "<p class=\"ln l48\" data-x=\"688\" data-y=\"1026\">M. C. Escher, Circle Limit III</p>",
+   "<p class=\"ln l48\" data-x=\"688\" data-y=\"1026\">M. C. Escher, Circle Limit III</p>\n    <p class=\"ln note\" data-x=\"543\" data-y=\"552\" style=\"width:834px;text-align:center;color:#929292\">Image not shown online for copyright reasons.</p>"
+  ],
+  [
+   "<section aria-label=\"Some Facts\">",
+   "<section aria-label=\"Appendix\">\n  <div class=\"stage\">\n    <p class=\"ln b116t20\" data-x=\"99\" data-y=\"705\">Appendix</p>\n  </div>\n</section>\n\n<section aria-label=\"Some Facts\">"
+  ],
+  [
+   "\\overline{U} \\rightarrow \\overline{E}",
+   "\\bar{U} \\rightarrow \\bar{E}"
+  ]
+ ],
+ "styles": {
+  "note": [
+   "hn",
+   35,
+   400,
+   false
+  ]
+ }
+}

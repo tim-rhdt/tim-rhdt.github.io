@@ -1,0 +1,75 @@
+{
+ "slug": "discrete-conformal-maps",
+ "title": "Selected Convergence Results for Discrete Conformal Maps",
+ "event": "Public talk, TUM",
+ "date": "20 April 2022",
+ "slides": {
+  "6": {
+   "videos": [
+    {
+     "src": "../media/7ecktocirc.mp4",
+     "rect": [
+      1059.8,
+      242.7,
+      533.2,
+      299.9
+     ],
+     "applet": "../applets/heptagon.html",
+     "title": "Live applet: averaging maps a heptagon onto the disk"
+    },
+    {
+     "src": "../media/circtoquad.mp4",
+     "rect": [
+      1059.8,
+      671.2,
+      533.2,
+      299.9
+     ],
+     "applet": "../applets/disk-to-quad.html",
+     "title": "Live applet: the disk mapped onto a quadrilateral; drag its corners"
+    }
+   ]
+  },
+  "9": {
+   "videos": [
+    {
+     "src": "../media/averagingcombined.mp4",
+     "rect": [
+      172.3,
+      154.5,
+      1575.4,
+      886.2
+     ],
+     "loop": false,
+     "applet": "../applets/averaging.html",
+     "title": "Live applet: dynamic averaging with error colouring"
+    }
+   ]
+  },
+  "10": {
+   "videos": [
+    {
+     "src": "../media/dynamicnature.mp4",
+     "rect": [
+      925.2,
+      407.6,
+      982.7,
+      552.7
+     ],
+     "applet": "../applets/disk-to-quad.html#-1.0,-0.95,2.55,1.05",
+     "title": "Live applet: the disk mapped onto a quadrilateral; drag its corners"
+    }
+   ]
+  }
+ },
+ "fonts": {
+  "sans": "hn",
+  "mono": "cn"
+ },
+ "edits": [
+  [
+   "<p class=\"ln b55\" data-x=\"99\" data-y=\"485\">Independent Studies</p>",
+   "<p class=\"ln b55\" data-x=\"99\" data-y=\"485\">Independent Studies (Public Talk, TUM)</p>"
+  ]
+ ]
+}

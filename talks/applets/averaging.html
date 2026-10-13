@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- From Tim Reinhardt's applet 'Uniformization clean code.html' (CindyJS), with its controls. -->
+<meta charset="UTF-8">
+<title>Dynamic averaging with error indication</title>
+<style type="text/css">
+    html, body {margin: 0px; padding: 0px; background: #fff; overflow: hidden;}
+    /* the applet as recorded for the talk (1024×512 canvas with its controls), scaled to the frame */
+    #page { width: 1260px; transform-origin: 0 0; }
+</style>
+
+     
+<script type="text/javascript" src="cindyjs/Cindy.js"></script>
+<script type="text/javascript" src="cindyjs/CindyGL.js"></script>
+
+<script id="csinit" type="text/x-cindyscript">
+    /* --- INITIALIZATION --- */
+
+    // BASIC SETTINGS AND PARAMETERS
+    it = 2; // Iteration count (2: the averaging runs right away)
+    res = 256; // Resolution of canvases
+    pw = 2/res; // 2 = |BasePt2 - BasePt1| = pixelwidth
+    board = 8; // Coefficient for checkerboard tiling
+    interpolate = true; // Parameter for CindyGL-interpolation
+    mipmap = true; // Parameter for CindyGL-mipmapping
+    Navg = true; // Parameter for choice of averaging
+    CRavg = false; // Parameter for choice of averaging
+    LCRbased = true; // Parameter for error measurement
+    anglebased = false; // Parameter for error measurement
+    noerror = false; // Parameter for error measurement
+
+
+    // ELEMENTARY FUNCTIONS
+    pt2color(z) := ( (z_1, z_2, 0) ); // conversion of a 2D-point to a 3D-RGB-vector
+    color2pt(p) := ( (p_1,p_2) ); // backwards conversion of a 3D-RGB-vector to a 2D-point
+
+    circrefl(p, c, r) := (
+      v = p - c;
+      c + v * (r*r) / (v*v)
+    ); // circular reflection of a point p w.r.t. a circle with center c and radius r
+
+    linerefl(p, s, t) := (
+      n = (s.y-t.y, t.x-s.x);
+      p - ((2*(p-s)*n) / (n*n)) * n
+    ); // line reflection of a point p w.r.t. the line connecting two points s and t
+    
+
+    // CREATION OF CANVASES
+    createimage("checkerboard", res, res); // canvas to draw a checkerboard tiling
+    createimage("preimage", res, res); // canvas to draw the initial shape (= convex shape intersected with the tiling)
+    createimage("codomain", res, res); // canvas which shows the conformally deformed shaped tiling
+    createimage("function", res, res); // canvas to store a mapping from "codomain" to "preimage"
+
+    createimage("test", res, res); // test canvas
+    colorplot(BasePt1, BasePt2, "test", [0.1,13344667.4901,1.0001]);
+
+
+    // INITIALIZATION OF CANVASES
+    colorplot(BasePt1, BasePt2, "checkerboard",
+        p = #;
+        color = [1,0,0,1];
+        if(mod(floor(p.x*board/2)+floor(p.y*board/2),2)==0, color = [0,0,0,1], color = [1,1,1,1]);
+        color
+    ); // creates a checkerboard tiling on all of the "checkerboard" canvas
+
+    colorplot(BasePt1, BasePt2, "preimage",
+        p = #;
+        if( perpendicular(A-B) * (A-p) > 0 &
+            perpendicular(B-C) * (B-p) > 0 &
+            perpendicular(C-D) * (C-p) > 0 &
+            perpendicular(D-A) * (D-p) > 0,
+        imagergba(BasePt1, BasePt2, "checkerboard", p), [0,0,0,0])
+    ); // creates the shape which will be the preimage of the conformal map, i.e. in this case a quadrilateral with a checkerboard tiling inside
+
+    drawimage(interpolate->interpolate, BasePt1, BasePt2, "preimage"); // draws this preimage shape
+
+
+    // INITIALIZATION MAP FOR AVERAGING
+    InitMap = map((0,0),(0,0));
+    InitMap():=(
+    centroid = 0.25*(A+B+C+D);
+    m = point((centroid_1,centroid_2,1));
+   
+    nab = meet(perpendicular(m, join(A,B)),join(A,B));
+    nbc = meet(perpendicular(m, join(B,C)),join(B,C));
+    ncd = meet(perpendicular(m, join(C,D)),join(C,D));
+    nda = meet(perpendicular(m, join(D,A)),join(D,A));
+    scale = min([|m.xy,nab.xy|,|m.xy,nbc.xy|,|m.xy,ncd.xy|,|m.xy,nda.xy|]);
+    
+    InitMap = map(M, M+(1,0), m, m.xy+scale*(1,0)) //TODO: for some reason, the ".xy" is necessary in the last entry
+    );
+    // only works as long as A,B,C,D span a convex quadrilateral!
+    // Idea: map M to center of mass and set radius dependent on are of the quadrilateral
+
+    colorplot(BasePt1, BasePt2, "function",
+         p = #;
+         hom = InitMap*[p_1,p_2,1];
+         pt2color( (hom_1, hom_2)/hom_3 )
+    ); // stores the initial map in the "function" canvas
+
+
+    SchwarzFree(p):= (
+        q = p;
+        if(|p-M|>1, q = circrefl(p,M,1));
+        image = color2pt(imagergb(interpolate->interpolate, BasePt1, BasePt2, "function", q));
+        if(|p-M|>1,
+            valab = perpendicular(A-B)/|perpendicular(A-B)| * (A-image);
+            valbc = perpendicular(B-C)/|perpendicular(B-C)| * (B-image);
+            valcd = perpendicular(C-D)/|perpendicular(C-D)| * (C-image);
+            valda = perpendicular(D-A)/|perpendicular(D-A)| * (D-image);
+            auxvar = min([valab, valbc, valcd, valda]);
+            if( auxvar == valab,
+                image = linerefl(image,A,B),
+            if( auxvar == valbc,
+                image = linerefl(image,B,C),
+            if( auxvar == valcd,
+                image = linerefl(image,C,D),
+            if( auxvar == valda,
+                image = linerefl(image,D,A),
+            ))))
+        );
+        image
+    );
+
+    SchwarzFixed(p):= (
+        q = p;
+        if(|p-M|>1, q = circrefl(p,M,1));
+        image = color2pt(imagergb(interpolate->interpolate, BasePt1, BasePt2, "function", q));
+        if(|p-M|>1,
+            if( 45° <= arctan2(p-M) & arctan2(p-M) < 135°,
+                image = linerefl(image,A,B),
+            if( -45° <= arctan2(p-M) & arctan2(p-M) < 45°,
+                image = linerefl(image,D,A),
+            if( perpendicular(B-C)/|perpendicular(B-C)| * (B-image) <= perpendicular(C-D)/|perpendicular(C-D)| * (C-image),
+                image = linerefl(image,B,C), image = linerefl(image,C,D)
+            )))
+        );
+        image
+    );
+
+    Schwarz(p):= SchwarzFixed(p);
+
+</script>
+
+
+<script>
+function myFunction() {
+    cdy.stop();
+    cdy.evokeCS('InitMap(); colorplot(BasePt1, BasePt2, "function",p = #; hom = InitMap*[p_1,p_2,1]; pt2color( (hom_1, hom_2)/hom_3 )); colorplot(BasePt1, BasePt2,"codomain",p = #; t = imagergb(BasePt1, BasePt2,"function",p); cc1 = imagergba(BasePt1, BasePt2, "preimage", (t_1, t_2)); if(|p|<1, cc1, [0,0,0,0]); ); drawimage(AltPt1, AltPt2,"codomain"); it = 1;')
+    }
+</script>
+
+
+<script id="csmouseclick" type="text/x-cindyscript">
+    it = 2; // Restart averaging process if mouse is clicked
+</script>
+
+
+<script id="csdraw" type="text/x-cindyscript">
+
+    colorplot(BasePt1, BasePt2, "preimage",
+        p = #;
+        if( perpendicular(A-B) * (A-p) > 0 &
+            perpendicular(B-C) * (B-p) > 0 &
+            perpendicular(C-D) * (C-p) > 0 &
+            perpendicular(D-A) * (D-p) > 0,
+        imagergba(BasePt1, BasePt2, "checkerboard", p), [0,0,0,0])
+    );
+    drawimage(interpolate->false, BasePt1, BasePt2, "preimage");
+    // redraws the preimage in each iteration (as corners may be moved)
+
+    // LINEAR INTERPOLATION AVERAGING
+    if(Navg & it>=2,
+    repeat(30,
+        colorplot(BasePt1, BasePt2, "function",
+            p = #;
+            eps = 1 + floor(res/(4*it)); // dynamic version where "length of rubber bands" depends on iteration -> much faster than eps=1
+            
+            (1/8) * pt2color(
+            Schwarz(p+eps*pw*(1,0)) + Schwarz(p+eps*pw*(0,1)) +
+            Schwarz(p+eps*pw*(-1,0)) + Schwarz(p+eps*pw*(0,-1)) +
+            Schwarz(p+eps*pw*(1,1)) + Schwarz(p+eps*pw*(-1,1)) +
+            Schwarz(p+eps*pw*(1,-1)) + Schwarz(p+eps*pw*(-1,-1))
+            ),
+            /*
+            (1/16) * pt2color(
+                Schwarz(p+eps*pw*(1,0)) + Schwarz(p+eps*pw*(-1,0)) + Schwarz(p+eps*pw*(0,1)) + Schwarz(p+eps*pw*(0,-1))+
+                Schwarz(p+eps*pw*(1,1)) + Schwarz(p+eps*pw*(-1,1)) + Schwarz(p+eps*pw*(1,-1)) + Schwarz(p+eps*pw*(-1,-1)) +
+                Schwarz(p+eps*pw*(2,1)) + Schwarz(p+eps*pw*(1,2)) + Schwarz(p+eps*pw*(-1,2)) + Schwarz(p+eps*pw*(-2,1))+
+                Schwarz(p+eps*pw*(-2,-1)) + Schwarz(p+eps*pw*(-1,-2)) + Schwarz(p+eps*pw*(1,-2)) + Schwarz(p+eps*pw*(2,-1))
+            ),*/
+            /*
+            (1/16) * pt2color(
+                //sum(1..16, run, Schwarz(p+eps*pw*gauss(exp(2 * 3.14159265 * complex((0,1)) * run /16))))
+                Schwarz(p+eps*pw*gauss(exp(2 * pi * i * 1 /16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  2/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  3/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  4/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  5/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  6/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  7/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  8/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  9/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  10/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  11/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  12/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  13/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  14/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  15/16)))
+                + Schwarz(p+eps*pw*gauss(exp(2 * pi * i *  16/16)))
+            ),*/
+
+            mipmap->mipmap
+        );
+    );
+    );
+
+    // ALTERNATIVE AVERAGING using cross-ratios
+    if(CRavg & it>=2,
+    repeat(50,
+        colorplot(BasePt1, BasePt2, "function",
+            p = #;
+            eps = 1 + floor(res/(10*it));
+
+            // TODO: make these terms nicer
+            g1 = complex(Schwarz(p+eps*pw*(1,0)));
+            h1 = complex(Schwarz(p+eps*pw*(0,1)));
+            f1 = complex(Schwarz(p+eps*pw*(1,1)));
+            g2 = complex(Schwarz(p+eps*pw*(-1,0)));
+            h2 = complex(Schwarz(p+eps*pw*(0,-1)));
+            f2 = complex(Schwarz(p+eps*pw*(-1,-1)));
+            g3 = complex(Schwarz(p+eps*pw*(-1,0)));
+            h3 = complex(Schwarz(p+eps*pw*(0,1)));
+            f3 = complex(Schwarz(p+eps*pw*(-1,1)));
+            g4 = complex(Schwarz(p+eps*pw*(1,0)));
+            h4 = complex(Schwarz(p+eps*pw*(0,-1)));
+            f4 = complex(Schwarz(p+eps*pw*(1,-1)));
+            e1 = complex(Schwarz(p+eps*pw*(2,0)));
+            e2 = complex(Schwarz(p+eps*pw*(0,2)));
+            e3 = complex(Schwarz(p+eps*pw*(-2,0)));
+            e4 = complex(Schwarz(p+eps*pw*(0,-2)));
+
+            // these w_i are points lying cocircularly in harmonic position with the 3 read off image points f1, f2, ..., respectively
+            w1 = (f1*h1 - 2*h1*g1 + g1*f1) / (2*f1 - h1 - g1);
+            w2 = (f2*h2 - 2*h2*g2 + g2*f2) / (2*f2 - h2 - g2);
+            w3 = (f3*h3 - 2*h3*g3 + g3*f3) / (2*f3 - h3 - g3);
+            w4 = (f4*h4 - 2*h4*g4 + g4*f4) / (2*f4 - h4 - g4);
+            w5 = (e1*f1 - 2*f1*f4 + f4*e1) / (2*e1 - f1 - f4);
+            w6 = (e2*f1 - 2*f1*f3 + f3*e2) / (2*e2 - f1 - f3);
+            w7 = (e3*f2 - 2*f2*f3 + f3*e3) / (2*e3 - f2 - f3);
+            w8 = (e4*f2 - 2*f2*f4 + f4*e4) / (2*e4 - f2 - f4);
+
+            (1/8) * pt2color( gauss(w1)+gauss(w2)+gauss(w3)+gauss(w4)+gauss(w5)+gauss(w6)+gauss(w7)+gauss(w8) ),
+            mipmap->mipmap
+        );
+    );
+    );
+
+
+    colorplot(BasePt1, BasePt2, "codomain",
+        p = #;
+
+        // "image triangulation"
+        funcp00 = imagergb(BasePt1, BasePt2, "function", p+(0,0)/res);
+        funcp01 = imagergb(BasePt1, BasePt2, "function", p+(0,1)/res);
+        funcp11 = imagergb(BasePt1, BasePt2, "function", p+(1,1)/res);
+        funcp10 = imagergb(BasePt1, BasePt2, "function", p+(1,0)/res);
+        funcpm10 = imagergb(BasePt1, BasePt2, "function", p+(-1,0)/res);
+        funcp0m1 = imagergb(BasePt1, BasePt2, "function", p+(0,-1)/res);
+
+        // length cross ratio error
+        // TODO: How to deal with boundary edges?
+        LCR1 = 2 - |funcp11 - funcp00| * |funcp01 - funcpm10| / (|funcp11 - funcp01| * |funcpm10 - funcp00|);
+        LCR2 = 1 - |funcp10 - funcp00| * |funcp11 - funcp01| / (|funcp11 - funcp10| * |funcp01 - funcp00|);
+        LCR3 = 0.5 - |funcp0m1 - funcp00| * |funcp11 - funcp10| / (|funcp10 - funcp0m1| * |funcp11 - funcp00|);
+        LCRerrscale = 2;
+        LCRerrcol = hue(LCRerrscale * (|LCR1| + |LCR2| + |LCR3|) + 1/3);
+
+        imgcol = imagergba(interpolate->interpolate, BasePt1, BasePt2, "preimage", (funcp00_1, funcp00_2));
+
+        // "elementary angle measurement" error
+        n1 = funcp11 - funcp00;
+        n2 = funcp01 - funcp10;
+        n3 = funcp10 - funcp00;
+        n4 = funcp01 - funcp00;
+        angerrorscale = 2;
+        angerror = angerrorscale * (|(n1/|n1|) * (n2/|n2|)| + |(n3/|n3|) * (n4/|n4|)|);
+        angerrcol = hue(angerror + 1/3);
+
+        LCRcoeff = if(LCRbased, 0.5, 0);
+        angcoeff = if(anglebased, 0.5, 0);
+        imgcolorcoeff = if(noerror, 1, 0.5);
+
+        if( |p-M|<1,
+            imgcol * imgcolorcoeff
+            + [LCRerrcol_1,LCRerrcol_2,LCRerrcol_3,1] * LCRcoeff
+            + [angerrcol_1,angerrcol_2,angerrcol_3,1] * angcoeff,
+            [0,0,0,0]),
+        mipmap->mipmap
+    );
+
+    drawimage(interpolate->false, AltPt1, AltPt2, "codomain");
+    it = it + 1;
+    print(it);
+    //print(imagergb(BasePt1, BasePt2, "test", (0,0)));
+</script>
+
+<script type="text/javascript">
+    var cdy = CindyJS({
+        scripts: "cs*",
+        defaultAppearance: {
+            dimDependent: 0.7,
+            fontFamily: "sans-serif",
+            lineSize: 2,
+            pointSize: 5,
+            textsize: 12
+        },
+        angleUnit: "°",
+        "geometry": [
+            {name: "M", type: "Free", pos: [0,0,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "Maux", type: "Free", pos: [3,0,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "Disk", type: "CircleByRadius", args: ["Maux"], radius: 1.0, color: [0.0, 0.0, 0.0], size: 2.0, pinned: true, visible: false},
+            {name: "A", type: "Free", pos: [1,1,1], color: [0.0, 0.0, 0.0], size: 5.0, labeled: false, pinned: false},
+            {name: "B", type: "Free", pos: [-1,1,1], color: [0.0, 0.0, 0.0], size: 5.0, labeled: false, pinned: false},
+            {name: "C", type: "Free", pos: [-1,-1,1], color: [0.0, 0.0, 0.0], size: 5.0, labeled: false, pinned: false},
+            {name: "D", type: "Free", pos: [1,-1,1], color: [0.0, 0.0, 0.0], size: 5.0, labeled: false, pinned: false},
+            {name: "a", type: "Join", args: ["A", "B"], color: [0.0, 0.0, 0.0], size: 2.0, overhang: 1.0, clip: "inci"},
+            {name: "b", type: "Join", args: ["B", "C"], color: [0.0, 0.0, 0.0], size: 2.0, overhang: 1.0, clip: "inci"},
+            {name: "c", type: "Join", args: ["C", "D"], color: [0.0, 0.0, 0.0], size: 2.0, overhang: 1.0, clip: "inci"},
+            {name: "d", type: "Join", args: ["D", "A"], color: [0.0, 0.0, 0.0], size: 2.0, overhang: 1.0, clip: "inci"},
+
+            {name: "BasePt1", type: "Free", pos: [-1,-1,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "BasePt2", type: "Free", pos: [1,-1,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "BasePt3", type: "Free", pos: [1,1,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "BasePt4", type: "Free", pos: [-1,1,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "AltPt1", type: "Free", pos: [2,-1,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "AltPt2", type: "Free", pos: [4,-1,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "AltPt3", type: "Free", pos: [4,1,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "AltPt4", type: "Free", pos: [2,1,1], color: [0.0, 0.0, 0.0], size: 5.0, pinned: true, visible: false},
+            {name: "Border1", type: "Poly", args: ["BasePt1","BasePt2","BasePt3","BasePt4","BasePt1"], color: [0.0, 0.0, 0.0], size: 2.0, pinned: true, visible: true},
+            {name: "Border2", type: "Poly", args: ["AltPt1","AltPt2","AltPt3","AltPt4","AltPt1"], color: [0.0, 0.0, 0.0], size: 2.0, pinned: true, visible: false}
+        ],
+        ports: [{
+            id: "CSCanvas",
+            width: "1024",
+            height: "512",
+            transform: [{visibleRect: [-2, -2, 5, 2]}],
+            background: "rgba(0,0,0,0)"
+        }],
+        csconsole: false,
+        autoplay: true,
+        use: ["CindyGL"]
+    });
+
+        var check = function () {
+                if (document.getElementById("ch1").checked) {cdy.evokeCS("interpolate=true;");}
+                else {cdy.evokeCS("interpolate=false;");}
+                if (document.getElementById("ch2").checked) {cdy.evokeCS("mipmap=true;");}
+                else {cdy.evokeCS("mipmap=false;");}
+            };
+        var checkavg = function () {
+                if (document.getElementById("Navg").checked) {cdy.evokeCS("Navg=true;");}
+                else {cdy.evokeCS("Navg=false;");}
+                if (document.getElementById("CRavg").checked) {cdy.evokeCS("CRavg=true;");}
+                else {cdy.evokeCS("CRavg=false;");}
+            };
+        var checkerr = function () {
+                if (document.getElementById("LCRbased").checked) {cdy.evokeCS("LCRbased=true;");}
+                else {cdy.evokeCS("LCRbased=false;");}
+                if (document.getElementById("anglebased").checked) {cdy.evokeCS("anglebased=true;");}
+                else {cdy.evokeCS("anglebased=false;");}
+                if (document.getElementById("noerror").checked) {cdy.evokeCS("noerror=true;");}
+                else {cdy.evokeCS("noerror=false;");}
+            };
+        var checkrefl = function () {
+                if (document.getElementById("SchwarzFixed").checked) {cdy.evokeCS("Schwarz(p):=SchwarzFixed(p);");}
+                if (document.getElementById("SchwarzFree").checked) {cdy.evokeCS("Schwarz(p):=SchwarzFree(p);");}
+            };
+</script>
+</head>
+
+<body>
+    <div id="page">
+    <div id = "CSCanvas"></div>
+
+    <p style = "margin-left: 20px">
+        <button onclick="cdy.play()" type="button">Play</button>
+        <button onclick="cdy.pause()" type="button">Pause</button>
+        <button onclick="myFunction()" type="button">Stop</button>
+    </p>
+
+    <p style = "margin-left: 20px">
+        <input type="checkbox" id="ch1" onclick="check()" checked>
+        <label for="ch1" style="font-family: sans-serif">linear interpolation</label>
+        <input type="checkbox" id="ch2" onclick="check()" checked>
+        <label for="ch2" style="font-family: sans-serif">mipmap</label>
+    </p>
+
+    <p style = "margin-left: 20px">
+        <input type="radio" id="CRavg" name="averaging" onclick="checkavg()">
+        <label for="CRavg" style="font-family: sans-serif">harmonic position inspired averaging</label>
+        <input type="radio" id="Navg" name="averaging" onclick="checkavg()" checked>
+        <label for="Navg" style="font-family: sans-serif">Neanderthal method</label>
+    </p>
+
+    <p style = "margin-left: 20px">
+        <input type="radio" id="LCRbased" name="errormeasure" onclick="checkerr()" checked>
+        <label for="LCRbased" style="font-family: sans-serif">LCR based error</label>
+        <input type="radio" id="anglebased" name="errormeasure" onclick="checkerr()">
+        <label for="anglebased" style="font-family: sans-serif">angle based error</label>
+        <input type="radio" id="noerror" name="errormeasure" onclick="checkerr()">
+        <label for="noerror" style="font-family: sans-serif">no error colouring</label>
+    </p>
+
+    <p style = "margin-left: 20px">
+        <input type="radio" id="SchwarzFixed" name="Schwarz" onclick="checkrefl()" checked>
+        <label for="SchwarzFixed" style="font-family: sans-serif">Schwarz reflection with 3 fixed points</label>
+        <input type="radio" id="SchwarzFree" name="Schwarz" onclick="checkrefl()">
+        <label for="SchwarzFree" style="font-family: sans-serif">Nearest Schwarz reflection</label>
+    </p>
+
+
+  </div>
+  <script>
+    function fit() { document.getElementById("page").style.zoom = innerWidth / 1260; }
+    addEventListener("resize", fit); fit();
+  </script>
+  <script>
+    // shown inside the talk slides: arrow keys and space keep moving through the slides
+    addEventListener("keydown", function (e) {
+      var R = window.parent !== window && window.parent.Reveal;
+      if (!R) return;
+      if (["ArrowRight", "ArrowDown", "PageDown", " "].indexOf(e.key) >= 0) { R.next(); e.preventDefault(); }
+      else if (["ArrowLeft", "ArrowUp", "PageUp"].indexOf(e.key) >= 0) { R.prev(); e.preventDefault(); }
+    });
+  </script>
+</body>
+</html>

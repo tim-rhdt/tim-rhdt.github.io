@@ -1,0 +1,537 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- From Tim Reinhardt's applet Uniformization_7.html (CindyJS); here only the image disk is shown. -->
+    <meta charset="UTF-8">
+
+    <title>Averaging: heptagon to disk</title>
+    <style type="text/css">
+    html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+    </style>
+
+    <script type="text/javascript" src="cindyjs/Cindy.js"></script>
+    <script type="text/javascript" src="cindyjs/CindyGL.js"></script>
+
+    <script id="csinit" type="text/x-cindyscript">
+    resetclock();
+    it = 1;
+    res = 512;
+    pw = 2/res; // 2 = |P3-Q3| -> larger "function" canvas chosen s.t. this still holds!
+    n = 12; // Density of chess tiling
+    interpolate = true;
+    mipmap = true;
+    Navg = false;
+    CRavg = true;
+    LCRbased = false;
+    angbased = false;
+    noerr = true;
+
+    base = 255;
+    scv = 10;
+    clamp(x) := max(min(x,1),0);
+    comp(u) := (
+            ux = clamp(u_1/scv+.5);
+            uy = clamp(u_2/scv+.5);
+            uxh = floor(ux*base)/base;
+            uyh = floor(uy*base)/base;
+            uxl = floor((ux-uxh)*base*base)/base;
+            uyl = floor((uy-uyh)*base*base)/base;
+            (uxh,uyh,uxl,uyl);
+    );
+    expv(u) := (
+            ur = ((u_1) + (u_3)/base, (u_2) + (u_4)/base, 0, 0);
+            (ur - (.5,.5,0,0)) * scv;
+    );
+
+    createimage("function", 3/2 * res, 3/2 * res);
+    // make function canvas large enough s.t. it does NOT intersect boundary of shape!!
+    // Now: Can choose values like "var=1.337" what had caused massive errors before!
+    createimage("codomain", res, res);
+    createimage("bild", res, res);
+    createimage("preimage", res, res);
+    createimage("test", res, res);
+    // TODO: Understand better how coordinates of the canvases and their "foot points" correlate and how they can be simplified
+
+    pt2color(z) := ( (z_1, z_2, 1) );
+
+    refl(x, c, r) := (
+      v0 = x-c;
+      v1 = v0*(r*r)/(v0*v0);
+      c + v1
+    );
+
+    refll(x, a, b) := (
+      n = (a.y-b.y,b.x-a.x);
+      x - 2*(((x-a)*n)/(n*n))*n
+    );
+
+    colorplot(Q, R, "bild",
+        p = #-(.21,.21);
+        col = [1,0,0,1];
+        if(mod(floor(p.x*n)+floor(p.y*n),2)==0, col = [0,0,0,1], col = [1,1,1,1]);
+        col
+    );
+
+    // Try to test how many digits after comma stored by colorplot
+    /*
+    colorplot(Q, R, "test",
+        p = #;
+        tt = 0.0000000000000000001;
+        //if( |p - Minvis| <= 0.00279, [1,1,1], [0,0,0])
+        if( |p-Minvis|<=1, [tt,1,1], [0,0,0])
+    );
+    */
+
+
+    colorplot(Q, R, "preimage",
+        p = #;
+        if( perpendicular(A.xy-B.xy) * (A.xy-p) >= 0 &
+            perpendicular(B.xy-C.xy) * (B.xy-p) >= 0 &
+            perpendicular(C.xy-D.xy) * (C.xy-p) >= 0 &
+            perpendicular(D.xy-E.xy) * (D.xy-p) >= 0 &
+            perpendicular(E.xy-F.xy) * (E.xy-p) >= 0 &
+            perpendicular(F.xy-G.xy) * (F.xy-p) >= 0 &
+            perpendicular(G.xy-A.xy) * (G.xy-p) >= 0,
+        imagergba(Q, R, "bild", p), [0,0,0,0])
+    );
+    drawimage(interpolate->interpolate, Q, R, "preimage");
+
+    Maux = (1/7)*(A+B+C+D+E+F+G);
+    lab = cross(A,B);
+    lbc = cross(B,C);
+    lcd = cross(C,D);
+    lde = cross(D,E);
+    lef = cross(E,F);
+    lfg = cross(F,G);
+    lga = cross(G,A);
+    raux1 = min([|lab*Maux.homog|/|sqrt((lab_1)^2+(lab_2)^2)|,
+                |lbc*Maux.homog|/|sqrt((lbc_1)^2+(lbc_2)^2)|,
+                |lcd*Maux.homog|/|sqrt((lcd_1)^2+(lcd_2)^2)|,
+                |lde*Maux.homog|/|sqrt((lde_1)^2+(lde_2)^2)|,
+                |lef*Maux.homog|/|sqrt((lef_1)^2+(lef_2)^2)|,
+                |lfg*Maux.homog|/|sqrt((lfg_1)^2+(lfg_2)^2)|,
+                |lga*Maux.homog|/|sqrt((lga_1)^2+(lga_2)^2)|]);
+    raux2 = max([|lab*Maux.homog|/|sqrt((lab_1)^2+(lab_2)^2)|,
+                |lbc*Maux.homog|/|sqrt((lbc_1)^2+(lbc_2)^2)|,
+                |lcd*Maux.homog|/|sqrt((lcd_1)^2+(lcd_2)^2)|,
+                |lde*Maux.homog|/|sqrt((lde_1)^2+(lde_2)^2)|,
+                |lef*Maux.homog|/|sqrt((lef_1)^2+(lef_2)^2)|,
+                |lfg*Maux.homog|/|sqrt((lfg_1)^2+(lfg_2)^2)|,
+                |lga*Maux.homog|/|sqrt((lga_1)^2+(lga_2)^2)|]);
+    raux3 = max([|Maux-A|,|Maux-B|,|Maux-C|,|Maux-D|]);
+    AMAP = map(M, M+(1,0), M+(0,1), Maux, Maux+raux1*(1,0), Maux+raux1*(0,1)); //Alternativ: raux2, raux3
+    //Das funktioniert nur solange A,B,C,D ein KONVEXES Viereck aufspannen!
+    //TODO: Use Bücking exponent-t-center projective transformation as AMAP
+
+    colorplot(Q2, R2, "function",
+         p = #;
+         hom = AMAP*[p_1,p_2,1];
+         pt2color( (hom_1, hom_2)/hom_3 )
+    );
+
+//TODO: Das stimmt so nicht!? Mehrere Spiegelungen möglich!?
+read(p) := (
+    q = p;
+    if(|p-M|>1, q = refl(p,M,1));
+    imagept = imagergb(interpolate->interpolate, Q2, R2, "function", q);
+    ipt = (imagept_1, imagept_2)/imagept_3;
+    if(|p-M|>1,
+        valab = perpendicular(A.xy-B.xy) * (A.xy-ipt);
+        valbc = perpendicular(B.xy-C.xy) * (B.xy-ipt);
+        valcd = perpendicular(C.xy-D.xy) * (C.xy-ipt);
+        valde = perpendicular(D.xy-E.xy) * (D.xy-ipt);
+        valef = perpendicular(E.xy-F.xy) * (E.xy-ipt);
+        valfg = perpendicular(F.xy-G.xy) * (F.xy-ipt);
+        valga = perpendicular(G.xy-A.xy) * (G.xy-ipt);
+        auxvar = min([valab, valbc, valcd, valde, valef, valfg, valga]);
+
+        if( auxvar == valab,
+            ipt = refll(ipt,A.xy,B.xy),
+        if( auxvar == valbc,
+            ipt = refll(ipt,B.xy,C.xy),
+        if( auxvar == valcd,
+            ipt = refll(ipt,C.xy,D.xy),
+        if( auxvar == valde,
+            ipt = refll(ipt,D.xy,E.xy),
+        if( auxvar == valef,
+            ipt = refll(ipt,E.xy,F.xy),
+        if( auxvar == valfg,
+            ipt = refll(ipt,F.xy,G.xy),
+        if( auxvar == valga,
+            ipt = refll(ipt,G.xy,A.xy)
+        )))))))
+    );
+
+    pt2color(ipt)
+);
+</script>
+
+
+<script>
+function myFunction() {
+    cdy.stop();
+    cdy.evokeCS('colorplot(Q2, R2, "function",p = #; hom = AMAP*[p_1,p_2,1]; pt2color( (hom_1, hom_2)/hom_3 )); colorplot(Q3, R3,"codomain",p = #; t = imagergb(Q2, R2,"function",p); cc1 = imagergba(Q, R, "preimage", (t_1, t_2)); if(|p|<=1, cc1, [0,0,0,0]); ); drawimage(Q3, R3,"codomain"); it = 1; list = []; resetclock();')
+    }
+</script>
+
+<script id="cskeytyped" type="text/x-cindyscript">
+            list=list++[key()];
+</script>
+<script id="csmousedown" type="text/x-cindyscript">
+            it = 2;
+</script>
+
+
+<script id="csdraw" type="text/x-cindyscript">
+//Switch
+//WA.x = 5.8;
+//WA.y = round(max(0,min(1,WA.y*2))) - .5;
+//errswitch = WA.y + .5;
+//draw((5.8,0.5),(5.8,-0.5),size->1,color->(1,1,1));
+//drawtext((5.8,0.6),"LCR-based",size->10,color->(1,1,1),align->"center");
+//drawtext((5.8,-0.6),"angle-based",size->10,color->(1,1,1),align->"center");
+
+//colorplot((0,-2),(2,-2),"test",
+//        p = #;
+//        hue(p.x/2.35 + 1/3)
+//);
+//drawimage((0,-2),(2,-2),"test");
+
+colorplot(Q, R, "preimage",
+    p = #;
+    if( perpendicular(A.xy-B.xy) * (A.xy-p) >= 0 &
+        perpendicular(B.xy-C.xy) * (B.xy-p) >= 0 &
+        perpendicular(C.xy-D.xy) * (C.xy-p) >= 0 &
+        perpendicular(D.xy-E.xy) * (D.xy-p) >= 0 &
+        perpendicular(E.xy-F.xy) * (E.xy-p) >= 0 &
+        perpendicular(F.xy-G.xy) * (F.xy-p) >= 0 &
+        perpendicular(G.xy-A.xy) * (G.xy-p) >= 0,
+    imagergba(Q, R, "bild", p), [0,0,0,0])
+);
+drawimage(interpolate->interpolate, Q, R, "preimage");
+
+if(Navg & it>=2,
+repeat(50,
+colorplot(Q2, R2,"function",
+        p = #;
+        //var = 2 + 2/seconds();
+        var = 1 + floor(res/(10*it));
+        //var = 1;
+
+        (1/8)*(
+          read(p+var*pw*(1,0)) + read(p+var*pw*(0,1)) +
+          read(p+var*pw*(-1,0)) + read(p+var*pw*(0,-1)) +
+          read(p+var*pw*(1,1)) + read(p+var*pw*(-1,1)) +
+          read(p+var*pw*(1,-1)) + read(p+var*pw*(-1,-1))
+        ),
+        /*
+            (1/4)*(
+            read(p+var*pw*(1,0)) + read(p+var*pw*(0,1)) +
+            read(p+var*pw*(-1,0)) + read(p+var*pw*(0,-1))
+        ),*/
+      mipmap->mipmap
+        );
+        //Apply Möbius transformation after each step -> does not work at all...
+        /*
+        colorplot(Q2, R2, "function",
+            p = #;
+            fv = read((5,0)); //"v = (5,0)" -> fv = image point
+            cfv = (fv_1 + i*fv_2)/|fv|; //as complex number and projected onto unit circle
+            matA = [[-1, 0],[0, - cfv]]; //matrix for Möbius transformation mapping 0->0, cfv->1, inf->inf
+            helppt = matA * (p.xy-(4,0)) + (4,0); // CP1 image point, translations for coord reasons
+            helpc = helppt_1 / helppt_2; // C image point
+            read( (re(helpc), im(helpc)) )
+        );*/
+);
+);
+
+if(CRavg & it>=2,
+repeat(50,
+colorplot(Q2, R2,"function",
+        p = #;
+        var = 1 + floor(res/(10*it)); // corresponds to "radius" of the involved circles
+        //var = 1;
+
+        //TODO: make those terms nicer!!
+
+        ga = read(p+var*pw*(1,0))_1     + i*read(p+var*pw*(1,0))_2;
+        ha = read(p+var*pw*(0,1))_1     + i*read(p+var*pw*(0,1))_2;
+        fa = read(p+var*pw*(1,1))_1     + i*read(p+var*pw*(1,1))_2;
+        gb = read(p+var*pw*(-1,0))_1    + i*read(p+var*pw*(-1,0))_2;
+        hb = read(p+var*pw*(0,-1))_1    + i*read(p+var*pw*(0,-1))_2;
+        fb = read(p+var*pw*(-1,-1))_1   + i*read(p+var*pw*(-1,-1))_2;
+        gc = read(p+var*pw*(-1,0))_1    + i*read(p+var*pw*(-1,0))_2;
+        hc = read(p+var*pw*(0,1))_1     + i*read(p+var*pw*(0,1))_2;
+        fc = read(p+var*pw*(-1,1))_1    + i*read(p+var*pw*(-1,1))_2;
+        gd = read(p+var*pw*(1,0))_1     + i*read(p+var*pw*(1,0))_2;
+        hd = read(p+var*pw*(0,-1))_1    + i*read(p+var*pw*(0,-1))_2;
+        fd = read(p+var*pw*(1,-1))_1    + i*read(p+var*pw*(1,-1))_2;
+        ea = read(p+var*pw*(2,0))_1     + i*read(p+var*pw*(2,0))_2;
+        eb = read(p+var*pw*(0,2))_1     + i*read(p+var*pw*(0,2))_2;
+        ec = read(p+var*pw*(-2,0))_1    + i*read(p+var*pw*(-2,0))_2;
+        ed = read(p+var*pw*(0,-2))_1    + i*read(p+var*pw*(0,-2))_2;
+        sc = read(p+var*pw*(-1,sqrt(3)))_1      + i*read(p+var*pw*(-1,sqrt(3)))_2;
+        sd = read(p+var*pw*(-1,-sqrt(3)))_1     + i*read(p+var*pw*(-1,-sqrt(3)))_2;
+        se = read(p+var*pw*(1,sqrt(3)))_1       + i*read(p+var*pw*(1,sqrt(3)))_2;
+        sf = read(p+var*pw*(1,-sqrt(3)))_1      + i*read(p+var*pw*(1,-sqrt(3)))_2;
+
+        // These w_i are points lying cocircularly in harmonic position with the 3 read off image points fa, fb, ..., respectively
+        wa = (fa*ha - 2*ha*ga + ga*fa)/(2*fa - ha - ga);
+        wb = (fb*hb - 2*hb*gb + gb*fb)/(2*fb - hb - gb);
+        wc = (fc*hc - 2*hc*gc + gc*fc)/(2*fc - hc - gc);
+        wd = (fd*hd - 2*hd*gd + gd*fd)/(2*fd - hd - gd);
+        we = (ea*fa - 2*fa*fd + fd*ea)/(2*ea - fa - fd);
+        wf = (eb*fa - 2*fa*fc + fc*eb)/(2*eb - fa - fc);
+        wg = (ec*fb - 2*fb*fc + fc*ec)/(2*ec - fb - fc);
+        wh = (ed*fb - 2*fb*fd + fd*ed)/(2*ed - fb - fd);
+
+        // Determinante prüfen, um korrekte Orientierung zu bestimmen
+        if( det([[re(ea),re(sc),re(sd)],[im(ea),im(sc),im(sd)],[1,1,1]]) >= 0,
+            wi = (2*ea*sc + i*(i+sqrt(3))*ea*sd + (-1-i*sqrt(3))*sc*sd)/((1+i*sqrt(3))*ea + (1-i*sqrt(3))*sc - 2*sd),
+            wi = (2*ea*sd + i*(i+sqrt(3))*ea*sc + (-1-i*sqrt(3))*sd*sc)/((1+i*sqrt(3))*ea + (1-i*sqrt(3))*sd - 2*sc)
+        );
+        if( det([[re(ec),re(se),re(sf)],[im(ec),im(se),im(sf)],[1,1,1]]) >= 0,
+            wj = (2*ec*se + i*(i+sqrt(3))*ec*sf + (-1-i*sqrt(3))*se*sf)/((1+i*sqrt(3))*ec + (1-i*sqrt(3))*se - 2*sf),
+            wj = (2*ec*sf + i*(i+sqrt(3))*ec*se + (-1-i*sqrt(3))*sf*se)/((1+i*sqrt(3))*ec + (1-i*sqrt(3))*sf - 2*se)
+        );
+        // wi und wj: DV von Mittelpunkt eines gleichseitigen Dreiecks mit Eckpunkten
+
+        if( det([[re(wa),re(wb),re(wc)],[im(wa),im(wb),im(wc)],[1,1,1]]) >= 0,
+            za = (2*wa*wb + i*(i+sqrt(3))*wa*wc + (-1-i*sqrt(3))*wb*wc)/((1+i*sqrt(3))*wa + (1-i*sqrt(3))*wb - 2*wc),
+            za = (2*wa*wc + i*(i+sqrt(3))*wa*wb + (-1-i*sqrt(3))*wc*wb)/((1+i*sqrt(3))*wa + (1-i*sqrt(3))*wc - 2*wb)
+        );
+        if( det([[re(wd),re(we),re(wf)],[im(wd),im(we),im(wf)],[1,1,1]]) >= 0,
+            zb = (2*wd*we + i*(i+sqrt(3))*wd*wf + (-1-i*sqrt(3))*we*wf)/((1+i*sqrt(3))*wd + (1-i*sqrt(3))*we - 2*wf),
+            zb = (2*wd*wf + i*(i+sqrt(3))*wd*we + (-1-i*sqrt(3))*wf*we)/((1+i*sqrt(3))*wd + (1-i*sqrt(3))*wf - 2*we)
+        );
+        if( det([[re(wg),re(wh),re(wi)],[im(wg),im(wh),im(wi)],[1,1,1]]) >= 0,
+            zc = (2*wg*wh + i*(i+sqrt(3))*wg*wi + (-1-i*sqrt(3))*wh*wi)/((1+i*sqrt(3))*wg + (1-i*sqrt(3))*wh - 2*wi),
+            zc = (2*wg*wi + i*(i+sqrt(3))*wg*wh + (-1-i*sqrt(3))*wi*wh)/((1+i*sqrt(3))*wg + (1-i*sqrt(3))*wi - 2*wh)
+        );
+        if( det([[re(za),re(zb),re(zc)],[im(za),im(zb),im(zc)],[1,1,1]]) >= 0,
+            final = (2*za*zb + i*(i+sqrt(3))*za*zc + (-1-i*sqrt(3))*zb*zc)/((1+i*sqrt(3))*za + (1-i*sqrt(3))*zb - 2*zc),
+            final = (2*zb*za + i*(i+sqrt(3))*zb*zc + (-1-i*sqrt(3))*za*zc)/((1+i*sqrt(3))*zb + (1-i*sqrt(3))*za - 2*zc)
+        );
+
+        //ipt = 1/2 * (re(wi+wj),im(wi+wj));
+
+        //TODO: Try CPP and APP interpolation!!
+        //TODO: After each iteration, apply Möbius trafo to fix 3 degrees of freedom!!
+
+        //ipt = (1/4)*(
+        //    (re(za),im(za)) + (re(zb),im(zb)) + (re(zc),im(zc)) + (re(wi),im(wi))
+        //);
+
+        ipt = (1/8)*(
+            (re(wa),im(wa)) + (re(wb),im(wb)) +
+            (re(wc),im(wc)) + (re(wd),im(wd)) +
+            (re(we),im(we)) + (re(wf),im(wf)) +
+            (re(wg),im(wg)) + (re(wh),im(wh)) //+ (re(wi),im(wi))
+        );
+
+
+        pt2color(ipt),
+        mipmap->mipmap
+    );
+    /* //Apply Möbius transformation after each step -> does not work at all...
+    colorplot(Q2, R2, "function",
+        p = #;
+        fv = read((5,0)); //"v = (5,0)" -> fv = image point
+        cfv = (fv_1 + i*fv_2)/|fv|; //as complex number and projected onto unit circle
+        matA = [[-1, 0],[0, - cfv]]; //matrix for Möbius transformation
+        helppt = matA * p.xy; // CP1 image point
+        helpc = helppt_1 / helppt_2; // C image point
+        read( (re(helpc), im(helpc)) )
+    ); */
+);
+);
+
+
+// Make triangular lattice like that:
+//  0----0----0
+//  |  / 1  2 |
+//  | /  | /  |
+//  0----p--3-0
+//  |  / |  / |
+//  | /  | /  |
+//  0----0----0
+// => if p is not on boundary: p contained in 6 inner edges
+// LCR actually works on edges, not on vertices:
+// Add absolute values of "LCR-differences" for three edges in upper right corner
+
+
+colorplot(Q3, R3, "codomain",
+    p = #;
+
+    // "image triangulation"
+
+    funcp00 = imagergb(Q2, R2, "function", p+(0,0)/res);
+    funcp01 = imagergb(Q2, R2, "function", p+(0,1)/res);
+    funcp11 = imagergb(Q2, R2, "function", p+(1,1)/res);
+    funcp10 = imagergb(Q2, R2, "function", p+(1,0)/res);
+    funcpm10 = imagergb(Q2, R2, "function", p+(-1,0)/res);
+    funcp0m1 = imagergb(Q2, R2, "function", p+(0,-1)/res);
+
+/*
+    funcp00 = read(p+(0,0)/res);
+    funcp01 = read(p+(0,1)/res);
+    funcp11 = read(p+(1,1)/res);
+    funcp10 = read(p+(1,0)/res);
+    funcpm10 = read(p+(-1,0)/res);
+    funcp0m1 = read(p+(0,-1)/res);
+*/
+
+    // length cross ratio error
+    // TODO: How to deal with boundary edges? -> Not really important since "mesh" goes on after circle boundary
+    LCR1 = sqrt(2)*sqrt(2) - |funcp11 - funcp00| * |funcp01 - funcpm10| / (|funcp11 - funcp01| * |funcpm10 - funcp00|);
+    LCR2 = 1 - |funcp10 - funcp00| * |funcp11 - funcp01| / (|funcp11 - funcp10| * |funcp01 - funcp00|);
+    LCR3 = 1/(sqrt(2)*sqrt(2)) - |funcp0m1 - funcp00| * |funcp11 - funcp10| / (|funcp10 - funcp0m1| * |funcp11 - funcp00|);
+    var2 = 1; // raise it to "look at precision of LCR-error"
+    LCRerrcol = hue(var2*(|LCR1| + |LCR2| + |LCR3|) + 1/3);
+    imgcol = imagergba(interpolate->interpolate, Q, R, "preimage", (funcp00_1, funcp00_2));
+
+    // "elementary angle measurement" error
+    n1 = funcp11 - funcp00;
+    n2 = funcp01 - funcp10;
+    angerror = (n1/|n1|) * (n2/|n2|);
+    angerrcol = hue(|angerror| + 1/3);
+
+    LCRcoeff = if(LCRbased, 0.5, 0);
+    angcoeff = if(angbased, 0.5, 0);
+    imgcolcoeff = if(noerr, 1, 0.5);
+
+    if( |p-M|<=1,
+        imgcol * imgcolcoeff
+        + [LCRerrcol_1,LCRerrcol_2,LCRerrcol_3,1] * LCRcoeff
+        + [angerrcol_1,angerrcol_2,angerrcol_3,1] * angcoeff,
+        [0,0,0,0]),
+    mipmap->mipmap
+);
+
+
+drawimage(interpolate->interpolate, Q3, R3,"codomain");
+
+//How to interpret this value?
+/*
+print(format(
+        read(M)
+        - (1/8)*(
+          read(M+pw*(1,0)) + read(M+pw*(0,1)) +
+          read(M+pw*(-1,0)) + read(M+pw*(0,-1)) +
+          read(M+pw*(1,1)) + read(M+pw*(-1,1)) +
+          read(M+pw*(1,-1)) + read(M+pw*(-1,-1))),
+      20)
+    );
+    */
+//print(format(imagergb(Q, R, "test", Minvis), 20));
+//print(format(0.000000000000000002/0.000000001, 20));
+//print(imagergb(Q2, R2, "function", M);
+it = it + 1;
+print(it);
+</script>
+
+<script type="text/javascript">
+    var VIEW = /^#-?[\d.]+(,-?[\d.]+){3}$/.test(location.hash) ? location.hash.slice(1).split(",").map(Number) : [2.151, -1.04, 5.849, 1.04];
+    var cdy = CindyJS({
+        scripts: "cs*",
+        defaultAppearance: {
+            dimDependent: 0.7,
+            fontFamily: "sans-serif",
+            lineSize: 1,
+            pointSize: 5,
+            textsize: 12
+        },
+        angleUnit: "°",
+        "geometry": [
+            {name: "Minvis", type: "Free", pos: [0,0,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "M", type: "Free", pos: [4,0,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "IO", type: "Free", pos: [1,0,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "I1", type: "Free", pos: [0,1,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "I2", type: "Free", pos: [-1,0,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "I3", type: "Free", pos: [0,-1,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "AuxCirc", type: "CircleByRadius", color: [0.0, 0.0, 0.0], radius: 1.0, args: ["Minvis"], size: 2, pinned: true, visible: true},
+            {name: "Disk", type: "CircleByRadius", color: [0.0, 0.0, 0.0], radius: 1.0, args: ["M"], size: 2, pinned: true},
+            {name: "A", type: "Free", pos: [0.5,0.3,1], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            {name: "B", type: "Free", pos: [0.2,0.7,1], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            {name: "C", type: "Free", pos: [-0.4,0.5,1], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            {name: "D", type: "Free", pos: [-0.6,-0.3,1], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            {name: "E", type: "Free", pos: [-0.5,-0.6,1], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            {name: "F", type: "Free", pos: [0.1,-0.6,1], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            {name: "G", type: "Free", pos: [0.6,-0.2,1], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            //{name: "A", type: "Free", pos: [1,1,1.4142135624], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            //{name: "B", type: "Free", pos: [-1,1,1.4142135624], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            //{name: "C", type: "Free", pos: [-1,-1,1.4142135624], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            //{name: "D", type: "Free", pos: [1,-1,1.4142135624], color: [1.0, 0.0, 0.0], labeled: false, size: 4.0, pinned: false},
+            {name: "a", type: "Join", color: [0.0, 0.0, 0.0], args: ["A", "B"], overhang: 1.0, clip: "inci"},
+            {name: "b", type: "Join", color: [0.0, 0.0, 0.0], args: ["B", "C"], overhang: 1.0, clip: "inci"},
+            {name: "c", type: "Join", color: [0.0, 0.0, 0.0], args: ["C", "D"], overhang: 1.0, clip: "inci"},
+            {name: "d", type: "Join", color: [0.0, 0.0, 0.0], args: ["D", "E"], overhang: 1.0, clip: "inci"},
+            {name: "e", type: "Join", color: [0.0, 0.0, 0.0], args: ["E", "F"], overhang: 1.0, clip: "inci"},
+            {name: "f", type: "Join", color: [0.0, 0.0, 0.0], args: ["F", "G"], overhang: 1.0, clip: "inci"},
+            {name: "g", type: "Join", color: [0.0, 0.0, 0.0], args: ["G", "A"], overhang: 1.0, clip: "inci"},
+            {name: "Q", type: "Free", pos: [-1,-1,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "R", type: "Free", pos: [1,-1,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "Q2", type: "Free", pos: [2.5,-1.5,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "R2", type: "Free", pos: [5.5,-1.5,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "Q3", type: "Free", pos: [3,-1,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "R3", type: "Free", pos: [5,-1,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "S", type: "Free", pos: [-1,1,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            {name: "T", type: "Free", pos: [1,1,1], color: [0.0, 1.0, 0.0], labeled: true, size: 4.0, pinned: true, visible: false},
+            //{name: "D", type: "Meet", color: [1.0, 1.0, 1.0], args: ["a", "g"], labeled: true, size: 4.0}
+            //{name: "K", type: "PointOnLine", pos: [4.0, 1.2222222222222225, 0.5555555555555556], color: [1.0, 0.0, 0.0], args: ["a"], labeled: true, size: 4.0, printname: "D'"}
+            //{name: "WA", type: "Free", pos: [5.8,0.5], size: 5, color: [1,1,1], narrow: 45}
+        ],
+        ports: [
+        {
+            id: "CSCanvas",
+            fill: "window",
+            transform: [{ visibleRect: VIEW }],
+            background: "rgba(0,0,0,0)"//"rgb(168,176,192)"
+        }
+        ],
+        csconsole: false,
+        autoplay: true,
+        use: ["CindyGL"],
+    });
+
+        var check = function () {
+                if (document.getElementById("interpol").checked) {cdy.evokeCS("interpolate=true;");}
+                else {cdy.evokeCS("interpolate=false;");}
+                if (document.getElementById("ch2").checked) {cdy.evokeCS("mipmap=true;");}
+                else {cdy.evokeCS("mipmap=false;");}
+            };
+        var checkavg = function () {
+                if (document.getElementById("Navg").checked) {cdy.evokeCS("Navg=true;");}
+                else {cdy.evokeCS("Navg=false;");}
+                if (document.getElementById("CRavg").checked) {cdy.evokeCS("CRavg=true;");}
+                else {cdy.evokeCS("CRavg=false;");}
+            };
+        var checkerr = function () {
+                if (document.getElementById("LCRbased").checked) {cdy.evokeCS("LCRbased=true;");}
+                else {cdy.evokeCS("LCRbased=false;");}
+                if (document.getElementById("angbased").checked) {cdy.evokeCS("angbased=true;");}
+                else {cdy.evokeCS("angbased=false;");}
+                if (document.getElementById("noerr").checked) {cdy.evokeCS("noerr=true;");}
+                else {cdy.evokeCS("noerr=false;");}
+            };
+    </script>
+
+
+</head>
+
+<body>
+    <div id="CSCanvas"></div>
+
+  <script>
+    // shown inside the talk slides: arrow keys and space keep moving through the slides
+    addEventListener("keydown", function (e) {
+      var R = window.parent !== window && window.parent.Reveal;
+      if (!R) return;
+      if (["ArrowRight", "ArrowDown", "PageDown", " "].indexOf(e.key) >= 0) { R.next(); e.preventDefault(); }
+      else if (["ArrowLeft", "ArrowUp", "PageUp"].indexOf(e.key) >= 0) { R.prev(); e.preventDefault(); }
+    });
+  </script>
+</body>
+
+</html>

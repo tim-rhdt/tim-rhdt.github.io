@@ -1,0 +1,226 @@
+<!-- deck {
+  "slug": "simple-conformal-maps",
+  "title": "Real-Time Computation of Simple Conformal Maps",
+  "event": "Matrix × Imaginary, Paris",
+  "date": "31 August 2022",
+  "styles": {
+    "b35": ["hn", 35.0, 700, false],
+    "b36": ["hn", 36.0, 700, false],
+    "b55": ["hn", 55.0, 700, false],
+    "b84_5t20": ["hn", 84.53, 700, false, -0.02],
+    "b85t20": ["hn", 85.0, 700, false, -0.02],
+    "eq": ["hn", 0, 400, false],
+    "r24": ["hn", 24.0, 400, false],
+    "r30": ["hn", 30.0, 400, false],
+    "r35": ["hn", 35.0, 400, false],
+    "r43": ["hn", 43.05, 400, false],
+    "ri35": ["hn", 35.0, 400, true]
+  },
+  "css": ".stage { color: #5e5e5e; }\n"
+} -->
+<!--
+  Source of talks/simple-conformal-maps/ (build: node build.mjs mxi.src.html ../../..).
+  Generated from the Keynote file by extract.py/writesrc.py, then edited by hand.
+  Lines: class = style (see "styles"), data-x / data-y = left edge and baseline in 1920×1080 slide
+  coordinates, data-m = size of the formulas in the line. Figures: fig/sNN-K.svg = what appears at build step K.
+-->
+
+<section aria-label="Real-Time">
+  <div class="stage">
+    <p class="ln b36" data-x="99" data-y="921">Tim Reinhardt, 31. August 2022.</p>
+    <p class="ln b36" data-x="99" data-y="965">Joint work with Jürgen Richter-Gebert and Aaron Montag.</p>
+    <p class="ln b84_5t20" data-x="99" data-y="148">Real-Time</p>
+    <p class="ln b84_5t20" data-x="99" data-y="230">Computation of Simple</p>
+    <p class="ln b84_5t20" data-x="99" data-y="312">Conformal Maps</p>
+    <p class="ln b55" data-x="99" data-y="403">Matrix × Imaginary 2022</p>
+    <img class="layer" data-src="fig/s01-0.svg" alt="">
+    <iframe class="clip applet" data-applet="../applets/mxi-logo.html" style="left:1171px;top:-7.7px;width:847.5px;height:1095.5px" title="MATRIX × IMAGINARY logo animation"></iframe>
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s01-1.svg" alt="">
+    <img class="layer" data-src="fig/s01-2.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Motivation">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Motivation</p>
+    <p class="ln r35" data-x="104" data-y="341">Hyperbolic symmetry groups.</p>
+    <img class="layer" data-src="fig/s02-0.svg" alt="">
+    <p class="ln r35 fragment" data-fragment-index="1" data-x="104" data-y="643"><b>Key question. </b>How to transform fundamental cells of symmetry?</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s02-1.svg" alt="">
+    <p class="ln r24 fragment" data-fragment-index="1" data-x="560" data-y="828">conformal</p>
+  </div>
+</section>
+
+<section aria-label="Motivation">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">Motivation</p>
+    <img class="layer" data-src="fig/s03-0.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Why Conformal?">
+  <div class="stage">
+    <img class="layer" data-src="fig/s04-0.svg" alt="">
+    <div class="fragment dim" data-fragment-index="1" style="--dim:0.81"><img class="layer" data-src="fig/s04-1.svg" alt=""></div>
+    <img class="layer" data-src="fig/s04-2.svg" alt="">
+    <p class="ln b85t20" data-x="99" data-y="118">Why Conformal?</p>
+    <p class="ln r35" data-x="97" data-y="238" data-m="42.28">A transformation  \(\displaystyle f\)  is called <i>conformal </i>if it is angle- and orientation-preserving ( \(\displaystyle \Leftrightarrow f\)  holomorphic and \(\displaystyle f^{\prime} \neq 0\)).</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="1030" data-y="372">infinitesimal figures only</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="1065" data-y="415">rotated and scaled</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="637" data-y="877">not conformal</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="1557" data-y="877">not conformal</p>
+    <p class="ln r30 fragment" data-fragment-index="1" data-x="1123" data-y="877">conformal</p>
+    <div class="fragment dim" data-fragment-index="1" style="--dim:0.6"><img class="layer" data-src="fig/s04-3.svg" alt=""></div>
+  </div>
+</section>
+
+<section aria-label="Why Conformal?">
+  <div class="stage">
+    <img class="layer" data-src="fig/s05-0.svg" alt="">
+    <p class="ln b85t20" data-x="99" data-y="118">Why Conformal?</p>
+    <p class="ln r35" data-x="97" data-y="238" data-m="42.28">A transformation  \(\displaystyle f\)  is called <i>conformal </i>if it is angle- and orientation-preserving ( \(\displaystyle \Leftrightarrow f\)  holomorphic and \(\displaystyle f^{\prime} \neq 0\)).</p>
+    <p class="ln r30" data-x="1030" data-y="372">infinitesimal figures only</p>
+    <p class="ln r30" data-x="1065" data-y="415">rotated and scaled</p>
+    <p class="ln r30" data-x="637" data-y="877">not conformal</p>
+    <p class="ln r30" data-x="1557" data-y="877">not conformal</p>
+    <p class="ln r30" data-x="1123" data-y="877">conformal</p>
+  </div>
+</section>
+
+<section aria-label="How to Compute Conformal Maps?">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="118">How to Compute Conformal Maps?</p>
+    <p class="ln b35" data-x="85" data-y="349">Riemann Mapping Theorem.</p>
+    <p class="ln r35" data-x="85" data-y="406" data-m="42.28">Every simply connected region \(\displaystyle U \neq \mathbb{C}\) is biholomorphically equivalent to the unit disk \(\displaystyle \mathbb{E} = \{ z \in \mathbb{C} \colon |z| < 1 \}\).</p>
+    <p class="ln r35 fragment" data-fragment-index="1" data-x="757" data-y="742">Only existence statement.</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s06-0.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="1" data-x="947" data-y="674" data-m="70" data-kw="24" style="color:#ffffff">\(\displaystyle !\)</p>
+  </div>
+</section>
+
+<section aria-label="How to Compute Conformal Maps?">
+  <div class="stage">
+    <img class="raster fragment" data-fragment-index="2" data-src="fig/s07-r0.webp" style="left:1400px;top:130px;width:220px;height:215px" alt="">
+    <video class="clip fragment" data-fragment-index="5" data-src="../media/clip-forces-2.mp4" style="left:1161.2px;top:765px;width:178px;height:179px" muted playsinline data-autoplay></video>
+    <img class="layer fragment fade-out" data-fragment-index="5" data-src="fig/s07-1.svg" alt="">
+    <p class="ln b85t20" data-x="99" data-y="118">How to Compute Conformal Maps?</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s07-2.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="1" data-x="1144" data-y="265" data-m="30" data-kw="15">\(\displaystyle p\)</p>
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s07-3.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1631" data-y="213" data-m="30" data-kw="116">\(\displaystyle \operatorname{arg}(f^\prime (p))\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1483" data-y="274" data-m="30" data-kw="47">\(\displaystyle f(p)\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1311" data-y="226" data-m="30" data-kw="21">\(\displaystyle \approx\)</p>
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s07-4.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="3" data-x="790" data-y="543" data-m="30" data-kw="15" style="color:#006c65">\(\displaystyle p\)</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1014" data-y="488" data-m="36.24" data-kw="11">\(\displaystyle f\)</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1181" data-y="537" data-m="30" data-kw="48" style="color:#006c65">\(\displaystyle f(p)\)</p>
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s07-5.svg" alt="">
+    <p class="ln b35 fragment" data-fragment-index="3" data-x="85" data-y="457">Necessary condition.</p>
+    <p class="ln r35 fragment" data-fragment-index="3" data-x="85" data-y="507">Each image point is approximately</p>
+    <p class="ln r35 fragment" data-fragment-index="3" data-x="85" data-y="548">the arithmetic mean of the images</p>
+    <p class="ln r35 fragment" data-fragment-index="3" data-x="85" data-y="589">of close neighbours.</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s07-6.svg" alt="">
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s07-7.svg" alt="">
+    <p class="ln b35 fragment" data-fragment-index="4" data-x="85" data-y="797">Idea for algorithm.</p>
+    <p class="ln r43 fragment" data-fragment-index="4" data-x="85" data-y="849">•</p>
+    <p class="ln r35 fragment" data-fragment-index="4" data-x="115" data-y="846">Initialize with reasonable mapping.</p>
+    <img class="layer fragment" data-fragment-index="4" data-src="fig/s07-8.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="4" data-x="790" data-y="888" data-m="30" data-kw="15" style="color:#006c65">\(\displaystyle p\)</p>
+    <img class="layer fragment" data-fragment-index="5" data-src="fig/s07-9.svg" alt="">
+    <img class="layer fragment" data-fragment-index="4" data-src="fig/s07-10.svg" alt="">
+    <p class="ln r24 fragment" data-fragment-index="4" data-x="988" data-y="841">GPU</p>
+    <p class="ln eq fragment" data-fragment-index="6" data-x="1278" data-y="840" data-m="30" data-kw="48" style="color:#006c65">\(\displaystyle f(p)\)</p>
+    <p class="ln r35 fragment" data-fragment-index="1" data-x="85" data-y="251"><b>Idea. </b>Conformal maps are infinitesimal scale-rotations.</p>
+    <p class="ln r43 fragment" data-fragment-index="5" data-x="85" data-y="902">•</p>
+    <p class="ln r35 fragment" data-fragment-index="5" data-x="115" data-y="899">“Force” the mapping to fulfil the</p>
+    <p class="ln r35 fragment" data-fragment-index="5" data-x="124" data-y="940">arithmetic mean property.</p>
+    <div class="fragment" data-fragment-index="5"><p class="ln eq fragment fade-out" data-fragment-index="6" data-x="1120" data-y="916" data-m="30" data-kw="62" style="color:#006c65">\(\displaystyle f(p)?\)</p></div>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="947.277" data-y="518" data-m="48.32" data-kw="20.7">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s08-0.svg" alt="">
+    <p class="ln b85t20" data-x="99" data-y="118">How to Deal with Boundaries?</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="1284.27" data-y="236" data-m="36.24" data-kw="15.7">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s09-0.svg" alt="">
+    <p class="ln b85t20" data-x="99" data-y="118">How to Deal with Boundaries?</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <img class="layer" data-src="fig/s10-0.svg" alt="">
+    <p class="ln eq" data-x="1043" data-y="614" data-m="42.28" data-kw="18" style="color:#ee220c">\(\displaystyle x\)</p>
+    <p class="ln eq" data-x="898" data-y="606" data-m="42.28" data-kw="21" style="color:#006c65">\(\displaystyle p\)</p>
+    <img class="layer" data-src="fig/s10-1.svg" alt="">
+    <p class="ln eq" data-x="1284.27" data-y="236" data-m="36.24" data-kw="15.7">\(\displaystyle \; f \;\)</p>
+    <video class="clip" data-src="../media/screen-recording-2022-08-29-at-12-06-23.mp4" style="left:1286.2px;top:411.8px;width:582.8px;height:324.7px" muted playsinline data-autoplay></video>
+    <img class="layer" data-src="fig/s10-2.svg" alt="">
+    <p class="ln b85t20" data-x="99" data-y="118">How to Deal with Boundaries?</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <img class="layer" data-src="fig/s11-0.svg" alt="">
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s11-1.svg" alt="">
+    <img class="layer" data-src="fig/s11-2.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1001" data-y="614" data-m="42.28" data-kw="142" style="color:#ee220c">\(\displaystyle x = \operatorname{refl}(\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1143" data-y="614" data-m="42.28" data-kw="33" style="color:#0076ba">\(\displaystyle y {\color{#ee220c} )}\)</p>
+    <p class="ln eq fragment fade-out" data-fragment-index="2" data-x="1043" data-y="614" data-m="42.28" data-kw="18" style="color:#ee220c">\(\displaystyle x\)</p>
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s11-3.svg" alt="">
+    <img class="layer" data-src="fig/s11-4.svg" alt="">
+    <p class="ln eq" data-x="898" data-y="606" data-m="42.28" data-kw="21" style="color:#006c65">\(\displaystyle p\)</p>
+    <img class="layer fragment" data-fragment-index="4" data-src="fig/s11-5.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="4" data-x="1372" data-y="628" data-m="42.28" data-kw="273" style="color:#ee220c">\(\displaystyle f \, (x) = \operatorname{refl} ( {\color{#0076ba} f \, (y)} )\)</p>
+    <img class="layer fragment fade-out" data-fragment-index="4" data-src="fig/s11-6.svg" alt="">
+    <p class="ln eq fragment fade-out" data-fragment-index="4" data-x="1580" data-y="552" data-m="35" data-kw="16" style="color:#ee220c">\(\displaystyle ?\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="864" data-y="544" data-m="42.28" data-kw="19" style="color:#0076ba">\(\displaystyle y\)</p>
+    <p class="ln b85t20" data-x="99" data-y="118">How to Deal with Boundaries?</p>
+    <p class="ln eq" data-x="1284.27" data-y="236" data-m="36.24" data-kw="15.7">\(\displaystyle \; f \;\)</p>
+    <p class="ln r43 fragment" data-fragment-index="1" data-x="85" data-y="433">•</p>
+    <p class="ln r35 fragment" data-fragment-index="1" data-x="115" data-y="430">Analytical continuation</p>
+    <p class="ln ri35 fragment" data-fragment-index="1" data-x="115" data-y="471"><span class="up">via </span>Schwarz Reflection</p>
+    <p class="ln ri35 fragment" data-fragment-index="1" data-x="115" data-y="512">Principle<span class="up">.</span></p>
+    <p class="ln r43 fragment" data-fragment-index="1" data-x="85" data-y="597">•</p>
+    <p class="ln r35 fragment" data-fragment-index="1" data-x="120" data-y="594">Restrict to regions</p>
+    <p class="ln r35 fragment" data-fragment-index="1" data-x="120" data-y="635">bounded by straight-line</p>
+    <p class="ln r35 fragment" data-fragment-index="1" data-x="120" data-y="676">and circular segments.</p>
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s11-7.svg" alt="">
+    <img class="layer" data-src="fig/s11-8.svg" alt="">
+    <p class="ln eq" data-x="1733" data-y="544" data-m="42.28" data-kw="73" style="color:#006c65">\(\displaystyle f \, (p)\)</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1782" data-y="628" data-m="42.28" data-kw="68" style="color:#0076ba">\(\displaystyle f \, (y)\)</p>
+  </div>
+</section>
+
+<section aria-label="Demo">
+  <div class="stage">
+    <iframe class="clip applet" data-applet="../applets/disk-to-quad.html#-0.94,-0.95,1.03,1.05" style="left:1458.8px;top:447.6px;width:461.2px;height:467px" title="Live applet: the disk mapped onto a quadrilateral; drag its corners"></iframe>
+    <iframe class="clip applet" data-applet="../applets/heptagon.html" style="left:1455.3px;top:202px;width:454.8px;height:255.8px" title="Live applet: averaging maps a heptagon onto the disk"></iframe>
+    <p class="ln b85t20" data-x="99" data-y="118">Demo</p>
+    <p class="ln b35" data-x="85" data-y="400">Advantages.</p>
+    <p class="ln r43" data-x="85" data-y="465">•</p>
+    <p class="ln r35" data-x="115" data-y="462">Map “floats” to conformal state.</p>
+    <p class="ln r43" data-x="85" data-y="547">•</p>
+    <p class="ln r35" data-x="120" data-y="544">Smooth adaption to change of target shape.</p>
+    <p class="ln r43" data-x="85" data-y="629">•</p>
+    <p class="ln r35" data-x="120" data-y="626">Applications beyond hyperbolic symmetry groups.</p>
+    <img class="layer" data-src="fig/s12-0.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Conformal Maps in Real Time">
+  <div class="stage">
+    <img class="layer" data-src="fig/s13-0.svg" alt="">
+    <p class="ln b85t20" data-x="55" data-y="118">Conformal Maps in Real Time</p>
+    <iframe class="clip applet" data-applet="../applets/mxi-logo.html" style="left:1321px;top:-7.7px;width:847.5px;height:1095.5px" title="MATRIX × IMAGINARY logo animation"></iframe>
+    <img class="layer" data-src="fig/s13-1.svg" alt="">
+  </div>
+</section>

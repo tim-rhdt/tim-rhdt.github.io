@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- The MATRIX × IMAGINARY logo animation (conformal mapping animation by Aaron Montag, design by
+       Eric Londaits; matrix.imaginary.org), shown live in the talk slides. -->
+  <title>MATRIX × IMAGINARY</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #2a0a6b; }
+    #CSCanvas { width: 100vw; height: 100vh; }
+  </style>
+  <script src="cindyjs/Cindy.js"></script>
+  <script src="cindyjs/CindyGL.js"></script>
+  <script id="csinit" type="text/x-cindyscript">
+    resetclock();
+    color(z) := if(imageready("imageFG") & imageready("imageBG"),
+      imagergb([0,0],[2.5,0],"imageFG", z+exp(i*seconds()/8)*sin(seconds()/5), repeat->true, mipmap->true) +
+      imagergb([0,0],[2.5,0],"imageBG", z+exp(i*seconds()/8)*sin(seconds()/10), repeat->true, mipmap->true),
+      [0,0,0]
+    );
+    Ax = -0.375;
+    Ay = 0.25;
+    w1 = 10;
+    w2 = i*w1;
+    deform(z) := log(z)*(2*Ax*w1+2*Ay*w2)/(2*pi*i);
+    f(z) := (z+1)/((i^0.9*(z-1))+1);
+  </script>
+  <script id="csdraw" type="text/x-cindyscript">
+    colorplot(color(deform(f(z))));
+  </script>
+</head>
+<body>
+  <div id="CSCanvas"></div>
+  <script>
+    var cdy = CindyJS({
+      scripts: "cs*",
+      geometry: [],
+      ports: [{ id: "CSCanvas", transform: [{ visibleRect: [-2, -5, 3, 6] }] }],
+      images: { imageBG: "mxi-logo/colors.png", imageFG: "mxi-logo/logos.png" },
+      use: ["CindyGL"],
+      autoplay: true,
+    });
+    // shown inside the talk slides: arrow keys and space keep moving through the slides
+    addEventListener("keydown", function (e) {
+      var R = window.parent !== window && window.parent.Reveal;
+      if (!R) return;
+      if (["ArrowRight", "ArrowDown", "PageDown", " "].indexOf(e.key) >= 0) { R.next(); e.preventDefault(); }
+      else if (["ArrowLeft", "ArrowUp", "PageUp"].indexOf(e.key) >= 0) { R.prev(); e.preventDefault(); }
+    });
+  </script>
+</body>
+</html>

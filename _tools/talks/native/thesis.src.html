@@ -1,0 +1,562 @@
+<!-- deck {
+  "slug": "conformal-maps-gpu",
+  "title": "Approximation of Conformal Mappings on the GPU",
+  "event": "Master’s thesis, TUM",
+  "date": "2023",
+  "styles": {
+    "b112_5t20": ["hn", 112.52, 700, false, -0.02],
+    "b116t20": ["hn", 116.0, 700, false, -0.02],
+    "b45": ["hn", 45.0, 700, false],
+    "b45t5": ["hn", 45.0, 700, false, -0.005],
+    "b85t20": ["hn", 85.0, 700, false, -0.02],
+    "eq": ["hn", 0, 400, false],
+    "l35": ["hn", 35.0, 300, false],
+    "l45": ["hn", 45.0, 300, false],
+    "l45t-5": ["hn", 45.0, 300, false, 0.005],
+    "l48": ["hn", 48.0, 300, false],
+    "l55": ["hn", 55.0, 300, false],
+    "l55_4": ["hn", 55.35, 300, false],
+    "l59": ["hn", 59.04, 300, false],
+    "note": ["hn", 35, 400, false]
+  },
+  "css": ""
+} -->
+<!--
+  Source of talks/conformal-maps-gpu/ (build: node build.mjs thesis.src.html ../../..).
+  Generated from the Keynote file by extract.py/writesrc.py, then edited by hand.
+  Lines: class = style (see "styles"), data-x / data-y = left edge and baseline in 1920×1080 slide
+  coordinates, data-m = size of the formulas in the line. Figures: fig/sNN-K.svg = what appears at build step K.
+-->
+
+<section aria-label="Approximation of Conformal">
+  <div class="stage">
+    <p class="ln b116t20" data-x="99" data-y="649">Approximation of Conformal</p>
+    <p class="ln b116t20" data-x="99" data-y="762">Mappings on the GPU</p>
+    <p class="ln l55" data-x="99" data-y="872">Theoretical and Experimental Results</p>
+  </div>
+</section>
+
+<section aria-label="Plan">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Plan</p>
+    <p class="ln l59" data-x="99" data-y="384">•</p>
+    <p class="ln l48" data-x="147" data-y="379">What are conformal maps and why do we care about them?</p>
+    <p class="ln l59" data-x="99" data-y="514">•</p>
+    <p class="ln l48" data-x="147" data-y="509">In which situations do conformal maps exist?</p>
+    <p class="ln l59" data-x="99" data-y="644">•</p>
+    <p class="ln l48" data-x="147" data-y="639">What are known techniques to compute conformal maps?</p>
+    <p class="ln l59" data-x="99" data-y="773">•</p>
+    <p class="ln l48" data-x="147" data-y="768">How does the “new” approximation on the GPU work?</p>
+    <p class="ln l59" data-x="99" data-y="903">•</p>
+    <p class="ln l48" data-x="147" data-y="898">How well does it work?</p>
+  </div>
+</section>
+
+<section aria-label="What are conformal maps and">
+  <div class="stage">
+    <p class="ln b116t20" data-x="99" data-y="649">What are conformal maps and</p>
+    <p class="ln b116t20" data-x="99" data-y="762">why do we care about them?</p>
+  </div>
+</section>
+
+<section aria-label="Motivation">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Motivation</p>
+    <p class="ln l48" data-x="688" data-y="1026">M. C. Escher, Circle Limit III</p>
+    <p class="ln note" data-x="543" data-y="552" style="width:834px;text-align:center;color:#929292">Image not shown online for copyright reasons.</p>
+  </div>
+</section>
+
+<section aria-label="Motivation">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Motivation</p>
+    <p class="ln l45" data-x="1186" data-y="364">Hyperbolic</p>
+    <p class="ln l45" data-x="1186" data-y="419">symmetry</p>
+    <p class="ln l45" data-x="1186" data-y="474">groups.</p>
+    <img class="layer" data-src="fig/s05-0.svg" alt="">
+    <p class="ln l45 fragment" data-fragment-index="1" data-x="104" data-y="669"><b>Key question. </b>How to transform fundamental cells of symmetry?</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s05-1.svg" alt="">
+    <p class="ln l35 fragment" data-fragment-index="1" data-x="539" data-y="854">conformal</p>
+  </div>
+</section>
+
+<section aria-label="Why Conformal?">
+  <div class="stage">
+    <img class="layer" data-src="fig/s06-0.svg" alt="">
+    <div class="fragment dim" data-fragment-index="1" style="--dim:0.84"><img class="layer" data-src="fig/s06-1.svg" alt=""></div>
+    <img class="layer" data-src="fig/s06-2.svg" alt="">
+    <p class="ln l35 fragment" data-fragment-index="1" data-x="1014" data-y="462">infinitesimal figures only</p>
+    <p class="ln l35 fragment" data-fragment-index="1" data-x="1049" data-y="512">rotated and scaled</p>
+    <p class="ln l35 fragment" data-fragment-index="1" data-x="626" data-y="979">not conformal</p>
+    <p class="ln l35 fragment" data-fragment-index="1" data-x="1546" data-y="979">not conformal</p>
+    <p class="ln l35 fragment" data-fragment-index="1" data-x="1115" data-y="979">conformal</p>
+    <div class="fragment dim" data-fragment-index="1" style="--dim:0.6"><img class="layer" data-src="fig/s06-3.svg" alt=""></div>
+    <p class="ln b85t20" data-x="99" data-y="171">Why Conformal?</p>
+    <p class="ln l45" data-x="103" data-y="276" data-m="54.99">A function \(\displaystyle \, f \colon \mathbb{C} \rightarrow \mathbb{C}\)  is called <i>conformal </i>if it is angle- and</p>
+    <p class="ln l45" data-x="103" data-y="342" data-m="54.99">orientation-preserving \(\displaystyle \Leftrightarrow f \,\) holomorphic and \(\displaystyle \, f^{\, \prime} \neq 0\).</p>
+  </div>
+</section>
+
+<section aria-label="Why Conformal?">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Why Conformal?</p>
+    <img class="layer" data-src="fig/s07-0.svg" alt="">
+    <p class="ln l35" data-x="626" data-y="979">not conformal</p>
+    <p class="ln l35" data-x="1546" data-y="979">not conformal</p>
+    <p class="ln l35" data-x="1115" data-y="979">conformal</p>
+    <p class="ln l45" data-x="103" data-y="276" data-m="54.99">A function \(\displaystyle \, f \colon \mathbb{C} \rightarrow \mathbb{C}\)  is called <i>conformal </i>if it is angle- and</p>
+    <p class="ln l45" data-x="103" data-y="342" data-m="54.99">orientation-preserving \(\displaystyle \Leftrightarrow f \,\) holomorphic and \(\displaystyle \, f^{\, \prime} \neq 0\).</p>
+    <p class="ln l35" data-x="1014" data-y="462">infinitesimal figures only</p>
+    <p class="ln l35" data-x="1049" data-y="512">rotated and scaled</p>
+  </div>
+</section>
+
+<section aria-label="In which situations do">
+  <div class="stage">
+    <p class="ln b116t20" data-x="99" data-y="649">In which situations do</p>
+    <p class="ln b116t20" data-x="99" data-y="762">conformal maps exist?</p>
+  </div>
+</section>
+
+<section aria-label="Surfaces">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Surfaces</p>
+    <img class="layer" data-src="fig/s09-0.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Riemann Mapping Theorem">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Riemann Mapping Theorem</p>
+    <p class="ln b45" data-x="99" data-y="302">Riemann Mapping Theorem.</p>
+    <p class="ln l45" data-x="99" data-y="366" data-m="54.99">Every simply connected region \(\displaystyle U \subsetneq \mathbb{C}\) is biholomorphically</p>
+    <p class="ln l45" data-x="99" data-y="433" data-m="54.99">equivalent to the unit disk \(\displaystyle \mathbb{E} = \{ z \in \mathbb{C} \colon |z| < 1 \}\).</p>
+    <p class="ln l35 fragment" data-fragment-index="1" data-x="827" data-y="940">Existence only.</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s10-0.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="1" data-x="925" data-y="871" data-m="70" data-kw="23" style="color:#ffffff">\(\displaystyle !\)</p>
+    <img class="layer" data-src="fig/s10-1.svg" alt="">
+    <p class="ln l45" data-x="841" data-y="680">conformal</p>
+    <p class="ln eq" data-x="1344" data-y="725" data-m="54.36" data-kw="34">\(\displaystyle \mathbb{E}\)</p>
+    <p class="ln eq" data-x="461" data-y="725" data-m="54.36" data-kw="39">\(\displaystyle U\)</p>
+  </div>
+</section>
+
+<section aria-label="What are known techniques to">
+  <div class="stage">
+    <p class="ln b116t20" data-x="99" data-y="649">What are known techniques to</p>
+    <p class="ln b116t20" data-x="99" data-y="762">compute conformal maps?</p>
+  </div>
+</section>
+
+<section aria-label="Schwarz-Christoffel Mappings">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Schwarz-Christoffel Mappings</p>
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s12-0.svg" alt="">
+    <p class="ln l45" data-x="98" data-y="290" data-m="54.99"><b>Problem. </b>Let \(\displaystyle P \subset \mathbb{C}\) be a polygon. Find a map \(\displaystyle \, f \colon \mathbb{H} \rightarrow P\) which</p>
+    <p class="ln l45" data-x="98" data-y="341">conformally maps the upper half-plane to the polygon’s interior.</p>
+    <p class="ln b45 fragment" data-fragment-index="4" data-x="99" data-y="988" data-m="45">General form. \(\displaystyle f \, (z) = A + C \,\int^z \, \prod_{k=1}^{n} \left(\zeta - z_k\right)^{-\theta_k} \, \mathrm{d} \zeta\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="212" data-y="646" data-m="45" data-kw="640">\(\displaystyle \operatorname{arg}((z+1)^{1/2})\big|_\mathbb{R} = \begin{cases} \pi/2, & z<-1 \\
+0, & z > -1 \end{cases}\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="242.275" data-y="476" data-m="45" data-kw="574.7">\(\displaystyle \, f \, (z) = \int_0^z \, (\zeta+1)^{1/2} (\zeta-1)^{-1/2} \mathrm{d} \zeta\)</p>
+    <p class="ln b45t5 fragment" data-fragment-index="1" data-x="98" data-y="478">Idea.</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="205" data-y="803" data-m="45" data-kw="654">\(\displaystyle \operatorname{arg}((z-1)^{-1/2})\big|_\mathbb{R} = \begin{cases} -\pi/2, & z<1 \\
+0, & z > 1 \end{cases}\)</p>
+    <img class="layer fragment fade-out" data-fragment-index="3" data-src="fig/s12-1.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="5" data-x="1537" data-y="985" data-m="45" data-kw="30">\(\displaystyle z_k\)</p>
+    <p class="ln b45 fragment" data-fragment-index="5" data-x="1297" data-y="988">Problem.</p>
+  </div>
+</section>
+
+<section aria-label="Schwarz-Christoffel Mappings">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Schwarz-Christoffel Mappings</p>
+    <img class="layer" data-src="fig/s13-0.svg" alt="">
+    <p class="ln eq" data-x="963" data-y="963" data-m="45" data-kw="428">\(\displaystyle f \, (z) = \int_0^z (1 - \zeta^n)^{-2/n} \, \mathrm{d} \zeta\)</p>
+    <p class="ln l45" data-x="532" data-y="964">Unit disk as domain:</p>
+  </div>
+</section>
+
+<section aria-label="Hypergeometric Functions">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Hypergeometric Functions</p>
+    <p class="ln l45" data-x="98" data-y="274" data-m="54.99"><b>Problem. </b>Let \(\displaystyle T \subset \mathbb{C}\) be a curvilinear triangle. Find a map \(\displaystyle \, f \colon \mathbb{E} \rightarrow T\)</p>
+    <p class="ln l45" data-x="98" data-y="325">which conformally maps the unit disk to the triangle’s interior.</p>
+    <img class="layer" data-src="fig/s14-0.svg" alt="">
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s14-1.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="How does the approximation on">
+  <div class="stage">
+    <p class="ln b116t20" data-x="99" data-y="649">How does the approximation on</p>
+    <p class="ln b116t20" data-x="99" data-y="762">the GPU work?</p>
+  </div>
+</section>
+
+<section aria-label="Averaging">
+  <div class="stage">
+    <img class="raster fragment" data-fragment-index="2" data-src="fig/s16-r0.webp" style="left:1430px;top:180px;width:220px;height:220px" alt="">
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s16-1.svg" alt="">
+    <p class="ln b85t20" data-x="99" data-y="171">Averaging</p>
+    <video class="clip fragment" data-fragment-index="5" data-src="../media/clip-forces-2.mp4" style="left:1496.4px;top:797px;width:178px;height:179px" muted playsinline data-autoplay></video>
+    <img class="layer fragment fade-out" data-fragment-index="5" data-src="fig/s16-2.svg" alt="">
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s16-3.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="1" data-x="1169" data-y="322" data-m="35" data-kw="18">\(\displaystyle p\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1662" data-y="271" data-m="35" data-kw="134">\(\displaystyle \operatorname{arg}(f^\prime (p))\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1511" data-y="331" data-m="35" data-kw="55">\(\displaystyle f(p)\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1342" data-y="280" data-m="35" data-kw="24">\(\displaystyle \approx\)</p>
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s16-4.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1128" data-y="577" data-m="35" data-kw="17" style="color:#006c65">\(\displaystyle p\)</p>
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s16-5.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1351" data-y="522" data-m="42.28" data-kw="12">\(\displaystyle f\)</p>
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1515" data-y="572" data-m="35" data-kw="55" style="color:#006c65">\(\displaystyle f(p)\)</p>
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s16-6.svg" alt="">
+    <p class="ln b45 fragment" data-fragment-index="3" data-x="99" data-y="483">Necessary condition.</p>
+    <p class="ln l45 fragment" data-fragment-index="3" data-x="99" data-y="549">Each image point is approximately</p>
+    <p class="ln l45 fragment" data-fragment-index="3" data-x="99" data-y="604">the arithmetic mean of the images of</p>
+    <p class="ln l45 fragment" data-fragment-index="3" data-x="99" data-y="659">close neighbours.</p>
+    <p class="ln b45 fragment" data-fragment-index="4" data-x="99" data-y="805">Idea for algorithm.</p>
+    <p class="ln l45t-5 fragment" data-fragment-index="4" data-x="99" data-y="871">• Initialize with reasonable mapping.</p>
+    <img class="layer fragment" data-fragment-index="4" data-src="fig/s16-7.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="4" data-x="1127" data-y="922" data-m="35" data-kw="18" style="color:#006c65">\(\displaystyle p\)</p>
+    <img class="layer fragment" data-fragment-index="4" data-src="fig/s16-8.svg" alt="">
+    <img class="layer fragment" data-fragment-index="6" data-src="fig/s16-9.svg" alt="">
+    <img class="layer fragment" data-fragment-index="4" data-src="fig/s16-10.svg" alt="">
+    <p class="ln l35 fragment" data-fragment-index="4" data-x="1313" data-y="870">GPU</p>
+    <p class="ln eq fragment" data-fragment-index="6" data-x="1614" data-y="875" data-m="35" data-kw="55" style="color:#006c65">\(\displaystyle f(p)\)</p>
+    <p class="ln b45 fragment" data-fragment-index="1" data-x="99" data-y="282">Idea.</p>
+    <p class="ln l45 fragment" data-fragment-index="1" data-x="99" data-y="337">Conformal maps are infinitesimal scale-rotations.</p>
+    <p class="ln l45t-5 fragment" data-fragment-index="5" data-x="99" data-y="949">• “Force” the mapping to fulfil the</p>
+    <p class="ln l45 fragment" data-fragment-index="5" data-x="149" data-y="1004">arithmetic mean property.</p>
+    <div class="fragment" data-fragment-index="5"><p class="ln eq fragment fade-out" data-fragment-index="6" data-x="1447" data-y="955" data-m="35" data-kw="72" style="color:#006c65">\(\displaystyle f(p)?\)</p></div>
+  </div>
+</section>
+
+<section aria-label="Averaging">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Averaging</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="960" data-y="800" data-m="36.24" data-kw="931">\(\displaystyle f(p) \approx \tfrac{1}{4} \cdot \left( f(p+\big( \begin{smallmatrix} \varepsilon \\ 0\end{smallmatrix} \big)) + f(p+\big( \begin{smallmatrix} 0 \\ \varepsilon \end{smallmatrix} \big) ) + f(p+\big( \begin{smallmatrix} - \varepsilon \\ 0 \end{smallmatrix} \big) )+ f(p+\big( \begin{smallmatrix} 0\\ -\varepsilon \end{smallmatrix} \big) ) \right)\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="55" data-y="904" data-m="36.24" data-kw="845">\(\displaystyle p = \tfrac{1}{4} \cdot \left( (p+\big( \begin{smallmatrix} \varepsilon \\ 0\end{smallmatrix} \big) ) + (p+\big( \begin{smallmatrix} 0 \\ \varepsilon \end{smallmatrix} \big) ) + (p+\big( \begin{smallmatrix} -\varepsilon \\ 0 \end{smallmatrix} \big) )+ (p+\big( \begin{smallmatrix} 0\\ -\varepsilon \end{smallmatrix} \big) ) \right)\)</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s17-0.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="1" data-x="440" data-y="588" data-m="45" data-kw="23" style="color:#006c65">\(\displaystyle p\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="616" data-y="504" data-m="45" data-kw="184" style="color:#5e5e5e">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix}1 \\ 0\end{smallmatrix} \big)\)</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s17-1.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="1" data-x="157" data-y="504" data-m="45" data-kw="208" style="color:#5e5e5e">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix} -1 \\ 0\end{smallmatrix} \big)\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="386" data-y="728" data-m="45" data-kw="208" style="color:#5e5e5e">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix} 0 \\ -1 \end{smallmatrix} \big)\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="397" data-y="376" data-m="45" data-kw="184" style="color:#5e5e5e">\(\displaystyle p + \varepsilon \cdot \big( \begin{smallmatrix} 0 \\ 1 \end{smallmatrix} \big)\)</p>
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s17-2.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1047" data-y="513" data-m="54.36" data-kw="15">\(\displaystyle f\)</p>
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1405" data-y="581" data-m="45" data-kw="70" style="color:#006c65">\(\displaystyle f(p)\)</p>
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s17-3.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+    <p class="ln eq" data-x="945.549" data-y="591" data-m="54.36" data-kw="23.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s18-0.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+    <p class="ln eq" data-x="1281.54" data-y="276" data-m="42.28" data-kw="18.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s19-0.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="1281.54" data-y="276" data-m="42.28" data-kw="18.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s20-0.svg" alt="">
+    <p class="ln eq" data-x="1040" data-y="619" data-m="54.36" data-kw="24" style="color:#ee220c">\(\displaystyle x\)</p>
+    <p class="ln eq" data-x="891" data-y="619" data-m="54.36" data-kw="27" style="color:#006c65">\(\displaystyle p\)</p>
+    <img class="layer" data-src="fig/s20-1.svg" alt="">
+    <video class="clip" data-src="../media/screen-recording-2022-08-29-at-12-06-23.mp4" style="left:1286.2px;top:411.8px;width:582.8px;height:324.7px" muted playsinline data-autoplay></video>
+    <img class="layer" data-src="fig/s20-2.svg" alt="">
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="1281.54" data-y="276" data-m="42.28" data-kw="18.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s21-0.svg" alt="">
+    <p class="ln eq" data-x="1040" data-y="618" data-m="54.36" data-kw="24" style="color:#ee220c">\(\displaystyle x\)</p>
+    <img class="layer" data-src="fig/s21-1.svg" alt="">
+    <p class="ln eq" data-x="891" data-y="618" data-m="54.36" data-kw="27">\(\displaystyle p\)</p>
+    <p class="ln eq" data-x="1580" data-y="558" data-m="45" data-kw="20" style="color:#ee220c">\(\displaystyle ?\)</p>
+    <p class="ln eq" data-x="1731" data-y="540" data-m="54.36" data-kw="92">\(\displaystyle f \, (p)\)</p>
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="1281.54" data-y="276" data-m="42.28" data-kw="18.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s22-0.svg" alt="">
+    <p class="ln eq" data-x="1040" data-y="618" data-m="54.36" data-kw="24" style="color:#ee220c">\(\displaystyle x\)</p>
+    <p class="ln eq" data-x="1580" data-y="558" data-m="45" data-kw="20" style="color:#ee220c">\(\displaystyle ?\)</p>
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+    <p class="ln b45" data-x="104" data-y="266">Schwarz reflection principle.</p>
+    <p class="ln l45" data-x="104" data-y="331" data-m="54.99">Let \(\displaystyle U \subset \mathbb{C}\) be a simply</p>
+    <p class="ln l45" data-x="104" data-y="388">connected region such that the</p>
+    <p class="ln l45" data-x="104" data-y="452" data-m="54.99">boundary \(\displaystyle \partial U\) is a Jordan curve</p>
+    <p class="ln eq" data-x="1113" data-y="315" data-m="54.99" data-kw="40">\(\displaystyle U\)</p>
+    <img class="layer" data-src="fig/s22-1.svg" alt="">
+    <p class="ln eq" data-x="891" data-y="618" data-m="54.36" data-kw="27">\(\displaystyle p\)</p>
+    <p class="ln eq" data-x="1731" data-y="540" data-m="54.36" data-kw="92">\(\displaystyle f \, (p)\)</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="1281.54" data-y="276" data-m="42.28" data-kw="18.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s23-0.svg" alt="">
+    <p class="ln eq" data-x="1040" data-y="618" data-m="54.36" data-kw="24" style="color:#ee220c">\(\displaystyle x\)</p>
+    <p class="ln eq" data-x="1580" data-y="558" data-m="45" data-kw="20" style="color:#ee220c">\(\displaystyle ?\)</p>
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+    <p class="ln b45" data-x="104" data-y="266">Schwarz reflection principle.</p>
+    <p class="ln l45" data-x="104" data-y="331" data-m="54.99">Let \(\displaystyle U \subset \mathbb{C}\) be a simply</p>
+    <p class="ln l45" data-x="104" data-y="388">connected region such that the</p>
+    <p class="ln l45" data-x="104" data-y="452" data-m="54.99">boundary \(\displaystyle \partial U\) is a Jordan curve</p>
+    <p class="ln l45" data-x="104" data-y="509">and such that there is a subset</p>
+    <p class="ln l45" data-x="104" data-y="573" data-m="54.99">\(\displaystyle A \subset \partial U\) contained in a Möbius</p>
+    <p class="ln l45" data-x="104" data-y="639">circle. <span style="color:#ffffff">Let</span></p>
+    <p class="ln eq" data-x="1113" data-y="315" data-m="54.99" data-kw="40">\(\displaystyle U\)</p>
+    <p class="ln eq" data-x="914" data-y="908" data-m="54.36" data-kw="165">\(\displaystyle A \subset \partial U\)</p>
+    <img class="layer" data-src="fig/s23-1.svg" alt="">
+    <p class="ln eq" data-x="891" data-y="618" data-m="54.36" data-kw="27">\(\displaystyle p\)</p>
+    <p class="ln eq" data-x="1731" data-y="540" data-m="54.36" data-kw="92">\(\displaystyle f \, (p)\)</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="1281.54" data-y="276" data-m="42.28" data-kw="18.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s24-0.svg" alt="">
+    <p class="ln eq" data-x="1040" data-y="618" data-m="54.36" data-kw="24" style="color:#ee220c">\(\displaystyle x\)</p>
+    <p class="ln eq" data-x="1580" data-y="558" data-m="45" data-kw="20" style="color:#ee220c">\(\displaystyle ?\)</p>
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+    <p class="ln b45" data-x="104" data-y="266">Schwarz reflection principle.</p>
+    <p class="ln l45" data-x="104" data-y="331" data-m="54.99">Let \(\displaystyle U \subset \mathbb{C}\) be a simply</p>
+    <p class="ln l45" data-x="104" data-y="388">connected region such that the</p>
+    <p class="ln l45" data-x="104" data-y="452" data-m="54.99">boundary \(\displaystyle \partial U\) is a Jordan curve</p>
+    <p class="ln l45" data-x="104" data-y="509">and such that there is a subset</p>
+    <p class="ln l45" data-x="104" data-y="573" data-m="54.99">\(\displaystyle A \subset \partial U\) contained in a Möbius</p>
+    <p class="ln l45" data-x="104" data-y="639" data-m="54.99">circle. Let  \(\displaystyle f \in H(U)\). <span style="color:#ffffff">If</span></p>
+    <p class="ln eq" data-x="1113" data-y="315" data-m="54.99" data-kw="40">\(\displaystyle U\)</p>
+    <p class="ln eq" data-x="914" data-y="908" data-m="54.36" data-kw="165">\(\displaystyle A \subset \partial U\)</p>
+    <img class="layer" data-src="fig/s24-1.svg" alt="">
+    <p class="ln eq" data-x="891" data-y="618" data-m="54.36" data-kw="27">\(\displaystyle p\)</p>
+    <p class="ln eq" data-x="1731" data-y="540" data-m="54.36" data-kw="92">\(\displaystyle f \, (p)\)</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="1281.54" data-y="276" data-m="42.28" data-kw="18.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s25-0.svg" alt="">
+    <p class="ln eq" data-x="1040" data-y="618" data-m="54.36" data-kw="24" style="color:#ee220c">\(\displaystyle x\)</p>
+    <p class="ln eq" data-x="1580" data-y="558" data-m="45" data-kw="20" style="color:#ee220c">\(\displaystyle ?\)</p>
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+    <p class="ln b45" data-x="104" data-y="266">Schwarz reflection principle.</p>
+    <p class="ln l45" data-x="104" data-y="331" data-m="54.99">Let \(\displaystyle U \subset \mathbb{C}\) be a simply</p>
+    <p class="ln l45" data-x="104" data-y="388">connected region such that the</p>
+    <p class="ln l45" data-x="104" data-y="452" data-m="54.99">boundary \(\displaystyle \partial U\) is a Jordan curve</p>
+    <p class="ln l45" data-x="104" data-y="509">and such that there is a subset</p>
+    <p class="ln l45" data-x="104" data-y="573" data-m="54.99">\(\displaystyle A \subset \partial U\) contained in a Möbius</p>
+    <p class="ln l45" data-x="104" data-y="639" data-m="54.99">circle. Let  \(\displaystyle f \in H(U)\). If  \(\displaystyle f(A)\) is</p>
+    <p class="ln l45" data-x="104" data-y="697">contained in a Möbius circle,</p>
+    <p class="ln l45" data-x="104" data-y="752">then we can analytically</p>
+    <p class="ln l45" data-x="104" data-y="816" data-m="54.99">continue  \(\displaystyle f\)  across \(\displaystyle A\) <span style="color:#ffffff">by</span></p>
+    <p class="ln eq" data-x="1113" data-y="315" data-m="54.99" data-kw="40">\(\displaystyle U\)</p>
+    <p class="ln eq" data-x="914" data-y="908" data-m="54.36" data-kw="165">\(\displaystyle A \subset \partial U\)</p>
+    <p class="ln eq" data-x="1575" data-y="885" data-m="54.36" data-kw="86">\(\displaystyle f(A)\)</p>
+    <img class="layer" data-src="fig/s25-1.svg" alt="">
+    <p class="ln eq" data-x="891" data-y="618" data-m="54.36" data-kw="27">\(\displaystyle p\)</p>
+    <p class="ln eq" data-x="1731" data-y="540" data-m="54.36" data-kw="92">\(\displaystyle f \, (p)\)</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="1281.54" data-y="276" data-m="42.28" data-kw="18.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s26-0.svg" alt="">
+    <p class="ln eq" data-x="1040" data-y="618" data-m="54.36" data-kw="24" style="color:#ee220c">\(\displaystyle x\)</p>
+    <p class="ln eq" data-x="1580" data-y="558" data-m="45" data-kw="20" style="color:#ee220c">\(\displaystyle ?\)</p>
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+    <p class="ln b45" data-x="104" data-y="266">Schwarz reflection principle.</p>
+    <p class="ln l45" data-x="104" data-y="331" data-m="54.99">Let \(\displaystyle U \subset \mathbb{C}\) be a simply</p>
+    <p class="ln l45" data-x="104" data-y="388">connected region such that the</p>
+    <p class="ln l45" data-x="104" data-y="452" data-m="54.99">boundary \(\displaystyle \partial U\) is a Jordan curve</p>
+    <p class="ln l45" data-x="104" data-y="509">and such that there is a subset</p>
+    <p class="ln l45" data-x="104" data-y="573" data-m="54.99">\(\displaystyle A \subset \partial U\) contained in a Möbius</p>
+    <p class="ln l45" data-x="104" data-y="639" data-m="54.99">circle. Let  \(\displaystyle f \in H(U)\). If  \(\displaystyle f(A)\) is</p>
+    <p class="ln l45" data-x="104" data-y="697">contained in a Möbius circle,</p>
+    <p class="ln l45" data-x="104" data-y="752">then we can analytically</p>
+    <p class="ln l45" data-x="104" data-y="816" data-m="54.99">continue  \(\displaystyle f\)  across \(\displaystyle A\) by</p>
+    <p class="ln l45" data-x="104" data-y="960" data-m="54.99">for all \(\displaystyle {\color{#ee220c} x}\) \(\displaystyle \in \operatorname{refl}_A(U)\).</p>
+    <p class="ln eq" data-x="104" data-y="882" data-m="54.99" data-kw="495">\(\displaystyle {\color{#ee220c} x}\) \(\displaystyle \mapsto \operatorname{refl}_{f(A)}(f(\operatorname{refl}_A( {\color{#ee220c} x} )))\)</p>
+    <p class="ln eq" data-x="1113" data-y="315" data-m="54.99" data-kw="40">\(\displaystyle U\)</p>
+    <p class="ln eq" data-x="914" data-y="908" data-m="54.36" data-kw="165">\(\displaystyle A \subset \partial U\)</p>
+    <p class="ln eq" data-x="1575" data-y="882" data-m="54.36" data-kw="86">\(\displaystyle f(A)\)</p>
+    <img class="layer" data-src="fig/s26-1.svg" alt="">
+    <p class="ln eq" data-x="891" data-y="618" data-m="54.36" data-kw="27">\(\displaystyle p\)</p>
+    <p class="ln eq" data-x="1731" data-y="540" data-m="54.36" data-kw="92">\(\displaystyle f \, (p)\)</p>
+  </div>
+</section>
+
+<section aria-label="How to Deal with Boundaries?">
+  <div class="stage">
+    <p class="ln eq" data-x="1281.54" data-y="276" data-m="42.28" data-kw="18.5">\(\displaystyle \; f \;\)</p>
+    <img class="layer" data-src="fig/s27-0.svg" alt="">
+    <p class="ln eq" data-x="1040" data-y="618" data-m="54.36" data-kw="24" style="color:#ee220c">\(\displaystyle x\)</p>
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s27-1.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="3" data-x="1265" data-y="633" data-m="54.36" data-kw="409" style="color:#ee220c">\(\displaystyle f \, (x) = \operatorname{refl}_{f(A)} ( {\color{#0076ba} f \, (y)} )\)</p>
+    <img class="layer fragment fade-out" data-fragment-index="3" data-src="fig/s27-2.svg" alt="">
+    <p class="ln eq fragment fade-out" data-fragment-index="3" data-x="1580" data-y="558" data-m="45" data-kw="20" style="color:#ee220c">\(\displaystyle ?\)</p>
+    <p class="ln b85t20" data-x="99" data-y="171">How to Deal with Boundaries?</p>
+    <p class="ln eq" data-x="1113" data-y="315" data-m="54.99" data-kw="40">\(\displaystyle U\)</p>
+    <p class="ln b45" data-x="104" data-y="266">Schwarz reflection principle.</p>
+    <p class="ln l45" data-x="104" data-y="331" data-m="54.99">Let \(\displaystyle U \subset \mathbb{C}\) be a simply</p>
+    <p class="ln l45" data-x="104" data-y="388">connected region such that the</p>
+    <p class="ln l45" data-x="104" data-y="452" data-m="54.99">boundary \(\displaystyle \partial U\) is a Jordan curve</p>
+    <p class="ln l45" data-x="104" data-y="509">and such that there is a subset</p>
+    <p class="ln l45" data-x="104" data-y="573" data-m="54.99">\(\displaystyle A \subset \partial U\) contained in a Möbius</p>
+    <p class="ln l45" data-x="104" data-y="639" data-m="54.99">circle. Let  \(\displaystyle f \in H(U)\). If  \(\displaystyle f(A)\) is</p>
+    <p class="ln l45" data-x="104" data-y="697">contained in a Möbius circle,</p>
+    <p class="ln l45" data-x="104" data-y="752">then we can analytically</p>
+    <p class="ln l45" data-x="104" data-y="816" data-m="54.99">continue  \(\displaystyle f\)  across \(\displaystyle A\) by</p>
+    <p class="ln l45" data-x="104" data-y="960" data-m="54.99">for all \(\displaystyle {\color{#ee220c} x}\) \(\displaystyle \in \operatorname{refl}_A(U)\).</p>
+    <p class="ln eq" data-x="104" data-y="882" data-m="54.99" data-kw="495">\(\displaystyle {\color{#ee220c} x}\) \(\displaystyle \mapsto \operatorname{refl}_{f(A)}(f(\operatorname{refl}_A( {\color{#ee220c} x} )))\)</p>
+    <p class="ln eq" data-x="914" data-y="908" data-m="54.36" data-kw="165">\(\displaystyle A \subset \partial U\)</p>
+    <p class="ln eq" data-x="1575" data-y="882" data-m="54.36" data-kw="86">\(\displaystyle f(A)\)</p>
+    <img class="layer" data-src="fig/s27-3.svg" alt="">
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s27-4.svg" alt="">
+    <img class="layer" data-src="fig/s27-5.svg" alt="">
+    <p class="ln eq" data-x="891" data-y="618" data-m="54.36" data-kw="27">\(\displaystyle p\)</p>
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s27-6.svg" alt="">
+    <img class="layer" data-src="fig/s27-7.svg" alt="">
+    <p class="ln eq" data-x="1731" data-y="541" data-m="54.36" data-kw="92">\(\displaystyle f \, (p)\)</p>
+    <p class="ln eq fragment" data-fragment-index="1" data-x="750" data-y="541" data-m="54.36" data-kw="248" style="color:#0076ba">\(\displaystyle y = \operatorname{refl}_A( {\color{#ee220c} x} )\)</p>
+    <img class="layer fragment" data-fragment-index="1" data-src="fig/s27-8.svg" alt="">
+    <p class="ln eq fragment" data-fragment-index="2" data-x="1773" data-y="633" data-m="54.36" data-kw="86" style="color:#0076ba">\(\displaystyle f \, (y)\)</p>
+  </div>
+</section>
+
+<section aria-label="Averaging">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Averaging</p>
+    <p class="ln b45" data-x="101" data-y="276">Advantages.</p>
+    <p class="ln l45t-5" data-x="101" data-y="358">•Map “floats” to conformal state.</p>
+    <p class="ln l55_4" data-x="101" data-y="444">•</p>
+    <p class="ln l45" data-x="136" data-y="440">Smooth adaption to change of</p>
+    <p class="ln l45" data-x="136" data-y="522">target shape.</p>
+    <p class="ln l55_4" data-x="101" data-y="608">•</p>
+    <p class="ln l45" data-x="136" data-y="603">Applications beyond hyperbolic</p>
+    <p class="ln l45" data-x="136" data-y="685">symmetry groups.</p>
+    <iframe class="clip applet" data-applet="../applets/disk-to-quad.html#-0.81,-0.95,0.91,1.05" style="left:1450.4px;top:325.9px;width:469.6px;height:543.4px" title="Live applet: the disk mapped onto a quadrilateral; drag its corners"></iframe>
+    <iframe class="clip applet" data-applet="../applets/heptagon.html" style="left:1446.3px;top:40.1px;width:529.1px;height:297.6px" title="Live applet: averaging maps a heptagon onto the disk"></iframe>
+    <img class="layer" data-src="fig/s28-0.svg" alt="">
+    <img class="layer fragment" data-fragment-index="2" data-src="fig/s28-1.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="How well does the approximation">
+  <div class="stage">
+    <p class="ln b112_5t20" data-x="99" data-y="653">How well does the approximation</p>
+    <p class="ln b112_5t20" data-x="99" data-y="763">on the GPU work?</p>
+  </div>
+</section>
+
+<section aria-label="Numerical Experiments">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Numerical Experiments</p>
+    <p class="ln b45" data-x="99" data-y="300">Idea.</p>
+    <p class="ln l45" data-x="99" data-y="355">Compare outputs of the algorithm with exact maps.</p>
+    <p class="ln b45 fragment" data-fragment-index="1" data-x="99" data-y="465">Problem.</p>
+    <p class="ln l45 fragment" data-fragment-index="1" data-x="99" data-y="520">GPU comes with low calculation precision (8 bits).</p>
+    <p class="ln l45 fragment" data-fragment-index="1" data-x="99" data-y="575">At most 4 digits after the decimal point are correct.</p>
+    <p class="ln b45 fragment" data-fragment-index="2" data-x="99" data-y="685">Solution.</p>
+    <p class="ln l45 fragment" data-fragment-index="2" data-x="99" data-y="740">Need implementation with high precision: in Mathematica.</p>
+  </div>
+</section>
+
+<section aria-label="Experimental Results">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Experimental Results</p>
+    <p class="ln b45" data-x="99" data-y="300">Some obvious results.</p>
+    <p class="ln l45" data-x="99" data-y="355">• The algorithm runs slowly in</p>
+    <p class="ln l45" data-x="117" data-y="410">Mathematica.</p>
+    <p class="ln l45 fragment" data-fragment-index="1" data-x="99" data-y="465">• The convergence speed rapidly</p>
+    <p class="ln l45 fragment" data-fragment-index="1" data-x="117" data-y="520">decays.</p>
+    <p class="ln b45 fragment" data-fragment-index="2" data-x="99" data-y="685">Approaches for speed-up.</p>
+    <p class="ln l45 fragment" data-fragment-index="2" data-x="99" data-y="740">• Initialization.</p>
+    <p class="ln l45 fragment" data-fragment-index="3" data-x="99" data-y="795">• Varying types of neighborhood.</p>
+    <p class="ln l45 fragment" data-fragment-index="4" data-x="99" data-y="850">• Varying distances for averaging.</p>
+    <img class="layer fragment fade-out" data-fragment-index="3" data-src="fig/s31-0.svg" alt="">
+    <img class="layer fragment" data-fragment-index="3" data-src="fig/s31-1.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Experimental Results">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Experimental Results</p>
+    <img class="layer" data-src="fig/s32-0.svg" alt="">
+    <p class="ln l45" data-x="634" data-y="656">exact map</p>
+    <p class="ln l45" data-x="1055" data-y="631">low-precision</p>
+    <p class="ln l45" data-x="1046" data-y="681">approximation</p>
+    <p class="ln l45" data-x="1494" data-y="631">high-precision</p>
+    <p class="ln l45" data-x="1492" data-y="681">approximation</p>
+    <p class="ln l45" data-x="1076" data-y="131"><b>Idea. </b>Compare outputs of the</p>
+    <p class="ln l45" data-x="1076" data-y="186">algorithm with exact maps.</p>
+  </div>
+</section>
+
+<section aria-label="Slide 33">
+  <div class="stage">
+    <img class="layer" data-src="fig/s33-0.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Slide 34">
+  <div class="stage">
+    <img class="layer" data-src="fig/s34-0.svg" alt="">
+  </div>
+</section>
+
+<section aria-label="Numerical Experiments">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Numerical Experiments</p>
+    <p class="ln b45 fragment" data-fragment-index="1" data-x="99" data-y="505">Results.</p>
+    <p class="ln l45 fragment" data-fragment-index="1" data-x="99" data-y="587">• High-precision averaging approximates “arbitrarily” well in examined instances.</p>
+    <p class="ln l45 fragment" data-fragment-index="1" data-x="99" data-y="669">• Have an <b>apparently </b>suitable way of measuring errors without knowing the exact map.</p>
+    <p class="ln l45 fragment" data-fragment-index="2" data-x="99" data-y="751">• Low-precision averaging returns visually satisfying results.</p>
+  </div>
+</section>
+
+<section aria-label="Appendix">
+  <div class="stage">
+    <p class="ln b116t20" data-x="99" data-y="705">Appendix</p>
+  </div>
+</section>
+
+<section aria-label="Some Facts">
+  <div class="stage">
+    <p class="ln b85t20" data-x="99" data-y="171">Some Facts</p>
+    <p class="ln b45" data-x="99" data-y="263">Carathéodory’s theorem.</p>
+    <p class="ln l45" data-x="99" data-y="327" data-m="54.99">Let  \(\displaystyle f \colon U \rightarrow \mathbb{E}\) be a biholomorphic map from a region \(\displaystyle U\) to the unit disk. Then,  \(\displaystyle f\)  can</p>
+    <p class="ln l45" data-x="99" data-y="394" data-m="54.99">be extended to a homeomorphism \(\displaystyle \bar{U} \rightarrow \bar{E}\) if and only if the boundary \(\displaystyle \partial U\) is a closed</p>
+    <p class="ln l45" data-x="99" data-y="451">Jordan curve.</p>
+    <p class="ln l45" data-x="99" data-y="515" data-m="54.99">In this case, it holds that \(\displaystyle f(\partial U) = \partial \mathbb{E}\).</p>
+    <p class="ln b45" data-x="92" data-y="687">Möbius Transformations.</p>
+    <p class="ln l45" data-x="92" data-y="753">Every conformal automorphism of the unit disk is a</p>
+    <p class="ln l45" data-x="92" data-y="818">Möbius transformation.</p>
+    <p class="ln l45" data-x="92" data-y="884">So, the Riemann mapping theorem can be used as a</p>
+    <p class="ln l45" data-x="92" data-y="950">tool to talk about “generalized Möbius transformations”.</p>
+    <img class="layer" data-src="fig/s41-0.svg" alt="">
+  </div>
+</section>

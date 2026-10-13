@@ -1,0 +1,10 @@
+{
+  "name": "talk-native-build",
+  "private": true,
+  "type": "module",
+  "description": "Builds the native reveal.js talk pages (TeX rendered to SVG with MathJax + STIX2 at build time)",
+  "dependencies": {
+    "@mathjax/src": "4.1.3",
+    "@mathjax/mathjax-stix2-font": "4.1.3"
+  }
+}

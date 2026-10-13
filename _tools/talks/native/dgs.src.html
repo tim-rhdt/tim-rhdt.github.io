@@ -1,0 +1,369 @@
+<!-- deck {
+  "slug": "dynamic-geometry-system",
+  "title": "How to Build a Dynamic Geometry System",
+  "event": "Public talk, TUM",
+  "date": "23 June 2025",
+  "css": ".fig { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; pointer-events: none; z-index: 1; }\n.fig-c, .fig-l { fill: none; stroke: #000; stroke-width: 5; }\n.fig-pt { fill: #000; }\n.fig-grab { stroke: transparent; stroke-width: 36; fill: none; pointer-events: stroke; cursor: grab; touch-action: none; }\n.fig-handle { fill: transparent; pointer-events: all; cursor: grab; touch-action: none; }\n.demo { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; border: 2px solid #000; background: #f5f5f5; }\n.demo iframe { width: 100%; height: 100%; border: 0; background: #fff; }\n.demo-start { font: 250 35px Inter, sans-serif; padding: 18px 40px; color: #000; background: #fff; border: 2px solid #000; border-radius: 0; cursor: pointer; }\n.demo-start:hover, .demo-start:focus-visible { background: #000; color: #fff; }\n.demo-note { margin: 0; font: 250 26px/1.5 Inter, sans-serif; color: #666; text-align: center; }\n.demo-note a { color: inherit; }"
+} -->
+<!--
+  Source of talks/dynamic-geometry-system/ (build: node build.mjs dgs.src.html ../../..).
+  Lines: class = style (see STYLES in build.mjs), data-x / data-y = left edge and baseline in the
+  1920×1080 Keynote coordinates (read from the PDF export), data-dot = x of a bullet.
+  Each <div class="fragment"> is one Keynote build step; TeX goes in \( … \).
+-->
+
+<section aria-label="How to Build a Dynamic Geometry System">
+  <div class="stage">
+    <h1 class="ln xl" data-x="99" data-y="398">How to Build a Dynamic</h1>
+    <p class="ln xl" data-x="99" data-y="539">Geometry System</p>
+    <p class="ln author" data-x="99" data-y="1006">Tim Reinhardt, 23.06.2025</p>
+  </div>
+</section>
+
+<section aria-label="Geometric Setup">
+  <div class="stage">
+    <h2 class="ln title" data-x="99" data-y="155">Geometric Setup</h2>
+    <p class="ln sub" data-x="99" data-y="245">Construct in \(\mathbb{RP}^2\), calculate in \(\mathbb{CP}^2\)</p>
+    <h3 class="ln h" data-x="99" data-y="354">Motivation</h3>
+    <p class="ln b" data-x="135" data-y="421" data-dot="99">beautiful theory</p>
+    <p class="ln b" data-x="135" data-y="488" data-dot="99">removal of case distinctions</p>
+    <h3 class="ln h" data-x="99" data-y="622">Geometric Objects</h3>
+    <p class="ln b" data-x="135" data-y="697" data-dot="99">Points: \(P \subseteq \mathbb{CP}^2\)</p>
+    <p class="ln b" data-x="135" data-y="774" data-dot="99">Lines: \(L \subseteq \mathbb{CP}^2\)</p>
+    <p class="ln b" data-x="135" data-y="851" data-dot="99">Conics: \(Q \subseteq \mathbb{CP}^5\)</p>
+    <p class="ln b" data-x="135" data-y="928" data-dot="99">Cubics: \(C \subseteq \mathbb{CP}^9\)</p>
+    <span class="ln brace" data-x="466" data-y="907" aria-hidden="true">}</span>
+    <p class="ln b" data-x="576" data-y="845">drawn as point sets</p>
+    <p class="ln b gray" data-x="135" data-y="996" data-dot="99">Exceptional types: segments, arcs, loci</p>
+  </div>
+</section>
+
+<section aria-label="Basic Terms: operations">
+  <div class="stage">
+    <h2 class="ln title" data-x="99" data-y="155">Basic Terms</h2>
+    <div class="fragment">
+      <h3 class="ln h" data-x="99" data-y="256">Definition.</h3>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="331" data-dot="99">An <b>operation</b> is a relation \(\omega \subseteq I_1 \times \ldots \times I_k \times O \in \{P, L, Q, C\}^{k+1} \quad (k \in \mathbb{N})\).</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="410" data-dot="99">For \(k = 0\), we call \(\omega \in \{P, L, Q, C\}\) a <b>free operation</b>.</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="486" data-dot="99">An operation \(\omega\) is called <b>algebraic</b> if it is the set of all \((i_1, \ldots, i_k, o)\) which satisfy a system of polynomial</p>
+      <p class="ln b" data-x="124" data-y="537">equations and which respect certain non-degeneracy conditions.</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="604" data-dot="99">Moreover, we write</p>
+      <p class="ln b" data-x="171" data-y="679">\(\omega(i_1, \ldots, i_k) := \{o \in O \mid (i_1, \ldots, i_k, o) \in \omega\}\).</p>
+    </div>
+    <div class="fragment">
+      <h3 class="ln h" data-x="99" data-y="797">Example.</h3>
+    </div>
+    <div class="fragment">
+      <p class="ln s" data-x="124" data-y="865" data-dot="99"><code>Join: </code>\(\{(p, q, l) \in P \times P \times L \mid p^T l = 0\) and \(q^T l = 0\}\)</p>
+    </div>
+    <div class="fragment">
+      <p class="ln s" data-x="124" data-y="934" data-dot="99"><code>Join: </code>\(\{(p, q, l) \in P \times P \times L \mid p^T l = 0\), \(q^T l = 0\) and \(p \neq q\}\)</p>
+    </div>
+    <div class="fragment">
+      <p class="ln s" data-x="124" data-y="1002" data-dot="99"><code>IntersectionConicLine: </code>\(\{(c, l, p) \in Q \times L \times P \mid p\) lies on \(c\), \(l^T p = 0\) and \(c\) non-degenerate\(\}\)</p>
+    </div>
+    <div class="fragment">
+      <svg class="fig" id="icl" viewBox="0 0 1920 1080" data-prevent-swipe role="img" aria-label="A circle c and a line l meeting in the points p and q. Drag the line, its ends or the circle.">
+        <circle class="fig-c" cx="1553.6" cy="725.6" r="126.6"/>
+        <line class="fig-l" x1="1373.1" y1="596" x2="1767.8" y2="816.3"/>
+        <circle class="fig-pt" id="icl-p" cx="1455.4" cy="644.7" r="16.5"/>
+        <circle class="fig-pt" id="icl-q" cx="1672.6" cy="767.5" r="16.5"/>
+        <circle class="fig-grab" id="icl-ring" cx="1553.6" cy="725.6" r="126.6"/>
+        <line class="fig-grab" id="icl-line" x1="1373.1" y1="596" x2="1767.8" y2="816.3"/>
+        <circle class="fig-handle" id="icl-a" cx="1373.1" cy="596" r="30"/>
+        <circle class="fig-handle" id="icl-b" cx="1767.8" cy="816.3" r="30"/>
+      </svg>
+      <span class="ln s" id="icl-lp" data-x="1446" data-y="605" aria-hidden="true">\(p\)</span>
+      <span class="ln s" id="icl-lq" data-x="1699" data-y="745" aria-hidden="true">\(q\)</span>
+      <span class="ln s" id="icl-ll" data-x="1549" data-y="745" aria-hidden="true">\(l\)</span>
+      <span class="ln s" id="icl-lc" data-x="1410" data-y="817" aria-hidden="true">\(c\)</span>
+      <p class="ln s" data-x="1281" data-y="899"><code>IntersectionConicLine</code>\((c, l) = \{p, q\}\)</p>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Basic Terms: constructions">
+  <div class="stage">
+    <h2 class="ln title" data-x="99" data-y="155">Basic Terms</h2>
+    <div class="fragment">
+      <h3 class="ln h" data-x="99" data-y="308">Definition.</h3>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="375" data-dot="99">A <b>(geometric) construction</b> consists of</p>
+      <p class="ln b" data-x="154" data-y="450">1.</p>
+      <p class="ln b" data-x="209" data-y="450">a sequence \(O_{1-m}, \ldots, O_0, O_1, \ldots, O_n \in \{P, L, Q, C\}\) of geometric types, and</p>
+      <p class="ln b" data-x="154" data-y="528">2.</p>
+      <p class="ln b" data-x="209" data-y="528">a sequence \(\omega_{1-m}, \ldots, \omega_n\) of corresponding operations where \(\omega_{1-m}, \ldots, \omega_0\) are all free operations</p>
+      <p class="ln b" data-x="209" data-y="587">and \(\omega_1, \ldots, \omega_n\) only use free or already constructed objects as input.</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="658" data-dot="99">A <b>(geometric) instance</b> of a geometric construction is an element</p>
+      <p class="ln b" data-x="207" data-y="733">\(o = (o_{1-m}, \ldots, o_n) \in O_{1-m} \times \ldots \times O_n\)</p>
+      <p class="ln b" data-x="124" data-y="811">such that the corresponding subtuples of \(o\) are contained in each \(\omega_k\).</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="882" data-dot="99">The set of all instances of a construction is called the <b>configuration space</b> of the construction.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Fundamental Properties">
+  <div class="stage">
+    <h2 class="ln title" data-x="99" data-y="155">Fundamental Properties</h2>
+    <div class="fragment">
+      <h3 class="ln h" data-x="87" data-y="363">Consistency.</h3>
+      <p class="ln b" data-x="87" data-y="430">In every instance of a construction that is shown by</p>
+      <p class="ln b" data-x="87" data-y="477">the DGP, the geometric objects have the type and</p>
+      <p class="ln b" data-x="87" data-y="524">fulfill the relations determined by the construction.</p>
+    </div>
+    <div class="fragment">
+      <h3 class="ln h" data-x="1013" data-y="363">Determinism.</h3>
+      <p class="ln b" data-x="1013" data-y="430">In a DGP, the same movements from the same</p>
+      <p class="ln b" data-x="1013" data-y="477">starting instances always yield the same motions</p>
+      <p class="ln b" data-x="1013" data-y="524">of dependent elements.</p>
+    </div>
+    <div class="fragment">
+      <h3 class="ln h" data-x="87" data-y="713">Conservatism.</h3>
+      <p class="ln b" data-x="87" data-y="780">In a DGP, the ending instance is completely</p>
+      <p class="ln b" data-x="87" data-y="827">determined by the starting instance and the</p>
+      <p class="ln b" data-x="87" data-y="874">ending positions of the free elements.</p>
+    </div>
+    <div class="fragment">
+      <h3 class="ln h" data-x="1013" data-y="713">Continuity.</h3>
+      <p class="ln b" data-x="1013" data-y="780">If the free elements of a construction move</p>
+      <p class="ln b" data-x="1013" data-y="827">continuously, the induced paths of dependent</p>
+      <p class="ln b" data-x="1013" data-y="874">elements are continuous as well.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Our Framework">
+  <div class="stage">
+    <h2 class="ln title" data-x="99" data-y="155">Our Framework</h2>
+    <div class="fragment">
+      <h3 class="ln h" data-x="99" data-y="252">Definition.</h3>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="327">A map \(\mu : [0,1] \to T \in \{P, L, Q, C\}\) is called a <b>movement</b> if there exists an open neighborhood</p>
+      <p class="ln b" data-x="99" data-y="384">\([0,1] \subset U \subseteq \mathbb{C}\) and a holomorphic map \(\varphi : U \to T\) with \(\varphi_{|_{[0,1]}} = \mu\).</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="473">Given a construction with \(m\) free objects and a starting instance \(o\). Let</p>
+      <p class="ln b" data-x="171" data-y="549">\(M = \{\mu : [0,1] \to O_{1-m} \times \ldots \times O_0 \mid \forall j : \mu_j\) is movement with \(\mu_j(0) = o_j\}\).</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="634">Moreover, let \(N = \{\nu : [0,1] \to O_1 \times \ldots \times O_n\}\).</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="713">A <b>dynamic geometry system</b> (DGS) is a map \(M \to N\) such that \(\forall t \in [0,1]\), \((\mu(t), \nu(t))\) is an instance of</p>
+      <p class="ln b" data-x="99" data-y="761">the underlying geometric construction.</p>
+    </div>
+    <div class="fragment">
+      <h3 class="ln h" data-x="99" data-y="875">Observation.</h3>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="942">This definition of a DGS automatically ensures <em>consistency</em> and <em>determinism</em></p>
+      <p class="ln b" data-x="99" data-y="997">(since \(\nu\) decomposes into functions).</p>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Conservatism vs. Continuity">
+  <div class="stage">
+    <h2 class="ln title" data-x="99" data-y="155">Conservatism vs. Continuity</h2>
+    <div class="fragment">
+      <h3 class="ln h" data-x="99" data-y="379">Example.</h3>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="446">Consider a DGS with the following operations:</p>
+      <p class="ln c" data-x="171" data-y="507">FreePoint, Join(\(\cdot\),\(\cdot\)), Meet(\(\cdot\),\(\cdot\)), AngularBisector(\(\cdot\),\(\cdot\))</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="574">which is captured by</p>
+      <p class="ln c" data-x="171" data-y="635">FreePoint, Join(\(\cdot\),\(\cdot\)), Meet(\(\cdot\),\(\cdot\)), CircleMidRadius(\(\cdot\),\(\cdot\)), IntersectionCircleLine(\(\cdot\),\(\cdot\)),</p>
+      <p class="ln c" data-x="171" data-y="675">IntersectionCircleCircle(\(\cdot\),\(\cdot\)).</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="804">\(\Rightarrow\) Conservatism and continuity are mutually exclusive if sufficiently complex operations are admissible.</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="881">\(\Rightarrow\) It is “likely” that not the whole configuration space is reachable in a conservative DGP.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Reachability">
+  <div class="stage">
+    <h2 class="ln title" data-x="99" data-y="155">Reachability</h2>
+    <div class="fragment">
+      <h3 class="ln h" data-x="99" data-y="380">Reachability Problem in Dynamic Geometry.</h3>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="447">Given two instances of an algebraic construction, is it possible to move continuously from one to the other</p>
+      <p class="ln b" data-x="99" data-y="494">using only paths of a certain type?</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="628"><b>Theorem</b> (Kortenkamp, Richter-Gebert)<b>.</b></p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="695">The reachability problem is</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="762" data-dot="99">PSPACE-hard in general,</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="829" data-dot="99">NP-hard if <code>FreePoint, Join(\(\cdot\),\(\cdot\)), Meet(\(\cdot\),\(\cdot\)), AngularBisector(\(\cdot\),\(\cdot\)) </code>are the admissible operations,</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="896" data-dot="99">undecidable if “algebraic” is dropped.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Continuous DG Systems">
+  <div class="stage">
+    <h2 class="ln title" data-x="99" data-y="155">Continuous DG Systems</h2>
+    <div class="fragment">
+      <h3 class="ln h" data-x="99" data-y="274">Continuity makes theorems possible!</h3>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="341">A theorem in DG is an algebraic property that holds on an open neighborhood of an instance.</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="475"><b>Theorem</b> (Kortenkamp, Orendt, Richter-Gebert)<b>.</b></p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="99" data-y="542">There exists a continuous DGS for every algebraic construction</p>
+      <p class="ln b" data-x="99" data-y="589">(if the starting instance satisfies certain non-degeneracy constraints).</p>
+    </div>
+    <div class="fragment">
+      <h3 class="ln h" data-x="99" data-y="723">Key ideas.</h3>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="790" data-dot="99">Complex detours: Use the neighborhood of a movement to avoid singularities.</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="865" data-dot="99">One then needs to show that the limit of smaller detours converging to \([0,1]\) do not induce discontinuities</p>
+      <p class="ln b" data-x="124" data-y="914">in the limit case.</p>
+    </div>
+    <div class="fragment">
+      <p class="ln b" data-x="124" data-y="981" data-dot="99">In practice: Path tracing problem</p>
+    </div>
+  </div>
+</section>
+
+<section aria-label="Demo">
+  <div class="stage">
+    <h2 class="ln title" data-x="99" data-y="155">Demo</h2>
+    <div class="demo" style="left:99px;top:250px;width:1722px;height:760px" data-src="https://cindy-in-cindy-f218c4.pages.gitlab.lrz.de/" data-prevent-swipe>
+      <button class="demo-start" type="button">Start live demo</button>
+      <p class="demo-note">Cindy in Cindy, loaded from gitlab.lrz.de when you start it · <a href="https://cindy-in-cindy-f218c4.pages.gitlab.lrz.de/" target="_blank" rel="noopener">open in a new tab ↗</a><br>Click next to the demo to continue with the arrow keys.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+// Slide 3: a live version of the figure. Drag the line (or one of its ends) or the circle;
+// p and q are recomputed as the intersections of the line with the circle.
+(function () {
+  var svg = document.getElementById("icl");
+  if (!svg) return;
+  var circle = svg.querySelector(".fig-c"), line = svg.querySelector(".fig-l");
+  var ring = document.getElementById("icl-ring"), grab = document.getElementById("icl-line");
+  var dotP = document.getElementById("icl-p"), dotQ = document.getElementById("icl-q");
+  var endA = document.getElementById("icl-a"), endB = document.getElementById("icl-b");
+  var labels = { p: "icl-lp", q: "icl-lq", l: "icl-ll", c: "icl-lc" };
+  for (var k in labels) labels[k] = document.getElementById(labels[k]);
+  // label offsets (to the baseline) relative to p, q, the chord's midpoint and the circle's centre, as on the slide
+  var offset = { p: [-9.4, -39.7], q: [26.4, -22.5], l: [-15, 39], c: [-143.6, 91.4] };
+  var state = { c: { x: 1553.6, y: 725.6, r: 126.6 }, a: { x: 1373.1, y: 596 }, b: { x: 1767.8, y: 816.3 } };
+  var baseline = 1.36 * 30; // baseline offset of a .s line (see build.mjs)
+
+  function set(el, attrs) { for (var n in attrs) el.setAttribute(n, attrs[n]); }
+  function place(el, x, y, visible) {
+    el.style.left = x + "px";
+    el.style.top = (y - baseline) + "px";
+    el.style.visibility = visible === false ? "hidden" : "";
+  }
+  function update() {
+    var c = state.c, a = state.a, b = state.b;
+    var dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+    var fx = a.x - c.x, fy = a.y - c.y;
+    var half = fx * ux + fy * uy, disc = half * half - (fx * fx + fy * fy - c.r * c.r);
+    var from = 0, to = len, p = null, q = null;
+    if (disc >= 0) {
+      var s = Math.sqrt(disc), tp = -half - s, tq = -half + s;
+      p = { x: a.x + tp * ux, y: a.y + tp * uy };
+      q = { x: a.x + tq * ux, y: a.y + tq * uy };
+      from = Math.min(from, tp - 40);
+      to = Math.max(to, tq + 40);
+    }
+    var ends = { x1: a.x + from * ux, y1: a.y + from * uy, x2: a.x + to * ux, y2: a.y + to * uy };
+    set(line, ends);
+    set(grab, ends);
+    set(circle, { cx: c.x, cy: c.y });
+    set(ring, { cx: c.x, cy: c.y });
+    set(endA, { cx: a.x, cy: a.y });
+    set(endB, { cx: b.x, cy: b.y });
+    set(dotP, { cx: p ? p.x : -99, cy: p ? p.y : -99 });
+    set(dotQ, { cx: q ? q.x : -99, cy: q ? q.y : -99 });
+    var mid = p ? { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 } : { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    place(labels.p, (p ? p.x : 0) + offset.p[0], (p ? p.y : 0) + offset.p[1], !!p);
+    place(labels.q, (q ? q.x : 0) + offset.q[0], (q ? q.y : 0) + offset.q[1], !!q);
+    place(labels.l, mid.x + offset.l[0], mid.y + offset.l[1]);
+    place(labels.c, c.x + offset.c[0], c.y + offset.c[1]);
+  }
+  function toSlide(e) {
+    var r = svg.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * 1920 / r.width, y: (e.clientY - r.top) * 1080 / r.height };
+  }
+  function draggable(el, move) {
+    el.addEventListener("pointerdown", function (down) {
+      down.preventDefault();
+      down.stopPropagation();
+      el.setPointerCapture(down.pointerId);
+      el.style.cursor = "grabbing";
+      var start = toSlide(down), from = JSON.parse(JSON.stringify(state));
+      function onMove(e) {
+        var p = toSlide(e);
+        move(p.x - start.x, p.y - start.y, from);
+        update();
+      }
+      function onUp() {
+        el.style.cursor = "";
+        el.removeEventListener("pointermove", onMove);
+        el.removeEventListener("pointerup", onUp);
+        el.removeEventListener("pointercancel", onUp);
+      }
+      el.addEventListener("pointermove", onMove);
+      el.addEventListener("pointerup", onUp);
+      el.addEventListener("pointercancel", onUp);
+    });
+  }
+  function shift(pt, dx, dy) { return { x: pt.x + dx, y: pt.y + dy }; }
+  draggable(endA, function (dx, dy, s) { state.a = shift(s.a, dx, dy); });
+  draggable(endB, function (dx, dy, s) { state.b = shift(s.b, dx, dy); });
+  draggable(grab, function (dx, dy, s) { state.a = shift(s.a, dx, dy); state.b = shift(s.b, dx, dy); });
+  draggable(ring, function (dx, dy, s) { state.c = { x: s.c.x + dx, y: s.c.y + dy, r: s.c.r }; });
+  update();
+})();
+
+// Demo slide: the live geometry system is only loaded (from gitlab.lrz.de) after a click.
+document.querySelectorAll(".demo").forEach(function (box) {
+  box.querySelector(".demo-start").addEventListener("click", function () {
+    var frame = document.createElement("iframe");
+    frame.src = box.dataset.src;
+    frame.title = "Cindy in Cindy (live demo)";
+    frame.allow = "fullscreen";
+    box.replaceChildren(frame);
+  });
+});
+</script>
