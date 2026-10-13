@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>How to Build a Dynamic Geometry System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Slides of the talk “How to Build a Dynamic Geometry System” by Tim Reinhardt (Public talk, TUM, 23 June 2025).">
+  <meta name="description" content="Slides of the talk “How to Build a Dynamic Geometry System” by Tim Reinhardt (Public talk, TUM, June 23, 2025).">
   <link rel="stylesheet" href="../reveal/reveal.css">
   <style>
     @font-face { font-family: "Roboto Slab"; font-weight: 100 900; font-display: swap; src: url("../../assets/fonts/roboto-slab-latin.woff2") format("woff2"); }
@@ -329,7 +329,7 @@
         <div class="stage">
           <h1 class="ln xl" style="left:99px;top:231.2px">How to Build a Dynamic</h1>
           <p class="ln xl" style="left:99px;top:372.2px">Geometry System</p>
-          <p class="ln author" style="left:99px;top:960.13px">Tim Reinhardt, 23.06.2025</p>
+          <p class="ln author" style="left:99px;top:960.13px">Tim Reinhardt, June 23, 2025</p>
         </div>
       </section>
       
@@ -612,7 +612,7 @@
       var endA = document.getElementById("icl-a"), endB = document.getElementById("icl-b");
       var labels = { p: "icl-lp", q: "icl-lq", l: "icl-ll", c: "icl-lc" };
       for (var k in labels) labels[k] = document.getElementById(labels[k]);
-      // label offsets (to the baseline) relative to p, q, the chord's midpoint and the circle's centre, as on the slide
+      // label offsets (to the baseline) relative to p, q, the chord's midpoint and the circle's center, as on the slide
       var offset = { p: [-9.4, -39.7], q: [26.4, -22.5], l: [-15, 39], c: [-143.6, 91.4] };
       var state = { c: { x: 1553.6, y: 725.6, r: 126.6 }, a: { x: 1373.1, y: 596 }, b: { x: 1767.8, y: 816.3 } };
       var baseline = 1.36 * 30; // baseline offset of a .s line (see build.mjs)

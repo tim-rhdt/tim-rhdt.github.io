@@ -2,7 +2,7 @@
   "slug": "dynamic-geometry-system",
   "title": "How to Build a Dynamic Geometry System",
   "event": "Public talk, TUM",
-  "date": "23 June 2025",
+  "date": "June 23, 2025",
   "css": ".fig { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: visible; pointer-events: none; z-index: 1; }\n.fig-c, .fig-l { fill: none; stroke: #000; stroke-width: 5; }\n.fig-pt { fill: #000; }\n.fig-grab { stroke: transparent; stroke-width: 36; fill: none; pointer-events: stroke; cursor: grab; touch-action: none; }\n.fig-handle { fill: transparent; pointer-events: all; cursor: grab; touch-action: none; }\n.demo { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; border: 2px solid #000; background: #f5f5f5; }\n.demo iframe { width: 100%; height: 100%; border: 0; background: #fff; }\n.demo-start { font: 250 35px Inter, sans-serif; padding: 18px 40px; color: #000; background: #fff; border: 2px solid #000; border-radius: 0; cursor: pointer; }\n.demo-start:hover, .demo-start:focus-visible { background: #000; color: #fff; }\n.demo-note { margin: 0; font: 250 26px/1.5 Inter, sans-serif; color: #666; text-align: center; }\n.demo-note a { color: inherit; }"
 } -->
 <!--
@@ -16,7 +16,7 @@
   <div class="stage">
     <h1 class="ln xl" data-x="99" data-y="398">How to Build a Dynamic</h1>
     <p class="ln xl" data-x="99" data-y="539">Geometry System</p>
-    <p class="ln author" data-x="99" data-y="1006">Tim Reinhardt, 23.06.2025</p>
+    <p class="ln author" data-x="99" data-y="1006">Tim Reinhardt, June 23, 2025</p>
   </div>
 </section>
 
@@ -282,7 +282,7 @@
   var endA = document.getElementById("icl-a"), endB = document.getElementById("icl-b");
   var labels = { p: "icl-lp", q: "icl-lq", l: "icl-ll", c: "icl-lc" };
   for (var k in labels) labels[k] = document.getElementById(labels[k]);
-  // label offsets (to the baseline) relative to p, q, the chord's midpoint and the circle's centre, as on the slide
+  // label offsets (to the baseline) relative to p, q, the chord's midpoint and the circle's center, as on the slide
   var offset = { p: [-9.4, -39.7], q: [26.4, -22.5], l: [-15, 39], c: [-143.6, 91.4] };
   var state = { c: { x: 1553.6, y: 725.6, r: 126.6 }, a: { x: 1373.1, y: 596 }, b: { x: 1767.8, y: 816.3 } };
   var baseline = 1.36 * 30; // baseline offset of a .s line (see build.mjs)

@@ -84,6 +84,14 @@
   [
    "\\overline{U} \\rightarrow \\overline{E}",
    "\\bar{U} \\rightarrow \\bar{E}"
+  ],
+  [
+   "“Force” the mapping to fulfil the",
+   "“Force” the mapping to fulfill the"
+  ],
+  [
+   "close neighbours.",
+   "close neighbors."
   ]
  ],
  "styles": {
