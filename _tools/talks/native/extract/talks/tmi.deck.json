@@ -1,0 +1,190 @@
+{
+ "slug": "teaching-mathematical-illustration",
+ "title": "Case Study: Teaching Mathematical Illustration",
+ "by": "Jürgen Richter-Gebert and Tim Reinhardt",
+ "event": "Matrix × Imaginary, New York",
+ "date": "20.07.2026",
+ "fonts": {
+  "sans": "inter",
+  "mono": "mono",
+  "slab": "slab"
+ },
+ "weights": {
+  "slab": {
+   "200": 100,
+   "300": 250
+  },
+  "inter": {
+   "300": 250
+  }
+ },
+ "css": "/* Inter stands in for Graphik; cv11 gives the single-storey a of the slides */\n.stage .ln { font-feature-settings: \"cv11\"; }",
+ "slides": {
+  "3": {
+   "videos": [
+    {
+     "src": "../media/120cell-rotation.mp4",
+     "rect": [
+      1169.5,
+      55.2,
+      701.0,
+      470.3
+     ],
+     "step": 1
+    }
+   ]
+  },
+  "4": {
+   "videos": [
+    {
+     "src": "../media/screen-recording-2026-07-20-at-00-33-10.mp4",
+     "rect": [
+      689.0,
+      38.8,
+      691.1,
+      550.9
+     ],
+     "step": 1
+    },
+    {
+     "src": "../media/screen-recording-2026-07-20-at-00-36-14.mp4",
+     "rect": [
+      1342.5,
+      638.8,
+      498.5,
+      408.1
+     ],
+     "step": 2
+    }
+   ]
+  },
+  "5": {
+   "videos": [
+    {
+     "src": "../media/particle-disk.mp4",
+     "rect": [
+      1397.0,
+      91.8,
+      504.2,
+      896.3
+     ],
+     "step": 1
+    }
+   ]
+  },
+  "7": {
+   "videos": [
+    {
+     "src": "../media/screen-recording-2026-07-14-at-11-14-59.mp4",
+     "rect": [
+      537.4,
+      232.4,
+      346.6,
+      346.6
+     ],
+     "step": 0
+    },
+    {
+     "src": "../media/120cell-rotation.mp4",
+     "rect": [
+      72.2,
+      628.4,
+      639.4,
+      429.0
+     ],
+     "step": 0
+    },
+    {
+     "src": "../media/screen-recording-2026-07-20-at-00-36-14.mp4",
+     "rect": [
+      72.0,
+      232.4,
+      423.3,
+      346.6
+     ],
+     "step": 0
+    },
+    {
+     "src": "../media/screen-recording-2026-07-20-at-00-33-10.mp4",
+     "rect": [
+      916.0,
+      232.4,
+      434.8,
+      346.6
+     ],
+     "step": 0
+    },
+    {
+     "src": "../media/screen-recording-2026-07-20-at-00-38-50.mp4",
+     "rect": [
+      741.9,
+      628.4,
+      598.0,
+      429.0
+     ],
+     "step": 0
+    },
+    {
+     "src": "../media/particle-disk.mp4",
+     "rect": [
+      1382.8,
+      161.2,
+      504.2,
+      896.3
+     ],
+     "step": 0
+    }
+   ]
+  },
+  "9": {
+   "videos": [
+    {
+     "src": "../media/screen-recording-2026-07-14-at-11-14-59.mp4",
+     "rect": [
+      762.9,
+      60.1,
+      585.0,
+      585.0
+     ],
+     "step": 1
+    },
+    {
+     "src": "../media/screen-recording-2026-07-20-at-00-38-50.mp4",
+     "rect": [
+      1207.5,
+      562.3,
+      686.3,
+      492.3
+     ],
+     "step": 1
+    }
+   ]
+  }
+ },
+ "styles": {
+  "note": [
+   "inter",
+   24,
+   300,
+   false
+  ]
+ },
+ "edits": [
+  [
+   "<section aria-label=\"Chaos\">\n  <div class=\"stage\">",
+   "<section aria-label=\"Chaos\">\n  <div class=\"stage\">\n    <p class=\"ln note\" data-x=\"129.3\" data-y=\"406\" style=\"width:356.6px;text-align:center;color:#929292\">Image not shown online</p>\n    <p class=\"ln note\" data-x=\"82.8\" data-y=\"853\" style=\"width:449.6px;text-align:center;color:#929292\">Image not shown online</p>"
+  ],
+  [
+   "<section aria-label=\"Particles\">\n  <div class=\"stage\">",
+   "<section aria-label=\"Particles\">\n  <div class=\"stage\">\n    <p class=\"ln note\" data-x=\"455.6\" data-y=\"430\" style=\"width:416.5px;text-align:center;color:#929292\">Image not shown online</p>"
+  ],
+  [
+   "<section aria-label=\"Clebsch Cubic\">\n  <div class=\"stage\">",
+   "<section aria-label=\"Clebsch Cubic\">\n  <div class=\"stage\">\n    <p class=\"ln note\" data-x=\"157.5\" data-y=\"552\" style=\"width:319.7px;text-align:center;color:#929292\">Image not shown online</p>"
+  ],
+  [
+   "<section aria-label=\"Visual Proofs\">\n  <div class=\"stage\">",
+   "<section aria-label=\"Visual Proofs\">\n  <div class=\"stage\">\n    <p class=\"ln note\" data-x=\"40.1\" data-y=\"839\" style=\"width:433.7px;text-align:center;color:#929292\">Image not shown online</p>"
+  ]
+ ]
+}

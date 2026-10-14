@@ -2,7 +2,7 @@
 
 Werkzeuge, mit denen die Folien unter `talks/` entstanden sind. Der Ordner beginnt mit `_`, deshalb veröffentlicht GitHub Pages ihn nicht.
 
-Alle vier Talks sind **native Nachbauten** (C): Text bleibt Text (scharf in jeder Größe, durchsuchbar), Formeln werden zu Vektorgrafik, Abbildungen zu SVG-Ebenen, Builds zu Fragmenten. Dazu kommen Web-Elemente: interaktive Figuren und Live-Applets statt Bildschirmaufnahmen. Die **Bild-Decks** (A, B) sind der schnellere Weg, wenn es nur um eine Online-Kopie geht: Jede Folie und jeder Build-Schritt wird dabei ein Bild. Die Originale (`.key`, Exporte) werden nie verändert, alle Exporte entstehen aus einer Kopie.
+Alle fünf Talks sind **native Nachbauten** (C): Text bleibt Text (scharf in jeder Größe, durchsuchbar), Formeln werden zu Vektorgrafik, Abbildungen zu SVG-Ebenen, Builds zu Fragmenten. Dazu kommen Web-Elemente: interaktive Figuren und Live-Applets statt Bildschirmaufnahmen. Die **Bild-Decks** (A, B) sind der schnellere Weg, wenn es nur um eine Online-Kopie geht: Jede Folie und jeder Build-Schritt wird dabei ein Bild. Die Originale (`.key`, Exporte) werden nie verändert, alle Exporte entstehen aus einer Kopie.
 
 Benötigt: Google Chrome, Node ≥ 22, Python 3 mit `pikepdf`, `numpy` und `Pillow`, `ffmpeg`, `cwebp` (libwebp), poppler (`pdftoppm`, `pdftocairo`, `pdfinfo`), Ghostscript (`gs`).
 
@@ -53,7 +53,7 @@ MathJax setzt die Formeln beim Bauen als SVG. Die fertige Seite lädt deshalb we
 - `<iframe class="clip applet" data-applet="../applets/…">` ist ein Live-Applet. Es wird nur geladen, solange seine Folie zu sehen ist.
 - `<script>`-Blöcke laufen nach dem Start von reveal.js (z. B. die verschiebbare Figur im DGS-Talk).
 
-### Automatisch aus Keynote (Talks `is`, `mxi`, `thesis`)
+### Automatisch aus Keynote (Talks `is`, `mxi`, `thesis`, `tmi`)
 
 1. Eine Kopie der `.key` als PDF exportieren (Keynote, *Exportieren → PDF*, oder per AppleScript `export document … as PDF`), außerdem den HTML-Export aufnehmen (A, Schritte 1–2).
 2. Konvertieren:
@@ -69,13 +69,15 @@ MathJax setzt die Formeln beim Bauen als SVG. Die fertige Seite lädt deshalb we
    - Build-Schritte und Ausblendungen aus den Aufnahmen.
 
    Danach misst es die Zeilenlängen in Chrome und gleicht die Laufweiten an.
+
+   **Personen**: Zeigen Fotos Menschen ohne Einwilligung, werden sie vor dem Konvertieren unkenntlich gemacht, und zwar in der Kopie des PDF-Exports (Beispiel: `extract/talks/tmi.anonymize.py` verwischt die Köpfe). Gesichter und Personen in allen Bildern und in Einzelbildern aller Videos findet die Vision-Bibliothek von macOS (`VNDetectFaceRectanglesRequest`, `VNDetectHumanRectanglesRequest`); das Ergebnis wird trotzdem von Hand nachgesehen. Die Aufnahmen (A) zeigen die Originale, sie bleiben deshalb lokal.
 3. Die Einstellungen pro Talk liegen in `extract/talks/<name>.*.json`:
    - `config.json`, pro Folie:
      - `drop`: Bereiche (Video-Standbilder, Bilder ohne Rechte), die nicht übernommen werden.
      - `force`: Build-Schritte von Hand für Objekte, die sich aus den Aufnahmen nicht ablesen lassen.
      - `raster`: Bereiche, deren Striche Keynote zeigt, der PDF-Export aber nicht. Sie werden aus der Aufnahme übernommen, ohne den Text.
      - `static`: Folie ohne verwertbare Aufnahme (schaltet in Keynote selbst weiter).
-   - `deck.json`: Titel, Termin, Schriften, Videos und Applets pro Folie, zusätzliche Stilklassen (`styles`) und `edits`. Das sind Ersetzungen im erzeugten Quelltext, z. B. der Hinweis statt des Escher-Bildes oder die Appendix-Folie; sie bleiben bei jeder neuen Konvertierung erhalten.
+   - `deck.json`: Titel, Termin, Schriften, Videos und Applets pro Folie (`step`: Build-Schritt, falls die Aufnahme ihn nicht verrät), zusätzliche Stilklassen (`styles`), `weights` (Strichstärke der Ersatzschrift, z. B. `{"slab": {"200": 100}}` für Produkt Extralight) und `edits`. Das sind Ersetzungen im erzeugten Quelltext, z. B. der Hinweis statt des Escher-Bildes oder die Appendix-Folie; sie bleiben bei jeder neuen Konvertierung erhalten.
 
 ### Von Hand (DGS-Talk, `native/dgs.src.html`)
 
@@ -87,8 +89,8 @@ Die Koordinaten kommen aus `gs -q -sDEVICE=txtwrite -dTextFormat=0 -o p%d.xml "<
 | --- | --- |
 | Helvetica Neue (IS, M×I, Thesis) | die installierte Helvetica Neue (Mac, iPhone, iPad); sonst Inter, per `size-adjust` auf dieselben Zeilenlängen und Grundlinien gebracht |
 | Courier New | die installierte Courier New; sonst IBM Plex Mono |
-| Produkt (DGS-Titel) | Roboto Slab |
-| Graphik (DGS-Text) | Inter, mit `cv11` für das einstöckige a |
+| Produkt (Titel in DGS und M×I 2026) | Roboto Slab: Extralight → 100, Light → 250 |
+| Graphik (Text in DGS und M×I 2026) | Inter, mit `cv11` für das einstöckige a; Light → 250 |
 | Andale Mono (DGS-Code) | IBM Plex Mono |
 | STIX General (Formeln) | STIX Two (MathJax) |
 
@@ -123,6 +125,8 @@ Danach den Talk in `index.html` unter `#talks` eintragen (Titel mit `<a class="t
 - **Video-Standbilder**: Schritte, die sich nur durch das Standbild eines Videos unterscheiden, erkennt `gen_deck.py` per Bildvergleich und lässt sie weg.
 - **Der PDF-Export zeigt alle Objekte zugleich**, auch weiße Formeln und Texte (Platzhalter), Objekte unter weißen Abdeckflächen und Objekte, die später wieder ausgeblendet werden. `extract.py` gleicht das mit den Aufnahmen ab. Es erkennt dabei auch weiße Abdeckungen, die in einem Build verschwinden, und Bilder, die abgedunkelt werden (Deckkraft-Builds).
 - **Manches fehlt im PDF-Export ganz** (im M×I- und im Thesis-Talk ein Kreis mit Radius). Ob etwas fehlt, zeigt ein Vergleich der letzten Aufnahme jeder Folie mit dem PDF. Solche Stellen werden per `raster` aus der Aufnahme übernommen.
+- **Schlagschatten**: Keynote zeichnet den Schatten eines Bildes als eigenes, weiches Bild direkt davor. `extract.py` lässt ihn mit seinem Bild (oder dem Video, das ein Standbild ersetzt) erscheinen; aus den Aufnahmen allein ergäbe sich ein dunkler Kasten vor dem Build.
+- **Formeln im Textfeld**: Mehrere Formeln in einem Textfeld werden einzeln erkannt, auch wenn Hoch- und Tiefstellungen in anderer Reihenfolge gezeichnet sind als in der `.key` (x₀³). Ihre Bruchstriche aus dem PDF fallen weg, MathJax zeichnet eigene.
 - **Formeln aus mehreren Teilen**: Keynote setzt farbige Formeln oft aus mehreren Gleichungen zusammen, z. B. „y = refl_A(“ + rotes „x“ + „)“. `extract.py` fügt sie zu einer Formel mit `\color{…}` zusammen; mit den breiteren Zeichen von STIX Two würden die Einzelteile sonst übereinanderlaufen.
 
 Die Befehle für die aktuellen Decks stehen in `decks.sh`.

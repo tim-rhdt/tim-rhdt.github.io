@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Coxeter Kaleidoscopes · Tim Reinhardt</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Coxeter kaleidoscopes and a pseudo-kaleidoscope: mirror models that turn reflection groups into seemingly endless spaces.">
+
+  <script>
+    // Apply a saved dark theme before the first paint (same setting as the homepage)
+    try {
+      if (localStorage.getItem("theme") === "dark") {
+        document.documentElement.dataset.theme = "dark";
+      }
+    } catch (e) {}
+  </script>
+
+  <link rel="preload" href="../assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/instrument-serif-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/ibm-plex-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+  <style>
+    /* Self-hosted fonts, SIL Open Font License (../assets/fonts/OFL-*.txt) */
+    @font-face {
+      font-family: "Instrument Serif";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("../assets/fonts/instrument-serif-latin.woff2") format("woff2");
+    }
+
+    @font-face {
+      font-family: "IBM Plex Mono";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("../assets/fonts/ibm-plex-mono-latin.woff2") format("woff2");
+    }
+
+    /* Arrows (← ↑ → ↓ ↖ ↗ ↘ ↙) are not part of the Latin subset */
+    @font-face {
+      font-family: "IBM Plex Mono";
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url("../assets/fonts/ibm-plex-mono-arrows.woff2") format("woff2");
+      unicode-range: U+2190-2199;
+    }
+
+    @font-face {
+      font-family: "Inter";
+      font-style: normal;
+      font-weight: 300 400;
+      font-display: swap;
+      src: url("../assets/fonts/inter-latin.woff2") format("woff2");
+    }
+
+    /* Same colors as the homepage */
+    :root {
+      color-scheme: light;
+      --bg: oklch(0.98 0.003 255);
+      --surface: oklch(0.94 0.005 255);
+      --text: oklch(0.2 0.01 255);
+      --muted: oklch(0.45 0.01 255);
+      --faint: oklch(0.55 0.01 255);
+      --line: oklch(0.86 0.006 255);
+      --line-soft: oklch(0.91 0.005 255);
+      --stripe: oklch(0.9 0.006 255);
+      --underline: oklch(0.7 0.01 255);
+      --serif: "Instrument Serif", Georgia, serif;
+      --mono: "IBM Plex Mono", ui-monospace, monospace;
+      --sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: oklch(0.19 0.01 255);
+      --surface: oklch(0.24 0.01 255);
+      --text: oklch(0.95 0.005 255);
+      --muted: oklch(0.78 0.01 255);
+      --faint: oklch(0.7 0.01 255);
+      --line: oklch(0.35 0.01 255);
+      --line-soft: oklch(0.28 0.01 255);
+      --stripe: oklch(0.27 0.01 255);
+      --underline: oklch(0.5 0.01 255);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--bg); }
+
+    /* no scrolling behind the enlarged image */
+    html:has(.lightbox[open]) { overflow: hidden; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 300;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    a { color: inherit; }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem clamp(1.25rem, 5vw, 4rem) 3.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(2.5rem, 6vw, 3.5rem);
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    /* ---------- Top bar (as on the homepage) ---------- */
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem 2rem;
+    }
+
+    .label {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+    }
+
+    .nav {
+      display: flex;
+      gap: 1.75rem;
+    }
+
+    .nav a,
+    .name,
+    .back {
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .nav a:hover,
+    .name:hover,
+    .back:hover { color: var(--text); }
+
+    .theme-toggle {
+      display: grid;
+      place-items: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: transparent;
+      color: var(--faint);
+      cursor: pointer;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .theme-toggle:hover {
+      color: var(--text);
+      border-color: var(--text);
+    }
+
+    .theme-toggle .sun,
+    :root[data-theme="dark"] .theme-toggle .moon { display: none; }
+    :root[data-theme="dark"] .theme-toggle .sun { display: block; }
+
+    .icon {
+      width: 1rem;
+      height: 1rem;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ---------- Title ---------- */
+
+    main {
+      display: flex;
+      flex-direction: column;
+      gap: inherit;
+    }
+
+    .intro {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Headings as on the homepage: large Instrument Serif, a strong rule above each section */
+    .page-title,
+    .section-title {
+      margin: 0;
+      font-family: var(--serif);
+      font-weight: 400;
+      line-height: 1;
+      letter-spacing: -0.015em;
+    }
+
+    .page-title { font-size: clamp(3rem, 8vw, 4.75rem); }
+    .section-title { font-size: clamp(2.5rem, 6vw, 3.6rem); }
+
+    .with {
+      margin: 0;
+      font-size: 0.9375rem;
+      color: var(--faint);
+    }
+
+    .lead {
+      margin: 0;
+      max-width: 40rem;
+      font-size: clamp(1.125rem, 2.4vw, 1.375rem);
+      line-height: 1.5;
+      color: var(--muted);
+      text-wrap: pretty;
+    }
+
+    /* ---------- Sections ---------- */
+
+    .block {
+      border-top: 2px solid var(--text);
+      padding-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(1rem, 3vw, 1.5rem);
+    }
+
+    .prose {
+      max-width: 42rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .prose p {
+      margin: 0;
+      font-size: 1.0625rem;
+      line-height: 1.65;
+      text-wrap: pretty;
+    }
+
+    .text-link {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      text-decoration-color: var(--underline);
+      transition: text-decoration-color 0.2s ease;
+    }
+
+    .text-link:hover { text-decoration-color: currentColor; }
+
+    /* Figures from the write-up: drawn on white, so most sit on white cards in both themes */
+    .figs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 13rem));
+      gap: 1rem 0.75rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .figs.pair { grid-template-columns: repeat(2, minmax(0, 20rem)); }
+
+    .figs figure {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .card {
+      border-radius: 8px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .card img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .figs figcaption {
+      font-size: 0.8125rem;
+      line-height: 1.45;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* the three kaleidoscope pictures fade out into the page, without a card */
+    .figs .bare {
+      background: none;
+      border-radius: 0;
+    }
+
+    /* ---------- Galleries ---------- */
+
+    /* Galleries: an even grid of 4:3 tiles; the enlarged view shows each picture uncropped */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .gallery .item {
+      position: relative;
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--surface);
+      cursor: zoom-in;
+    }
+
+    .gallery img,
+    .gallery video {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .gallery .item:hover img,
+    .gallery .item:hover video { transform: scale(1.02); }
+
+    /* small play mark on videos */
+    .gallery .is-video::after {
+      content: "";
+      position: absolute;
+      right: 0.6rem;
+      bottom: 0.6rem;
+      border-style: solid;
+      border-width: 0.4rem 0 0.4rem 0.65rem;
+      border-color: transparent transparent transparent rgb(255 255 255 / 0.85);
+      filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.6));
+    }
+
+    /* ---------- Enlarged view ---------- */
+
+    .lightbox {
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      max-height: none;
+      margin: 0;
+      padding: clamp(3.5rem, 6vw, 4.5rem) clamp(1rem, 6vw, 5rem);
+      border: 0;
+      background: rgb(10 10 12 / 0.94);
+      color: #fff;
+    }
+
+    .lightbox[open] {
+      display: grid;
+      place-items: center;
+    }
+
+    .lightbox::backdrop { background: transparent; }
+
+    .lightbox figure {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      max-width: 100%;
+    }
+
+    .lb-media img,
+    .lb-media video {
+      display: block;
+      max-width: 100%;
+      max-height: calc(100vh - 11rem);
+      max-height: calc(100dvh - 11rem);
+      width: auto;
+      height: auto;
+      border-radius: 6px;
+    }
+
+    .lightbox figcaption {
+      max-width: 40rem;
+      font-size: 0.875rem;
+      line-height: 1.45;
+      color: rgb(255 255 255 / 0.75);
+      text-align: center;
+    }
+
+    .lb-button {
+      position: fixed;
+      display: grid;
+      place-items: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      border: 1px solid rgb(255 255 255 / 0.3);
+      border-radius: 50%;
+      background: rgb(255 255 255 / 0.06);
+      color: #fff;
+      font: 1rem/1 var(--mono);
+      cursor: pointer;
+    }
+
+    .lb-button:hover { border-color: #fff; }
+    .lb-close { top: 1rem; right: 1rem; }
+    .lb-prev { left: 1rem; top: calc(50% - 1.25rem); }
+    .lb-next { right: 1rem; top: calc(50% - 1.25rem); }
+
+    /* ---------- Footer ---------- */
+
+    footer {
+      margin-top: auto;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      text-wrap: balance;
+    }
+
+    footer a {
+      color: var(--faint);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    footer a:hover { color: var(--text); }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+
+    .gallery .item:focus-visible { outline-color: var(--text); border-radius: 8px; }
+
+    @media (max-width: 480px) {
+      .nav { gap: 1.25rem; }
+      .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .lb-prev, .lb-next { top: auto; bottom: 1rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+      .gallery .item:hover img,
+      .gallery .item:hover video { transform: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+    <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+  </svg>
+
+  <div class="page">
+    <header class="topbar">
+      <a class="label name" href="https://www.math.cit.tum.de/math/personen/wissenschaftliches-personal/reinhardt-tim/">Tim Reinhardt · TUM&nbsp;↗</a>
+      <div class="topbar-right">
+        <nav class="nav label" aria-label="Sections">
+          <a href="../#projects">Projects</a>
+          <a href="../#about">About</a>
+          <a href="../#talks">Talks</a>
+        </nav>
+        <button class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+          <svg class="icon moon" aria-hidden="true"><use href="#icon-moon"/></svg>
+          <svg class="icon sun" aria-hidden="true"><use href="#icon-sun"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <div class="intro">
+        <a class="label back" href="../#projects">← All Projects</a>
+        <h1 class="page-title">Coxeter Kaleidoscopes</h1>
+        <p class="with">With <a class="text-link" href="https://www.math.cit.tum.de/math/personen/professuren/richter-gebert-juergen/">Jürgen Richter-Gebert</a></p>
+        <p class="lead">How can infinity be made tangible? Mirrors set at just the right angles turn a small box into a space that seems to go on forever.</p>
+      </div>
+
+      <section class="block" aria-labelledby="mirrors">
+        <h2 class="section-title" id="mirrors">Mirrors and Coxeter Groups</h2>
+        <div class="prose">
+          <p>A single mirror shows one copy of whatever is in front of it. When several mirrors meet, the copies are reflected again and again. If the angle between two mirrors is 180°/<i>n</i> for a natural number <i>n</i>, different sequences of reflections lead to the same image, and all copies fit together seamlessly (a). For other angles, the copies overlap and form “break edges” (b).</p>
+          <p><a class="text-link" href="https://en.wikipedia.org/wiki/Coxeter_group">Coxeter groups</a> are the mathematical structure behind this: they describe and classify arrangements of mirrors in which different paths of reflection lead to the same mirror image.</p>
+        </div>
+        <ul class="figs pair">
+          <li><figure><div class="card"><img src="media/fig-mirrors-90.webp" width="900" height="899" alt="Two mirrors at 90 degrees: an L-shaped figure and its three reflections" loading="lazy"></div><figcaption>(a) 90° = 180°/2: reflecting in either order gives the same image</figcaption></figure></li>
+          <li><figure><div class="card"><img src="media/fig-mirrors-120.webp" width="900" height="658" alt="Two mirrors at 120 degrees: the reflected copies of an L-shaped figure overlap" loading="lazy"></div><figcaption>(b) 120°: a break edge forms</figcaption></figure></li>
+        </ul>
+        <div class="prose">
+          <p>An ordinary kaleidoscope is based on a Coxeter group of three mirrors in the plane. All three angles between them have to be of the form 180°/<i>n</i> and, as the angles of a triangle, add up to 180°. There are exactly three ways to do this:</p>
+        </div>
+        <ul class="figs">
+          <li><figure><div class="card bare"><img src="media/fig-kaleidoscope-60-60-60.webp" width="640" height="640" alt="Kaleidoscope pattern generated by a triangle with angles 60, 60 and 60 degrees" loading="lazy"></div><figcaption>(60°, 60°, 60°)</figcaption></figure></li>
+          <li><figure><div class="card bare"><img src="media/fig-kaleidoscope-45-45-90.webp" width="640" height="640" alt="Kaleidoscope pattern generated by a triangle with angles 45, 45 and 90 degrees" loading="lazy"></div><figcaption>(45°, 45°, 90°)</figcaption></figure></li>
+          <li><figure><div class="card bare"><img src="media/fig-kaleidoscope-30-60-90.webp" width="640" height="640" alt="Kaleidoscope pattern generated by a triangle with angles 30, 60 and 90 degrees" loading="lazy"></div><figcaption>(30°, 60°, 90°)</figcaption></figure></li>
+        </ul>
+      </section>
+
+      <section class="block" aria-labelledby="space">
+        <h2 class="section-title" id="space">Kaleidoscopes in Space</h2>
+        <div class="prose">
+          <p>The same principle works in three dimensions. In a mirror polyhedron whose faces meet at angles of the form 180°/<i>n</i>, the reflections continue in every direction and fill all of space. In these Coxeter kaleidoscopes, LED strips along the edges turn into an endless lattice of light. To look inside at all, the mirrors have to be semi-transparent: they reflect most of the light back inward but let a little of it escape – and that is the light that reaches the eye.</p>
+        </div>
+        <ul class="gallery" aria-label="Gallery: Coxeter kaleidoscopes">
+          <li><button class="item" type="button" data-kind="image" data-full="media/led-lattice-1600.webp" data-caption="Looking into an LED Coxeter kaleidoscope: red and yellow LED strips repeat as a lattice"><img src="media/led-lattice-800.webp" width="625" height="800" alt="Looking into an LED Coxeter kaleidoscope: red and yellow LED strips repeat as a lattice" loading="lazy" decoding="async"></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/led-clip-1.mp4" data-caption="Moving through the light lattice of an LED kaleidoscope"><video src="media/led-clip-1.mp4" poster="media/led-clip-1.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: moving through the light lattice of an LED kaleidoscope"></video></button></li>
+          <li><button class="item" type="button" data-kind="image" data-full="media/led-triangle-1600.webp" data-caption="A triangular face of an LED kaleidoscope with nested triangles of light"><img src="media/led-triangle-800.webp" width="800" height="600" alt="A triangular face of an LED kaleidoscope with nested triangles of light" loading="lazy" decoding="async"></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/led-clip-2.mp4" data-caption="Red and yellow LED lattice inside a Coxeter kaleidoscope"><video src="media/led-clip-2.mp4" poster="media/led-clip-2.webp" width="720" height="1280" muted loop playsinline preload="none" aria-label="Video: red and yellow LED lattice inside a Coxeter kaleidoscope"></video></button></li>
+          <li><button class="item" type="button" data-kind="image" data-full="media/led-lit-1600.webp" data-caption="An LED kaleidoscope lit up in the dark"><img src="media/led-lit-800.webp" width="800" height="600" alt="An LED kaleidoscope lit up in the dark" loading="lazy" decoding="async"></button></li>
+          <li><button class="item" type="button" data-kind="image" data-full="media/led-pyramid-1600.webp" data-caption="An LED kaleidoscope held up in the dark"><img src="media/led-pyramid-800.webp" width="800" height="800" alt="An LED kaleidoscope held up in the dark" loading="lazy" decoding="async"></button></li>
+        </ul>
+      </section>
+
+      <section class="block" aria-labelledby="pseudo">
+        <h2 class="section-title" id="pseudo">A Pseudo-Kaleidoscope</h2>
+        <div class="prose">
+          <p>This model is an upside-down pyramid whose side walls are mirrored on the inside. Its base – the top pane – is a semi-transparent mirror, so the mirrored interior can be watched from outside. The tip is cut off and replaced by a display showing a pattern. Because of the exact shape of the pyramid, a lattice of patterned cubes appears. The cubes get smaller and fade in the distance, but they leave no doubt that, in an idealized world, they never end.</p>
+          <p>Strictly speaking, it is not a Coxeter kaleidoscope: each side wall meets the top pane at 45°, but neighboring side walls meet at 120°, which is not of the form 180°/<i>n</i>. With symmetric patterns, however, these angles do no harm (c).</p>
+        </div>
+        <ul class="figs pair">
+          <li><figure><div class="card"><img src="media/fig-mirrors-120-symmetric.webp" width="900" height="653" alt="Two mirrors at 120 degrees with a symmetric figure: the copies fit together without a break edge" loading="lazy"></div><figcaption>(c) 120° with a symmetric pattern: no break edge</figcaption></figure></li>
+          <li><figure><div class="card"><img src="media/fig-corner.webp" width="900" height="809" alt="A patterned red cube and its reflections in one corner of the mirrored pyramid" loading="lazy"></div><figcaption>The situation in one corner of the pyramid</figcaption></figure></li>
+        </ul>
+        <ul class="gallery" aria-label="Gallery: pseudo-kaleidoscope">
+          <li><button class="item" type="button" data-kind="image" data-full="media/pseudo-model-1600.webp" data-caption="The pseudo-kaleidoscope: an upside-down glass pyramid on a table"><img src="media/pseudo-model-800.webp" width="800" height="402" alt="The pseudo-kaleidoscope: an upside-down glass pyramid on a table" loading="lazy" decoding="async"></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-1.mp4" data-caption="The pseudo-kaleidoscope with a purple and yellow pattern"><video src="media/pseudo-clip-1.mp4" poster="media/pseudo-clip-1.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: the pseudo-kaleidoscope with a purple and yellow pattern"></video></button></li>
+          <li><button class="item" type="button" data-kind="image" data-full="media/pseudo-above-1600.webp" data-caption="The pseudo-kaleidoscope seen from above, with its mirrored side walls"><img src="media/pseudo-above-800.webp" width="800" height="620" alt="The pseudo-kaleidoscope seen from above, with its mirrored side walls" loading="lazy" decoding="async"></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-2.mp4" data-caption="Cubes with a pink and blue pattern repeat in every direction"><video src="media/pseudo-clip-2.mp4" poster="media/pseudo-clip-2.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: cubes with a pink and blue pattern repeat in every direction"></video></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-3.mp4" data-caption="Inside the pseudo-kaleidoscope: patterned cubes in every direction"><video src="media/pseudo-clip-3.mp4" poster="media/pseudo-clip-3.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: inside the pseudo-kaleidoscope, patterned cubes in every direction"></video></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-4.mp4" data-caption="A blue pattern on the display turns into a lattice of cubes"><video src="media/pseudo-clip-4.mp4" poster="media/pseudo-clip-4.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: a blue pattern on the display turns into a lattice of cubes"></video></button></li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <a href="mailto:tim.reinhardt@tum.de">tim.reinhardt@tum.de</a>
+    </footer>
+  </div>
+
+  <dialog class="lightbox" aria-label="Enlarged view">
+    <figure>
+      <div class="lb-media"></div>
+      <figcaption></figcaption>
+    </figure>
+    <button class="lb-button lb-close" type="button" aria-label="Close">×</button>
+    <button class="lb-button lb-prev" type="button" aria-label="Previous">←</button>
+    <button class="lb-button lb-next" type="button" aria-label="Next">→</button>
+  </dialog>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var toggle = document.querySelector(".theme-toggle");
+
+      function updateLabel() {
+        var label = root.dataset.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+        toggle.setAttribute("aria-label", label);
+        toggle.title = label;
+      }
+
+      toggle.addEventListener("click", function () {
+        var dark = root.dataset.theme !== "dark";
+        if (dark) {
+          root.dataset.theme = "dark";
+        } else {
+          delete root.dataset.theme;
+        }
+        try {
+          localStorage.setItem("theme", dark ? "dark" : "light");
+        } catch (e) {}
+        updateLabel();
+      });
+
+      updateLabel();
+    })();
+
+    (function () {
+      var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // Gallery videos play only while they are on screen (and not at all with reduced motion)
+      if (!still && "IntersectionObserver" in window) {
+        var watcher = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              var playing = entry.target.play();
+              if (playing) playing.catch(function () {});
+            } else {
+              entry.target.pause();
+            }
+          });
+        }, { threshold: 0.5 });
+        document.querySelectorAll(".gallery video").forEach(function (video) { watcher.observe(video); });
+      }
+
+      // Enlarged view: click an item; arrow keys or buttons for the next one, Esc or a click outside to close
+      var box = document.querySelector(".lightbox");
+      var media = box.querySelector(".lb-media");
+      var caption = box.querySelector("figcaption");
+      var items = [];
+      var current = 0;
+
+      function show(index) {
+        current = (index + items.length) % items.length;
+        var item = items[current];
+        var element;
+        if (item.dataset.kind === "video") {
+          element = document.createElement("video");
+          element.src = item.dataset.full;
+          element.muted = true;
+          element.loop = true;
+          element.playsInline = true;
+          element.controls = true;
+          element.autoplay = !still;
+          element.setAttribute("aria-label", item.dataset.caption);
+        } else {
+          element = document.createElement("img");
+          element.src = item.dataset.full;
+          element.alt = item.dataset.caption;
+        }
+        media.replaceChildren(element);
+        caption.textContent = item.dataset.caption;
+      }
+
+      document.querySelectorAll(".gallery").forEach(function (gallery) {
+        var own = Array.prototype.slice.call(gallery.querySelectorAll(".item"));
+        own.forEach(function (item, index) {
+          item.addEventListener("click", function () {
+            items = own;
+            show(index);
+            box.showModal();
+          });
+        });
+      });
+
+      box.querySelector(".lb-prev").addEventListener("click", function () { show(current - 1); });
+      box.querySelector(".lb-next").addEventListener("click", function () { show(current + 1); });
+      box.querySelector(".lb-close").addEventListener("click", function () { box.close(); });
+      box.addEventListener("click", function (event) { if (event.target === box) box.close(); });
+      box.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowLeft") { show(current - 1); event.preventDefault(); }
+        if (event.key === "ArrowRight") { show(current + 1); event.preventDefault(); }
+      });
+      box.addEventListener("close", function () { media.replaceChildren(); });
+    })();
+  </script>
+</body>
+</html>

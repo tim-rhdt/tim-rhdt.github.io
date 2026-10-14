@@ -2,7 +2,7 @@
  "slug": "simple-conformal-maps",
  "title": "Real-Time Computation of Simple Conformal Maps",
  "event": "Matrix × Imaginary, Paris",
- "date": "August 31, 2022",
+ "date": "31. August 2022",
  "fonts": {
   "sans": "hn",
   "mono": "cn"
@@ -102,10 +102,6 @@
   }
  },
  "edits": [
-  [
-   "Tim Reinhardt, 31. August 2022.",
-   "Tim Reinhardt, August 31, 2022."
-  ],
   [
    "“Force” the mapping to fulfil the",
    "“Force” the mapping to fulfill the"

@@ -154,7 +154,7 @@ const page = `<!DOCTYPE html>
   <meta charset="UTF-8">
   <title>${esc(meta.title)}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="${esc(`Slides of the talk “${meta.title}” by Tim Reinhardt (${meta.event}, ${meta.date}).`)}">
+  <meta name="description" content="${esc(`Slides of the talk “${meta.title}” by ${meta.by || "Tim Reinhardt"} (${meta.event}, ${meta.date}).`)}">
   <link rel="stylesheet" href="../reveal/reveal.css">
   <style>
     @font-face { font-family: "Roboto Slab"; font-weight: 100 900; font-display: swap; src: url("../../assets/fonts/roboto-slab-latin.woff2") format("woff2"); }
@@ -198,7 +198,7 @@ ${(meta.css || "").replace(/^/gm, "    ")}
 </head>
 
 <body>
-  <a class="home" href="../../#talks">← Tim Reinhardt</a>
+  <a class="home" href="../../#talks">← All Talks</a>
 
   <div class="reveal">
     <div class="slides">

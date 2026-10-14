@@ -15,6 +15,7 @@ figdir = os.path.join(repo, "talks", deck["slug"], "fig")
 os.makedirs(figdir, exist_ok=True)
 
 # ------------------------------------------------------------ figure layers: PDF page → SVG, images → WebP
+WRITTEN = set()      # layers of this run; older ones with the same naming scheme are removed at the end
 def webp_data(png_bytes):
     im = Image.open(io.BytesIO(png_bytes))
     im.load()
@@ -63,19 +64,23 @@ def svg_layer(page, name):
     svg = svg.replace('width="1920pt" height="1080pt"', 'width="1920" height="1080"', 1)
     svg = re.sub(r">\s+<", "><", svg)
     open(os.path.join(figdir, name), "w", encoding="utf-8").write(svg)
+    WRITTEN.add(name)
     return len(svg)
 
 # ------------------------------------------------------------ text
 STY = {}  # class name -> [family, size, weight, italic]
-FONTS = {"sans": "inter", "mono": "mono", **deck.get("fonts", {})}
+FONTS = {"sans": "inter", "mono": "mono", "slab": "slab", **deck.get("fonts", {})}
+# CSS weight of the stand-in font where it differs from the weight in the PDF font name,
+# per family: "weights": {"slab": {"200": 100}} (Produkt Extralight looks like Roboto Slab 100)
+WEIGHTS = deck.get("weights", {})
 
 def style_name(kind, weight, italic, size, tracking=0.0):
-    fam = FONTS["mono"] if kind == "mono" else FONTS["sans"]
+    fam = FONTS.get(kind, FONTS["sans"])
     w = {300: "l", 400: "r", 500: "m", 700: "b", 200: "t"}.get(weight, "r")
     s = ("%g" % round(size, 1)).replace(".", "_")
     tracking = round(tracking * 200) / 200          # steps of 0.005 em
-    name = ("c" if kind == "mono" else "") + w + ("i" if italic else "") + s + (f"t{round(-tracking * 1000):g}" if tracking else "")
-    STY[name] = [fam, round(size, 2), weight, italic] + ([tracking] if tracking else [])
+    name = {"mono": "c", "slab": "p"}.get(kind, "") + w + ("i" if italic else "") + s + (f"t{round(-tracking * 1000):g}" if tracking else "")
+    STY[name] = [fam, round(size, 2), WEIGHTS.get(fam, {}).get(str(weight), weight), italic] + ([tracking] if tracking else [])
     return name
 
 LIG = {"ﬀ": "ff", "ﬁ": "fi", "ﬂ": "fl", "ﬃ": "ffi", "ﬄ": "ffl"}
@@ -192,6 +197,7 @@ for sl in ex["slides"]:
             x0, y0, x1, y1 = it["rect"]
             name = f"s{n:02d}-r{layer_no}.webp"; layer_no += 1
             Image.open(os.path.join(work, it["raster"])).save(os.path.join(figdir, name), "WEBP", lossless=True, method=6)
+            WRITTEN.add(name)
             body.append(with_build(f'<img class="raster" data-src="fig/{name}" style="left:{x0}px;top:{y0}px;width:{x1 - x0}px;height:{y1 - y0}px" alt="">', it["step"], None))
         elif "clip" in it:
             v = scfg.get("videos", [])[it["clip"]] if it["clip"] < len(scfg.get("videos", [])) else None
@@ -208,11 +214,18 @@ for sl in ex["slides"]:
             body.append(with_build(el, v.get("step", it["step"]), None))
     title = next((L for L in sl["lines"] if L["kind"] == "sans" and L["weight"] == 700 and (L["size"] or 0) >= 60), None)
     label = "".join(p.get("c", " ") for p in title["parts"]).strip() if title else f"Slide {n}"
+    if not title:
+        # light titles (Produkt): the largest text on the slide, all of its lines
+        big = [L for L in sl["lines"] if L["kind"] in ("sans", "slab") and (L["size"] or 0) >= 60]
+        top = max((L["size"] for L in big), default=None)
+        if top:
+            label = " ".join("".join(p.get("c", " ") for p in L["parts"]).strip()
+                             for L in sorted(big, key=lambda L: L["y"]) if L["size"] == top)
     sections.append("\n".join([f'<section aria-label="{esc(label)}">', '  <div class="stage">'] + ["    " + e for e in body] + ["  </div>", "</section>"]))
 
 STY["eq"] = [FONTS["sans"], 0, 400, False]
 STY.update(deck.get("styles", {}))      # classes used by hand edits ("edits" in deck.json)
-meta = {k: deck[k] for k in ("slug", "title", "event", "date")}
+meta = {k: deck[k] for k in ("slug", "title", "by", "event", "date") if k in deck}
 css = deck.get("css", "")
 if DEFAULT_COLOR and DEFAULT_COLOR != "#000000":
     css = f".stage {{ color: {DEFAULT_COLOR}; }}\n" + css
@@ -229,4 +242,7 @@ for find, repl in deck.get("edits", []):
     if find not in src: print("  EDIT NOT APPLIED (text not found):", find[:80])
     src = src.replace(find, repl)
 open(out_path, "w", encoding="utf-8").write(src)
+for f in os.listdir(figdir):
+    if re.fullmatch(r"s\d\d-r?\d+\.(svg|webp)", f) and f not in WRITTEN:
+        os.remove(os.path.join(figdir, f))
 print(f"{out_path}: {len(ex['slides'])} slides, {len(STY)} styles, figure layers {total_svg / 1024:.0f} KB")

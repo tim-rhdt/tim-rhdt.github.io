@@ -24,11 +24,13 @@ def parse_range(s):
 def font_kind(f):
     if "STIX" in f: return "math"
     if "Courier" in f or "Mono" in f or "Menlo" in f: return "mono"
+    if "Produkt" in f or "Slab" in f: return "slab"
     return "sans"
 
 def font_weight(f):
     if "Bold" in f: return 700
     if "Medium" in f: return 500
+    if "Extralight" in f or "ExtraLight" in f: return 200
     if "Light" in f: return 300
     if "Thin" in f or "UltraLight" in f: return 200
     return 400
@@ -53,6 +55,7 @@ class EqIndex:
     def __init__(self, path):
         self.eqs = json.load(open(path))
         self.by_seq = collections.defaultdict(list)
+        self.by_bag = collections.defaultdict(list)
         for name, e in self.eqs.items():
             reg = [g for g in e["glyphs"] if g[0].strip() and re.match(r"STIX(General|Variants)", g[1])]
             e["base"] = max((g[2] for g in reg), default=30.0)
@@ -61,9 +64,11 @@ class EqIndex:
                 if abs(g[2] - e["base"]) < 0.01: width[g[4]] += max(1, g[5] - g[3])
             e["baseline"] = width.most_common(1)[0][0] if width else e["h"] * 0.75
             self.by_seq[norm_seq(g[0] for g in e["glyphs"])].append(name)
+            # the slide may draw sub- and superscripts in another order (x₀³: "x03" on the slide, "x30" in the .key)
+            self.by_bag["".join(sorted(norm_seq(g[0] for g in e["glyphs"])))].append(name)
 
     def match(self, seq, w, h):
-        cands = self.by_seq.get(seq, [])
+        cands = self.by_seq.get(seq, []) or self.by_bag.get("".join(sorted(seq)), [])
         if not cands: return None
         return min(cands, key=lambda n: abs(self.eqs[n]["w"] / max(self.eqs[n]["h"], 1) - w / max(h, 1)))
 
@@ -437,7 +442,7 @@ def main():
             eqs.append(make_eq(e, name, used, b["rect"], b["start"]))
         # formulas drawn inside a text block (no clip frame of their own): runs of math glyphs in drawing order
         rest = [c for c in chars if not c.get("eq") and font_kind(c["font"]) == "math"]
-        runs = []
+        runs = []; inline_rects = []
         for c in rest:
             if runs:
                 r = runs[-1]; last = r[-1]
@@ -447,7 +452,8 @@ def main():
                 if near and min(ys) - 2 * big <= c["y"] <= max(ys) + 2 * big and c["blk"] is last["blk"]:
                     r.append(c); continue
             runs.append([c])
-        for r in runs:
+        while runs:
+            r = runs.pop()
             # longest prefix/suffix combination that is a Keynote formula
             found = None
             for i0 in range(len(r)):
@@ -461,10 +467,13 @@ def main():
             if not found: continue
             i0, i1, name = found
             sub = r[i0:i1]
+            # one text block can hold several formulas (one per line): search the rest of the run, too
+            runs += [part for part in (r[:i0], r[i1:]) if len(part) >= 2]
             for c in sub: c["eq"] = True
             e = eqidx.eqs[name]
             ys0 = min(c["y"] - 0.9 * c["size"] for c in sub); ys1 = max(c["y"] + 0.35 * c["size"] for c in sub)
             eqs.append(make_eq(e, name, sub, [min(c["x0"] for c in sub), ys0, max(c["x1"] for c in sub), ys1], min(c["z"] for c in sub)))
+            inline_rects.append(eqs[-1]["rect"])
             print(f"  slide {s}: formula inside a text block: {e['tex'][:50]}")
         text_chars = [c for c in chars if not c.get("eq")]
 
@@ -475,6 +484,10 @@ def main():
             bb = u["bbox"]
             if bb[2] <= bb[0] or bb[3] <= bb[1]: continue
             if u["kind"] == "path:f" and bb[2] - bb[0] >= 1900 and bb[3] - bb[1] >= 1060: continue
+            # fraction bars of a formula inside a text block: MathJax draws its own
+            if u["kind"].startswith("path:") and bb[3] - bb[1] <= 3.5 and any(
+                    r[0] - 2 <= bb[0] and bb[2] <= r[2] + 2 and r[1] - 2 <= bb[1] and bb[3] <= r[3] + 2 for r in inline_rects):
+                continue
             if any(inside(bb, r) for r in scfg.get("drop", [])):
                 dropped.append(u); continue
             fig.append(u)
@@ -608,6 +621,35 @@ def main():
             el["step"] = next((k for k in range(c) if (np.abs(steps.frames[k][y0:y1, x0:x1] - P).max(axis=2) < 40)[ink].mean() >= 0.85), c - 1)
             el["gone"] = None          # the cover hides it (it lies above in the drawing order)
         if covered_out: print(f"  slide {s}: {covered_out} objects are covered from the start, left out")
+        # clips (in place of dropped posters): build step from the capture log. A movie that is there from the
+        # start of the slide shows up one capture late (it starts playing a moment after the slide appears), so
+        # it belongs to the build before its first capture if its poster is already visible there
+        def clip_step(r, us):
+            x, y, w, h = r
+            stages = [st["stage"] for st in manifest["stops"] if st["slide"] == s and any(
+                abs(v["x"] - x) < 0.25 * w and abs(v["y"] - y) < 0.25 * h for v in st["videos"])]
+            if not stages: return min((steps.step(u["bbox"])[0] or 0) for u in us)
+            k = min(stages) - 1                          # index of that capture (stages count from 1)
+            if k <= 0 or k > len(steps.frames): return max(0, k - 1)
+            x0, y0, x1, y1 = steps.region((x + 3, y + 3, x + w - 3, y + h - 3))
+            before = steps.frames[k - 1][y0:y1, x0:x1]
+            shown = before.size > 0 and float((np.abs(before - 255).max(axis=2) > 24).mean()) > 0.5
+            return k - 1 if shown else k
+        clip_of = {}
+        for vi, r in enumerate(scfg.get("drop", [])):
+            us = [u for u in dropped if inside(u["bbox"], r)]
+            if us: clip_of[vi] = (us, clip_step(r, us))
+        # drop shadows: Keynote draws a picture's shadow as a soft image of its own right before the picture;
+        # it comes and goes with its picture, or with the clip that replaces the picture
+        poster_step = {id(u): stp for us, stp in clip_of.values() for u in us}
+        in_fig = {id(u) for u in fig}
+        pics = sorted([u for u in fig + dropped if u["kind"] == "Do:/Image"], key=lambda u: u["i"])
+        for a, b in zip(pics, pics[1:]):
+            if not a.get("smask") or id(a) not in in_fig: continue
+            A, B = a["bbox"], b["bbox"]
+            if not (0 <= B[0] - A[0] <= 15 and 0 <= B[1] - A[1] <= 15 and 0 <= A[2] - B[2] <= 15 and 0 <= A[3] - B[3] <= 15): continue
+            if id(b) in poster_step: a["step"], a["gone"] = poster_step[id(b)], None
+            elif b.get("step") is not None: a["step"], a["gone"] = b["step"], b.get("gone")
         # by hand: {"force": [{"bbox": [x0, y0, x1, y1], "step": k, "gone": j}]} for objects the captures cannot explain
         for fo in scfg.get("force", []):
             for u in fig:
@@ -619,17 +661,7 @@ def main():
         fig = [u for u in fig if u["step"] is not None]
 
         # clips (in place of dropped posters): z-order and build step of their poster
-        clips = []
-        for vi, r in enumerate(scfg.get("drop", [])):
-            us = [u for u in dropped if inside(u["bbox"], r)]
-            if not us: continue
-            # build step from the capture log: a movie that starts right after the slide appears belongs to
-            # the slide itself; otherwise it comes with the build before its start
-            x, y, w, h = r
-            stages = [st["stage"] for st in manifest["stops"] if st["slide"] == s and any(
-                abs(v["x"] - x) < 0.25 * w and abs(v["y"] - y) < 0.25 * h for v in st["videos"])]
-            stp = max(0, min(stages) - 2) if stages else min((steps.step(u["bbox"])[0] or 0) for u in us)
-            clips.append({"drop": vi, "z": min(u["i"] for u in us), "step": stp})
+        clips = [{"drop": vi, "z": min(u["i"] for u in us), "step": stp} for vi, (us, stp) in sorted(clip_of.items())]
 
         # z-order: figure parts go into as few SVG layers as possible without changing what covers what
         seq = sorted([("line", L["z"], L) for L in lines] + [("fig", u["i"], u) for u in fig] + [("clip", c["z"], c) for c in clips],

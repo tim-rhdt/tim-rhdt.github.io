@@ -3,7 +3,7 @@
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd)
 cd "$HERE/native"
-for deck in dgs is mxi thesis; do
+for deck in dgs is mxi thesis tmi; do
   node build.mjs "$deck.src.html" ../../..
 done
 
@@ -12,4 +12,6 @@ done
 #   extract/convert.sh is     "Presentation IS copy.key"     is.pdf     <captures>/is     1-10       (11–21: backup slides)
 #   extract/convert.sh mxi    "Presentation M×I v2 copy.key" mxi.pdf    <captures>/mxi    1-13       (14–20: backup slides)
 #   extract/convert.sh thesis "Presentation Thesis copy.key" thesis.pdf <captures>/thesis 1-35,41    (36–40: Escher, backup)
+#   extract/talks/tmi.anonymize.py tmi.pdf tmi-anon.pdf <preview dir>                                (blurs the people first)
+#   extract/convert.sh tmi    "Talk Matrix × Imaginary copy.key" tmi-anon.pdf <captures>/tmi 1-10
 # The DGS source (dgs.src.html) is written by hand; pages 10–15 of its PDF are trash slides.
