@@ -54,6 +54,8 @@
 *{box-sizing:border-box}
 [hidden]{display:none !important}
 html,body{height:100%;margin:0}
+@supports (height:100dvh){body{height:100dvh}}
+button,a,input,select,label,summary{touch-action:manipulation}
 body{background:var(--bg);color:var(--ink);font:300 14px/1.45 var(--font-ui);display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
@@ -74,6 +76,9 @@ b,strong{font-weight:500}
 .brand h1{font-family:var(--font-display);font-weight:400;font-size:34px;line-height:1;margin:0;letter-spacing:-.015em;text-wrap:balance}
 .brand p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 .search{position:relative;flex:0 1 320px;min-width:200px}
+.tools{display:flex;align-items:center;gap:10px;flex:none}
+.btn.search-toggle{display:none}
+.search-toggle svg{width:15px;height:15px}
 .search input{width:100%;height:36px;border:1px solid var(--line);background:transparent;border-radius:18px;padding:0 14px 0 34px;font-weight:400}
 .search svg{position:absolute;left:12px;top:10px;width:16px;height:16px;color:var(--muted);pointer-events:none}
 .qres{position:absolute;z-index:40;top:40px;left:0;right:0;background:var(--raised);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:4px;max-height:60vh;overflow:auto}
@@ -232,6 +237,7 @@ svg.links circle{fill:var(--ink);opacity:.6}
 .p-fig{margin:14px 0 0}
 .p-fig button{display:block;width:100%;border:0;padding:0;background:var(--band-row);border-radius:8px;overflow:hidden;cursor:zoom-in}
 .p-fig img{display:block;width:100%;height:auto;max-height:280px;object-fit:contain}
+.panel.drag{transition:none}
 .p-fig figcaption{font-size:12px;color:var(--ink-2);margin-top:6px;line-height:1.45}
 .p-fig .cr,.lb .cr{font-size:11.5px;color:var(--muted)}
 .p-fig .cr a{color:inherit;text-decoration:underline;text-decoration-color:var(--underline);text-underline-offset:3px}
@@ -358,31 +364,69 @@ svg.links circle{fill:var(--ink);opacity:.6}
   .seg button{padding:0 10px}
   #btnInfo{width:34px;padding:0;justify-content:center;font-weight:500}
   .brand p{display:none}
-  .search{flex:1 1 100%;order:3}
+  .search{flex:1 1 150px;min-width:130px}
   .btn .long{display:none}
   .btn .short{display:inline}
   .toolbar{flex-wrap:nowrap;overflow-x:auto;padding:4px 14px 8px;scrollbar-width:none}
   .toolbar::-webkit-scrollbar{display:none}
-  .chips{flex-wrap:nowrap}
+  .chips{flex-wrap:nowrap;flex:none}
   .chip{flex:none}
   .popover{position:fixed;top:auto;left:12px;right:12px}
-  .panel{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:72%;border-left:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:var(--shadow);z-index:50;padding:14px 18px 24px}
+  .panel{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:60%;border-left:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:var(--shadow);z-index:50;padding:10px 18px calc(24px + env(safe-area-inset-bottom));overscroll-behavior:contain;transition:transform .2s ease-out}
+  .panel::before{content:"";display:block;width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 6px}
+  .p-fig img{max-height:200px}
   .p-title{font-size:30px}
   .lab{padding-left:10px}
   .lab .lt{left:10px;gap:5px;font-size:11.5px}
-  .lab.ovr .lt{font-size:12px;right:6px}
+  .lab.ovr .lt{font-size:14px;right:6px}
   .lab .lg{max-width:56px;font-size:9.5px;right:4px}
   .tl-corner{padding-left:10px}
   .rt{padding-left:4px}
   .list th:nth-child(5),.list td:nth-child(5){display:none}
   .qz-q{font-size:30px}
   .zhint{white-space:normal;width:max-content;max-width:86%;text-align:center}
+  .sheet{padding:18px 18px 22px}
+  .sheet h2{font-size:32px}
+}
+/* Handy hochkant: Name und Werkzeuge oben, darunter Titel und Ansichten; die Suche klappt über den Suchknopf auf */
+@media (max-width: 599px){
+  .top{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name tools" "title seg" "search search";align-items:center;gap:8px 10px;padding:10px 14px 8px}
+  .brand{display:contents}
+  .brand .name{grid-area:name;justify-self:start;margin:0;white-space:nowrap}
+  .brand h1{grid-area:title;font-size:clamp(21px,6.4vw,26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .seg{grid-area:seg;justify-self:end}
+  .tools{grid-area:tools;justify-self:end}
+  .search{grid-area:search;display:none;min-width:0}
+  .top.searching .search{display:block}
+  .btn.search-toggle{display:inline-flex}
+  .search-toggle[aria-expanded="true"]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
+  .tl-corner b{display:none}
+  .tl-corner span{white-space:normal;font-size:11.5px;line-height:1.25}
+  /* Liste als Karten statt Tabelle */
+  .list table,.list tbody,.list tr,.list td{display:block}
+  .list thead{display:none}
+  .list tr[data-id]{padding:9px 14px;border-bottom:1px solid var(--line-2)}
+  .list tr[data-id] td{padding:0;border:0}
+  .list tr[data-id]:hover td{background:none}
+  .list tr[data-id]:hover{background:var(--band-row)}
+  .list tr.is-sel td{background:none}
+  .list tr.is-sel{background:color-mix(in oklab,var(--focus) 10%,var(--surface))}
+  .list td.num{white-space:normal;font-size:11.5px;margin:2px 0 0 17px}
+  .list td:nth-child(3){font-size:12.5px;color:var(--ink-2);margin-left:17px}
+  .list td:nth-child(4),.list td:nth-child(5){display:none}
+  .list-head{padding:10px 14px}
+}
+/* Touchgeräte: größere Ziele; Eingabefelder mit 16px, sonst zoomt iOS beim Antippen hinein */
+@media (pointer: coarse){
+  .chip{height:34px}
+  .search input,.cut-form input,.list-head select,.qz-top select{font-size:16px}
 }
 @media (max-width: 480px){
   .brand h1{font-size:24px}
   .top{gap:8px}
-  .seg button{padding:0 8px;letter-spacing:.04em}
+  .seg button{padding:0 9px;letter-spacing:.04em}
 }
+@media (max-width: 380px){ .seg button{padding:0 6px;letter-spacing:.02em} }
 @media (max-width: 640px){
   .qz-opts{grid-template-columns:1fr}
   .list th:nth-child(4),.list td:nth-child(4){display:none}
@@ -413,8 +457,11 @@ svg.links circle{fill:var(--ink);opacity:.6}
     <button type="button" id="btnList" aria-pressed="false">Liste</button>
     <button type="button" id="btnQuiz" aria-pressed="false">Quiz</button>
   </div>
-  <button type="button" class="btn" id="btnInfo" aria-label="Über die Übersicht"><span class="long">Über die Übersicht</span><span class="short" aria-hidden="true">i</span></button>
-  <button type="button" class="btn icon theme-toggle" aria-label="Dunkel anzeigen" title="Dunkel anzeigen"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button>
+  <div class="tools">
+    <button type="button" class="btn icon search-toggle" id="btnSearch" aria-label="Suchen" aria-expanded="false" aria-controls="q"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    <button type="button" class="btn" id="btnInfo" aria-label="Über die Übersicht"><span class="long">Über die Übersicht</span><span class="short" aria-hidden="true">i</span></button>
+    <button type="button" class="btn icon theme-toggle" aria-label="Dunkel anzeigen" title="Dunkel anzeigen"><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button>
+  </div>
 </header>
 
 <div class="toolbar" id="toolbar">
@@ -918,7 +965,8 @@ function render() {
     const p = L.placed.find(q => q.e.id === pendingScroll) || L.marks.find(q => q.e.id === pendingScroll);
     pendingScroll = null;
     if (p) {
-      const top = scrollBox.scrollTop, hgt = scrollBox.clientHeight;
+      const top = scrollBox.scrollTop, box = scrollBox.getBoundingClientRect();
+      const hgt = narrow() && !panel.hidden ? Math.max(60, panel.getBoundingClientRect().top - box.top) : scrollBox.clientHeight;
       if (p.y < top + 40 || p.y + p.h > top + hgt - 20) scrollBox.scrollTo({top: Math.max(0, p.y - hgt * 0.35), behavior: reduceMotion ? 'auto' : 'smooth'});
     }
   }
@@ -1757,6 +1805,14 @@ function bind() {
     } else if (ev.key === 'Enter' && qActive >= 0) { ev.preventDefault(); chooseSearch(qItems[qActive].id); }
   });
   $('#qres').addEventListener('click', ev => { const b = ev.target.closest('button[data-id]'); if (b) chooseSearch(b.dataset.id); });
+  const topEl = $('.top'), btnSearch = $('#btnSearch');
+  btnSearch.addEventListener('click', () => {
+    const open = !topEl.classList.contains('searching');
+    topEl.classList.toggle('searching', open);
+    btnSearch.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) q.focus();
+    else if (q.value) { q.value = ''; updateSearch(); }
+  });
 
   titlesBox.addEventListener('click', ev => {
     const b = ev.target.closest('button[data-reg]'); if (!b) return;
@@ -1787,6 +1843,26 @@ function bind() {
     setCut(y, {reveal: true});
   });
   panel.addEventListener('input', ev => { if (ev.target.id === 'cutIn') ev.target.setCustomValidity(''); });
+  let swipe = null;
+  panel.addEventListener('touchstart', ev => {
+    swipe = narrow() && ev.touches.length === 1 && panel.scrollTop <= 0 ? {y: ev.touches[0].clientY, dy: 0} : null;
+  }, {passive: true});
+  panel.addEventListener('touchmove', ev => {
+    if (!swipe) return;
+    swipe.dy = ev.touches[0].clientY - swipe.y;
+    if (swipe.dy < 0) { swipe = null; panel.classList.remove('drag'); panel.style.transform = ''; return; }
+    ev.preventDefault();
+    panel.classList.add('drag');
+    panel.style.transform = 'translateY(' + swipe.dy + 'px)';
+  }, {passive: false});
+  panel.addEventListener('touchend', () => {
+    if (!swipe) return;
+    const close = swipe.dy > 70;
+    swipe = null;
+    panel.classList.remove('drag');
+    panel.style.transform = '';
+    if (close) { const b = panel.querySelector('[data-act="close"],[data-act="cutclose"]'); if (b) b.click(); }
+  });
   panel.addEventListener('toggle', ev => { if (ev.target.classList && ev.target.classList.contains('p-more')) S.more = ev.target.open; }, true);
 
   /* Quiz */
