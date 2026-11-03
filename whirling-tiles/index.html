@@ -111,9 +111,10 @@
 
       /* ---------- Layout: title and text across the top; below, the menu on the left and the canvas on the right ---------- */
       :root { --menu: 316px; --gap-x: 2rem; }
-      .intro { display: grid; grid-template-columns: var(--menu) minmax(0, 1fr); column-gap: var(--gap-x); }
+      /* title with a toggle on the left; next to it the description and Save and share, which the toggle hides */
+      .intro { display: grid; grid-template-columns: var(--menu) minmax(0, 1fr); column-gap: var(--gap-x); align-items: start; }
+      .intro-head { display: flex; align-items: center; gap: 0.75rem; }
       .intro h1 {
-        grid-row: 1 / span 2;
         margin: 0;
         font-family: var(--serif);
         font-weight: 400;
@@ -121,8 +122,35 @@
         line-height: 1;
         letter-spacing: -0.015em;
       }
+      .intro-toggle {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 1.75rem;
+        height: 1.75rem;
+        padding: 0;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: transparent;
+        color: var(--faint);
+        cursor: pointer;
+        transition: color 0.2s ease, border-color 0.2s ease;
+      }
+      .intro-toggle:hover { color: var(--text); border-color: var(--text); }
+      .intro-toggle .icon { width: 0.875rem; height: 0.875rem; transition: transform 0.2s ease; }
+      .intro-toggle[aria-expanded="false"] .icon { transform: rotate(180deg); }
+      .intro-more { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem var(--gap-x); align-items: start; }
+      .intro-more[hidden] { display: none; }
       .intro .lead { max-width: 100ch; margin: 0; color: var(--muted); font-size: 0.875rem; text-wrap: pretty; }
       .intro .with { margin: 0.25rem 0 0; color: var(--faint); font-size: 0.75rem; text-wrap: pretty; }
+      /* as wide as the format buttons, so that a status message wraps instead of moving the text */
+      .export { display: flex; flex-direction: column; gap: 0.25rem; width: min-content; }
+      .export .row + .row { margin-top: 0; }
+      /* medium widths: Save and share in one line below the text */
+      @media (max-width: 1100px) {
+        .intro-more { grid-template-columns: minmax(0, 1fr); }
+        .export { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 0.75rem; width: auto; }
+      }
       .container { display: grid; grid-template-columns: var(--menu) minmax(0, 1fr); gap: 1rem var(--gap-x); }
       .controls { display: flex; flex-direction: column; gap: 1rem; }
       .stage {
@@ -294,9 +322,8 @@
       /* Phones and small tablets: title, then the canvas across the full width (kept in view), then the menu */
       @media (max-width: 760px) {
         .page { --pad: 1rem; gap: 1rem; }
-        .intro { grid-template-columns: minmax(0, 1fr); }
-        .intro h1 { grid-row: auto; font-size: 2.25rem; }
-        .intro .lead { margin-top: 0.6rem; }
+        .intro { grid-template-columns: minmax(0, 1fr); row-gap: 0.6rem; }
+        .intro h1 { font-size: 2.25rem; }
         .intro .with { margin-top: 0.5rem; }
         .container { grid-template-columns: minmax(0, 1fr); }
         .stage {
@@ -720,7 +747,7 @@
         download(image.toDataURL(format === 'jpg' ? 'image/jpeg' : 'image/png', 0.92), exportName() + '.' + format);
         showStatus('save-status', '');
       } catch (err) {
-        showStatus('save-status', 'Could not save the image');
+        showStatus('save-status', 'Saving failed');
       }
     }
     async function copyLink() {
@@ -730,7 +757,7 @@
         showStatus('link-status', 'Link copied');
       } catch (err) {
         history.replaceState(null, '', '#' + encodeState());
-        showStatus('link-status', 'Copy the address from the browser bar');
+        showStatus('link-status', 'Use the address bar');
       }
     }
 
@@ -1586,6 +1613,7 @@
   <svg width="0" height="0" style="position: absolute" aria-hidden="true">
     <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
     <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
   </svg>
 
   <div class="page">
@@ -1598,9 +1626,36 @@
     </header>
 
     <div class="intro">
-      <h1>Whirling Tiles</h1>
-      <p class="lead">The edges of every two-colorable tiling can be oriented consistently. Kites placed along these oriented edges at a fixed but adjustable base angle seem to “whirl” around (parts of) new tiles. Colored like one of the two tile classes, the kites merge with its tiles into a new tiling.</p>
-      <p class="with">Based on <a class="text-link" href="https://archive.bridgesmathart.org/2023/bridges2023-485.html">Whirling Tiles</a> by Ulrich Reitebuch, Martin Skrodzki, Henriette Lipschütz and Konrad Polthier (Bridges 2023)</p>
+      <div class="intro-head">
+        <h1>Whirling Tiles</h1>
+        <button class="intro-toggle" type="button" aria-expanded="true" aria-controls="intro-more" aria-label="Hide description and export" title="Hide description and export">
+          <svg class="icon" aria-hidden="true"><use href="#icon-chevron"/></svg>
+        </button>
+      </div>
+      <div class="intro-more" id="intro-more">
+        <div>
+          <p class="lead">The edges of every two-colorable tiling can be oriented consistently. Kites placed along these oriented edges at a fixed but adjustable base angle seem to “whirl” around (parts of) new tiles. Colored like one of the two tile classes, the kites merge with its tiles into a new tiling.</p>
+          <p class="with">Based on <a class="text-link" href="https://archive.bridgesmathart.org/2023/bridges2023-485.html">Whirling Tiles</a> by Ulrich Reitebuch, Martin Skrodzki, Henriette Lipschütz and Konrad Polthier (Bridges 2023)</p>
+        </div>
+        <div class="export" role="group" aria-labelledby="export-label">
+          <span class="label" id="export-label">Save and share</span>
+          <div class="row">
+            <button type="button" class="pill" data-save="png">PNG</button>
+            <button type="button" class="pill" data-save="jpg">JPG</button>
+            <button type="button" class="pill" data-save="svg">SVG</button>
+            <select class="pill" id="export-size" aria-label="Image size for PNG and JPG" title="Image size for PNG and JPG">
+              <option value="screen">Screen</option>
+              <option value="2000">2000 px</option>
+              <option value="4000">4000 px</option>
+            </select>
+          </div>
+          <div class="row">
+            <button type="button" class="pill" id="copy-link" title="The link keeps the tiling, angle, colors and view">Copy link</button>
+            <span class="status" id="link-status" role="status"></span>
+            <span class="status" id="save-status" role="status"></span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="container">
@@ -1681,27 +1736,6 @@
           </div>
         </fieldset>
 
-        <fieldset>
-          <legend>Save and share</legend>
-          <div class="group">
-            <div class="row">
-              <button type="button" class="pill" data-save="png">PNG</button>
-              <button type="button" class="pill" data-save="jpg">JPG</button>
-              <button type="button" class="pill" data-save="svg">SVG</button>
-              <select class="pill" id="export-size" aria-label="Image size for PNG and JPG" title="Image size for PNG and JPG">
-                <option value="screen">Screen</option>
-                <option value="2000">2000 px</option>
-                <option value="4000">4000 px</option>
-              </select>
-            </div>
-            <div class="row">
-              <button type="button" class="pill" id="copy-link" title="The link keeps the tiling, angle, colors and view">Copy link</button>
-              <span class="status" id="link-status" role="status"></span>
-              <span class="status" id="save-status" role="status"></span>
-            </div>
-          </div>
-        </fieldset>
-
         <footer>
           <a href="mailto:tim.reinhardt@tum.de">tim.reinhardt@tum.de</a>
         </footer>
@@ -1740,6 +1774,20 @@
         updateLabel();
       });
       updateLabel();
+    })();
+
+    // The description and Save and share can be hidden, leaving more room for the menu and the canvas
+    (function () {
+      var toggle = document.querySelector(".intro-toggle");
+      var more = document.getElementById("intro-more");
+      toggle.addEventListener("click", function () {
+        var open = more.hidden;
+        more.hidden = !open;
+        toggle.setAttribute("aria-expanded", open);
+        var label = open ? "Hide description and export" : "Show description and export";
+        toggle.setAttribute("aria-label", label);
+        toggle.title = label;
+      });
     })();
   </script>
 </body>
