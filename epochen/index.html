@@ -71,7 +71,8 @@ b,strong{font-weight:500}
 /* Kopf */
 .top{display:flex;align-items:center;gap:10px 18px;padding:10px 20px 6px;flex-wrap:wrap}
 .brand{min-width:0;margin-right:auto}
-.brand .name{display:inline-block;margin-bottom:6px;text-decoration:none;transition:color .2s}
+.brand .name-line{display:inline-block;margin-bottom:6px}
+.brand .name{text-decoration:none;transition:color .2s}
 .brand .name:hover{color:var(--ink)}
 .brand h1{font-family:var(--font-display);font-weight:400;font-size:34px;line-height:1;margin:0;letter-spacing:-.015em;text-wrap:balance}
 .brand p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
@@ -392,7 +393,7 @@ svg.links circle{fill:var(--ink);opacity:.6}
 @media (max-width: 599px){
   .top{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name tools" "title seg" "search search";align-items:center;gap:8px 10px;padding:10px 14px 8px}
   .brand{display:contents}
-  .brand .name{grid-area:name;justify-self:start;margin:0;white-space:nowrap}
+  .brand .name-line{grid-area:name;justify-self:start;margin:0;white-space:nowrap}
   .brand h1{grid-area:title;font-size:clamp(21px,6.4vw,26px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .seg{grid-area:seg;justify-self:end}
   .tools{grid-area:tools;justify-self:end}
@@ -442,7 +443,7 @@ svg.links circle{fill:var(--ink);opacity:.6}
 <body class="v-tl">
 <header class="top">
   <div class="brand">
-    <a class="label name" href="https://www.math.cit.tum.de/math/personen/wissenschaftliches-personal/reinhardt-tim/">Tim Reinhardt · TUM&nbsp;↗</a>
+    <span class="label name-line"><a class="name" href="../">Tim Reinhardt</a> · <a class="name" href="https://www.math.cit.tum.de/math/personen/wissenschaftliches-personal/reinhardt-tim/">TUM&nbsp;↗</a></span>
     <h1>Epochen der Welt</h1>
     <p>Kulturräume, Sparten, Strömungen und Ereignisse von ca. 500 v. Chr. bis heute</p>
   </div>
