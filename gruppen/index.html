@@ -5,27 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Atlas der kleinen Gruppen</title>
 <script>
-  // Dunkles Design vor dem ersten Zeichnen setzen (dieselbe Einstellung wie auf der Hauptseite)
+  // Hell oder dunkel wie das System, außer man hat oben rechts das andere gewählt
+  // (dieselbe Einstellung wie auf der Hauptseite); vor dem ersten Zeichnen, damit nichts aufblitzt
   try {
-    if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark";
+    var saved = localStorage.getItem("theme");
+    if (saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches) {
+      document.documentElement.dataset.theme = "dark";
+    }
   } catch (e) {}
 </script>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: eine Spalte; oben das Hasse-Diagramm aller Gruppen in voller Breite,
    darunter der Steckbrief der gewählten Gruppe (zwei Spalten ab 900px).
-   Farben, Schriften, Kopf- und Fußzeile wie auf der Hauptseite: hell als Standard,
-   dunkel über den Schalter oben rechts. */
+   Farben, Schriften, Kopf- und Fußzeile wie auf der Hauptseite: hell oder dunkel wie
+   das System, umschaltbar oben rechts. */
 :root {
   color-scheme: light;
-  --paper: oklch(0.98 0.003 255);
-  --sheet: oklch(0.98 0.003 255);
-  --ink: oklch(0.2 0.01 255);
-  --muted: oklch(0.45 0.01 255);
-  --faint: oklch(0.55 0.01 255);
-  --rule: oklch(0.86 0.006 255);
-  --rule-strong: oklch(0.7 0.01 255);
-  --wash: oklch(0.94 0.005 255);
+  --paper: #fbfaf7;
+  --sheet: #fbfaf7;
+  --ink: #1b2329;
+  --muted: #47525a;
+  --faint: #656f76;
+  --rule: #e2dfd9;
+  --rule-strong: #a7aaa8;
+  --wash: #f0eee9;
+  /* Akzent aus dem Theme „Tim“ von CindyInCindy (Punktfarbe, für den Kontrast etwas dunkler), wie auf der Hauptseite */
+  --point: #b0466f;
   --cyc: #2B5FC4;
   --cyc-soft: #DAE4F8;
   --ab: #A1650F;
@@ -37,7 +43,7 @@
      das auch die mathematischen Zeichen hat (⋊, ∘), die Instrument Serif fehlen */
   --font-display: "Instrument Serif", "STIX Two Text", Georgia, serif;
   --font-math: "STIX Two Text", Cambria, "Times New Roman", serif;
-  --font-body: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body: "Arrows", "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --g: var(--nab);
   --g-soft: var(--nab-soft);
@@ -46,11 +52,11 @@
   --clash: #D23C2A;
 }
 :root[data-theme="dark"] {
-  --paper: oklch(0.19 0.01 255); --sheet: oklch(0.19 0.01 255); --ink: oklch(0.95 0.005 255);
-  --muted: oklch(0.78 0.01 255); --faint: oklch(0.7 0.01 255);
-  --rule: oklch(0.35 0.01 255); --rule-strong: oklch(0.5 0.01 255); --wash: oklch(0.24 0.01 255);
+  --paper: #121a20; --sheet: #121a20; --ink: #ece8e2;
+  --muted: #bcc2c6; --faint: #98a1a7;
+  --rule: #27323a; --rule-strong: #4f5c64; --wash: #1b252c; --point: #e58aab;
   --cyc: #7DA2F0; --cyc-soft: #1C2A47; --ab: #E2AB52; --ab-soft: #3A2D15;
-  --nab: #EE7FA6; --nab-soft: #45202F; --on-g: oklch(0.19 0.01 255);
+  --nab: #EE7FA6; --nab-soft: #45202F; --on-g: #121a20;
   --k1: #4FC7B5; --k2: #A88BF0; --k3: #F3A35A; --k4: #86C866; --k5: #5CC9E8; --k6: #C9C451;
   --k7: #C9946B; --k8: #F08BBE; --k9: #93A3C0; --k10: #BEE05A; --k11: #8C89EE; --clash: #FF7A66;
   color-scheme: dark;
@@ -100,48 +106,44 @@ button { font: inherit; color: inherit; }
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem 2rem;
+  gap: 0.75rem 2rem;
+  font-size: 0.9375rem;
+  font-weight: 400;
 }
-.label {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--faint);
-}
-.name { text-decoration: none; transition: color 0.2s ease; }
-.name:hover { color: var(--ink); }
+.topbar a { text-decoration: none; transition: color 0.2s ease; }
+.topbar a:hover { color: var(--point); }
+.uni { color: var(--muted); }
 .theme-toggle {
   display: grid;
   place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2rem;
+  height: 2rem;
+  margin-right: -0.5rem;
   padding: 0;
-  border: 1px solid var(--rule);
-  border-radius: 50%;
-  background: transparent;
-  color: var(--faint);
+  border: 0;
+  background: none;
+  color: var(--muted);
   cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease;
+  transition: color 0.2s ease;
 }
-.theme-toggle:hover { color: var(--ink); border-color: var(--ink); }
+.theme-toggle:hover { color: var(--point); }
 .theme-toggle .sun,
 :root[data-theme="dark"] .theme-toggle .moon { display: none; }
 :root[data-theme="dark"] .theme-toggle .sun { display: block; }
 .icon {
-  width: 1rem;
-  height: 1rem;
+  width: 1.05rem;
+  height: 1.05rem;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-footer { margin-top: auto; font-family: var(--font-mono); font-size: 0.75rem; }
-footer a { color: var(--faint); text-decoration: none; transition: color 0.2s ease; }
-footer a:hover { color: var(--ink); }
-.name:focus-visible, .theme-toggle:focus-visible, footer a:focus-visible {
-  outline: 2px solid currentColor;
+footer { margin-top: auto; font-size: 0.9375rem; font-weight: 400; }
+footer a { color: var(--muted); text-decoration: none; transition: color 0.2s ease; }
+footer a:hover { color: var(--point); }
+.topbar a:focus-visible, .theme-toggle:focus-visible, footer a:focus-visible {
+  outline: 2px solid var(--point);
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -150,13 +152,6 @@ footer a:hover { color: var(--ink); }
 .masthead {
   display: grid;
   gap: 1.25rem;
-}
-.eyebrow {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--faint);
 }
 .masthead h1 {
   font-family: var(--font-display);
@@ -173,7 +168,6 @@ footer a:hover { color: var(--ink); }
   line-height: 1.5;
   text-wrap: pretty;
 }
-.lead strong { color: var(--ink); font-weight: 400; }
 
 /* ---------- Diagramm: Abschnitt mit kräftiger Linie darüber wie auf der Hauptseite ---------- */
 .atlas {
@@ -200,15 +194,16 @@ footer a:hover { color: var(--ink); }
 .seg-buttons {
   display: inline-flex;
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: 3px;
   overflow: hidden;
 }
 .seg-buttons button {
   border: 0;
   background: transparent;
-  padding: 5px 12px;
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  padding: 4px 11px;
+  font-size: 0.875rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
   color: var(--muted);
 }
@@ -275,14 +270,13 @@ footer a:hover { color: var(--ink); }
 .d-title { display: grid; gap: 10px; align-content: start; }
 .d-title .crumbs {
   display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
-  font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted);
-  letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: 0.875rem; font-weight: 400; color: var(--muted);
 }
 .pill {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 2px 9px; border-radius: 999px;
+  padding: 1px 7px; border-radius: 3px;
   border: 1px solid var(--g); color: var(--g);
-  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.03em; text-transform: none;
+  font-size: 0.8125rem; font-weight: 400;
 }
 .d-title h2 {
   font-family: var(--font-display);
@@ -313,11 +307,8 @@ footer a:hover { color: var(--ink); }
 .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
 .facts .mono { font-family: var(--font-mono); font-size: 0.84rem; }
 .where h3, .block-h {
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
+  font-size: 0.9375rem;
+  color: var(--ink);
   font-weight: 500;
   margin-bottom: 10px;
 }
@@ -334,9 +325,8 @@ footer a:hover { color: var(--ink); }
 .note {
   margin-top: 14px;
   padding: 10px 14px;
-  border-left: 3px solid var(--g);
   background: var(--g-soft);
-  border-radius: 0 6px 6px 0;
+  border-radius: 3px;
   font-size: 0.92rem;
   max-width: 70ch;
 }
@@ -355,7 +345,7 @@ footer a:hover { color: var(--ink); }
 /* Untergruppen sehen */
 .see {
   border: 1px solid var(--rule);
-  border-radius: 8px;
+  border-radius: 3px;
   padding: 18px;
   display: grid;
   gap: 18px;
@@ -493,11 +483,11 @@ footer a:hover { color: var(--ink); }
 .howto h3 { font-family: var(--font-display); font-weight: 400; font-size: 1.875rem; line-height: 1; margin-bottom: 0.875rem; }
 .howto p, .howto li { font-size: 0.92rem; color: var(--muted); }
 .howto ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
-.howto strong { color: var(--ink); font-weight: 500; }
+.howto em { color: var(--ink); }
 .section-rule { border: 0; border-top: 1px solid var(--rule); margin: 6px 0 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .edge, .node, .name, .theme-toggle, footer a { transition: none; }
+  .edge, .node, .topbar a, .theme-toggle, footer a { transition: none; }
 }
 
 /* ---------- Erweiterungen: Nebenklassen, große Gruppen ---------- */
@@ -512,7 +502,7 @@ footer a:hover { color: var(--ink); }
 .mode-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
 .mode-bar .lbl { font-size: 0.8rem; color: var(--muted); margin-right: 4px; }
 .mode-bar button {
-  border: 1px solid var(--rule); background: transparent; border-radius: 999px;
+  border: 1px solid var(--rule); background: transparent; border-radius: 3px;
   padding: 3px 11px; font-size: 0.8rem; cursor: pointer; color: var(--ink);
 }
 .mode-bar button[aria-pressed="true"] { background: var(--g); border-color: var(--g); color: var(--on-g); }
@@ -522,10 +512,10 @@ footer a:hover { color: var(--ink); }
 .coset-list span { display: inline-flex; align-items: center; gap: 5px; }
 .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex: none; }
 .verdict {
-  padding: 9px 12px; border-radius: 6px; font-size: 0.9rem; border-left: 3px solid var(--g);
+  padding: 9px 12px; border-radius: 3px; font-size: 0.9rem;
   background: var(--g-soft);
 }
-.verdict.bad { border-left-color: var(--clash); background: color-mix(in srgb, var(--clash) 12%, var(--sheet)); }
+.verdict.bad { background: color-mix(in srgb, var(--clash) 12%, var(--sheet)); }
 .table-wrap { overflow-x: auto; }
 .ctable { border-collapse: separate; border-spacing: 3px; font-family: var(--font-mono); font-size: 0.72rem; }
 .ctable th { font-weight: 500; color: var(--muted); padding: 0 4px; white-space: nowrap; }
@@ -548,12 +538,12 @@ footer a:hover { color: var(--ink); }
 </head>
 <body>
 <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-  <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
-  <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+  <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
 </svg>
 <div class="page">
   <header class="topbar">
-    <span class="label"><a class="name" href="../">Tim Reinhardt</a> · <a class="name" href="https://www.math.cit.tum.de/math/personen/wissenschaftliches-personal/reinhardt-tim/">TUM&nbsp;↗</a></span>
+    <span><a href="../">Tim Reinhardt</a> <span class="uni">·</span> <a class="uni" href="https://www.math.cit.tum.de/math/personen/wissenschaftliches-personal/reinhardt-tim/">TUM&nbsp;↗</a></span>
     <button class="theme-toggle" type="button" aria-label="Dunkel anzeigen" title="Dunkel anzeigen">
       <svg class="icon moon" aria-hidden="true"><use href="#icon-moon"/></svg>
       <svg class="icon sun" aria-hidden="true"><use href="#icon-sun"/></svg>
@@ -562,9 +552,8 @@ footer a:hover { color: var(--ink); }
 
   <main>
   <header class="masthead">
-    <div class="eyebrow">Gruppentheorie · alle Gruppen bis Ordnung 31</div>
     <h1>Atlas der kleinen Gruppen</h1>
-    <p class="lead">Bis zur Ordnung 31 gibt es genau <strong>93 Gruppen</strong> (bis auf Isomorphie), bis 15 sind es nur 28. Das Diagramm zeigt, welche Gruppe in welcher steckt: Eine Linie von G hinunter zu H bedeutet, dass H eine <strong>maximale Untergruppe</strong> von G ist. Wer den Linien weiter nach unten folgt, erreicht alle Untergruppen. Im Steckbrief darunter sieht man jede Untergruppe und ihre <strong>Nebenklassen</strong> im Modell, und was schiefgeht, wenn eine Untergruppe kein Normalteiler ist.</p>
+    <p class="lead">Bis zur Ordnung 31 gibt es genau 93 Gruppen (bis auf Isomorphie), bis 15 sind es nur 28. Das Diagramm zeigt, welche Gruppe in welcher steckt: Eine Linie von G hinunter zu H bedeutet, dass H eine maximale Untergruppe von G ist. Wer den Linien weiter nach unten folgt, erreicht alle Untergruppen. Im Steckbrief darunter sieht man jede Untergruppe und ihre Nebenklassen im Modell, und was schiefgeht, wenn eine Untergruppe kein Normalteiler ist.</p>
   </header>
 
   <section class="atlas" aria-label="Hasse-Diagramm aller Gruppen bis Ordnung 15">
@@ -615,17 +604,17 @@ footer a:hover { color: var(--ink); }
     <div>
       <h3>Wie man Untergruppen findet</h3>
       <ul>
-        <li><strong>Lagrange:</strong> Die Ordnung einer Untergruppe teilt die Gruppenordnung. Umgekehrt gilt das nicht immer: A<sub>4</sub> hat keine Untergruppe mit 6 Elementen.</li>
-        <li><strong>Potenzen eines Elements</strong> bilden immer eine zyklische Untergruppe.</li>
-        <li><strong>Stabilisatoren:</strong> Alle Symmetrien, die ein Detail festhalten (eine Ecke, eine Achse, eine Färbung), bilden eine Untergruppe. Darauf beruhen die Bilder im Steckbrief.</li>
-        <li><strong>Konjugierte Untergruppen</strong> sehen gleich aus, nur verdreht. Hat eine Untergruppe keine verdrehte Kopie, ist sie ein Normalteiler, und man kann durch sie teilen: G/N.</li>
-        <li><strong>Sylow:</strong> Zu jeder Primzahlpotenz p<sup>k</sup>, die |G| genau teilt, gibt es Untergruppen der Ordnung p<sup>k</sup>, und sie sind alle zueinander konjugiert.</li>
+        <li><em>Lagrange:</em> Die Ordnung einer Untergruppe teilt die Gruppenordnung. Umgekehrt gilt das nicht immer: A<sub>4</sub> hat keine Untergruppe mit 6 Elementen.</li>
+        <li><em>Potenzen eines Elements</em> bilden immer eine zyklische Untergruppe.</li>
+        <li><em>Stabilisatoren:</em> Alle Symmetrien, die ein Detail festhalten (eine Ecke, eine Achse, eine Färbung), bilden eine Untergruppe. Darauf beruhen die Bilder im Steckbrief.</li>
+        <li><em>Konjugierte Untergruppen</em> sehen gleich aus, nur verdreht. Hat eine Untergruppe keine verdrehte Kopie, ist sie ein Normalteiler, und man kann durch sie teilen: G/N.</li>
+        <li><em>Sylow:</em> Zu jeder Primzahlpotenz p<sup>k</sup>, die |G| genau teilt, gibt es Untergruppen der Ordnung p<sup>k</sup>, und sie sind alle zueinander konjugiert.</li>
       </ul>
     </div>
     <div>
       <h3>Warum bis 31?</h3>
       <ul>
-        <li>Anzahl der Gruppen für n = 1 bis 31: 1, 1, 1, 2, 1, 2, 1, 5, 2, 2, 1, 5, 1, 2, 1, <strong>14</strong>, 1, 5, 1, 5, 2, 2, 1, <strong>15</strong>, 2, 2, 5, 4, 1, 4, 1. Für n = 32 sind es schon 51, für n = 64 dann 267.</li>
+        <li>Anzahl der Gruppen für n = 1 bis 31: 1, 1, 1, 2, 1, 2, 1, 5, 2, 2, 1, 5, 1, 2, 1, <em>14</em>, 1, 5, 1, 5, 2, 2, 1, <em>15</em>, 2, 2, 5, 4, 1, 4, 1. Für n = 32 sind es schon 51, für n = 64 dann 267.</li>
         <li>Für eine Primzahl p gibt es nur C<sub>p</sub>. Für p² gibt es C<sub>p²</sub> und C<sub>p</sub>×C<sub>p</sub>. Für pq mit p &lt; q gibt es C<sub>pq</sub> und, falls p ein Teiler von q − 1 ist, eine nicht-abelsche Gruppe: hier S<sub>3</sub>, D<sub>5</sub>, D<sub>7</sub>, F<sub>21</sub>, D<sub>11</sub>, D<sub>13</sub>.</li>
         <li>Die Angabe SmallGroup [n, k] ist die Nummer der Gruppe in der SmallGroups-Bibliothek des Computeralgebrasystems GAP.</li>
       </ul>
@@ -1744,23 +1733,33 @@ window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(()
 
 </script>
 <script>
-// Hell/dunkel umschalten; gespeichert unter "theme" wie auf der Hauptseite
+// Hell/dunkel umschalten; gespeichert unter "theme" wie auf der Hauptseite.
+// Wählt man, was das System ohnehin zeigt, folgt die Seite wieder dem System.
 (function () {
   var root = document.documentElement;
   var toggle = document.querySelector(".theme-toggle");
-  function updateLabel() {
-    var label = root.dataset.theme === "dark" ? "Hell anzeigen" : "Dunkel anzeigen";
+  var system = matchMedia("(prefers-color-scheme: dark)");
+  function apply(dark) {
+    if (dark) root.dataset.theme = "dark";
+    else delete root.dataset.theme;
+    var label = dark ? "Hell anzeigen" : "Dunkel anzeigen";
     toggle.setAttribute("aria-label", label);
     toggle.title = label;
   }
   toggle.addEventListener("click", function () {
     var dark = root.dataset.theme !== "dark";
-    if (dark) root.dataset.theme = "dark";
-    else delete root.dataset.theme;
-    try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
-    updateLabel();
+    apply(dark);
+    try {
+      if (dark === system.matches) localStorage.removeItem("theme");
+      else localStorage.setItem("theme", dark ? "dark" : "light");
+    } catch (e) {}
   });
-  updateLabel();
+  system.addEventListener("change", function (e) {
+    var saved = null;
+    try { saved = localStorage.getItem("theme"); } catch (err) {}
+    if (!saved) apply(e.matches);
+  });
+  apply(root.dataset.theme === "dark");
 })();
 </script>
 </body>
