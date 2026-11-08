@@ -88,7 +88,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: clamp(2.5rem, 6vw, 3.5rem);
-  min-height: 100vh;
   min-height: 100dvh;
 }
 main { display: flex; flex-direction: column; gap: inherit; }
@@ -1754,14 +1753,11 @@ window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(()
       else localStorage.setItem("theme", dark ? "dark" : "light");
     } catch (e) {}
   });
-  // Änderungen der Systemeinstellung folgen (addListener: Safari vor Version 14)
-  var follow = function (e) {
+  system.addEventListener("change", function (e) {
     var saved = null;
     try { saved = localStorage.getItem("theme"); } catch (err) {}
     if (!saved) apply(e.matches);
-  };
-  if (system.addEventListener) system.addEventListener("change", follow);
-  else system.addListener(follow);
+  });
   apply(root.dataset.theme === "dark");
 })();
 </script>

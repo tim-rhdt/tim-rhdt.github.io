@@ -59,8 +59,8 @@
 
 *{box-sizing:border-box}
 [hidden]{display:none !important}
-html,body{height:100%;margin:0}
-@supports (height:100dvh){body{height:100dvh}}
+html,body{margin:0}
+body{height:100dvh}
 button,a,input,select,label,summary{touch-action:manipulation}
 body{background:var(--bg);color:var(--ink);font:300 14px/1.45 var(--font-ui);display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
@@ -2066,14 +2066,11 @@ else showZoomHint();
       else localStorage.setItem("theme", dark ? "dark" : "light");
     } catch (e) {}
   });
-  // Änderungen der Systemeinstellung folgen (addListener: Safari vor Version 14)
-  var follow = function (e) {
+  system.addEventListener("change", function (e) {
     var saved = null;
     try { saved = localStorage.getItem("theme"); } catch (err) {}
     if (!saved) apply(e.matches);
-  };
-  if (system.addEventListener) system.addEventListener("change", follow);
-  else system.addListener(follow);
+  });
   apply(root.dataset.theme === "dark");
 })();
 </script>
