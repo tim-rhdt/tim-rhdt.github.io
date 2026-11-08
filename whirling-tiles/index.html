@@ -218,7 +218,7 @@
       input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
       input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 4px; }
       input[type="color"]::-moz-color-swatch { border: 0; border-radius: 4px; }
-      button, select, input[type="number"] { font: inherit; color: inherit; }
+      button, select { font: inherit; color: inherit; }
       /* export: the formats are underlined words, like the links in the text */
       .link-button { padding: 0; border: 0; background: none; cursor: pointer; }
       select {
@@ -252,21 +252,9 @@
       .tiling-button:hover { border-color: var(--line); color: var(--text); }
       .tiling-button[aria-checked="true"] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); color: var(--text); }
 
-      /* kite angle */
-      .angle-head > label:first-child { font-weight: 400; }
-      .angle-value { font-family: var(--mono); font-size: 0.875rem; white-space: nowrap; }
-      .angle-value input {
-        width: 4.5em;
-        padding: 2px 4px;
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        background: transparent;
-        font-family: var(--mono);
-        font-size: 0.875rem;
-        text-align: right;
-      }
+      /* kite angle: the slider next to the label; the value is shown in the diagram on the canvas */
+      .angle-row > label { font-weight: 400; }
       #angle { flex: 1; min-width: 0; }
-      .range-end { font-family: var(--mono); font-size: 0.6875rem; color: var(--faint); }
 
       /* kite color: three options in a row */
       .options { display: flex; align-items: center; gap: 0.7rem; }
@@ -275,6 +263,7 @@
       /* canvas: drag to move, wheel or two fingers to zoom */
       #CSCanvas { cursor: grab; touch-action: none; }
       #CSCanvas.dragging { cursor: grabbing; }
+      /* the angle diagram lies over the canvas, so it is never part of an exported image */
       .angle-diagram {
         position: absolute;
         left: 10px;
@@ -283,15 +272,25 @@
         height: 88px;
         border: 1px solid var(--line);
         border-radius: 8px;
-        background: color-mix(in oklab, var(--bg) 88%, transparent);
+        overflow: hidden;
+        background: var(--surface);
         pointer-events: none;
       }
-      .angle-diagram .edge { stroke: var(--text); stroke-width: 1.5; }
-      .angle-diagram .ray { stroke: var(--accent); stroke-width: 1.5; }
-      .angle-diagram .arc { fill: none; stroke: var(--accent); stroke-width: 1.2; }
-      .angle-diagram .pt { fill: var(--text); }
-      .angle-diagram text { font-family: var(--mono); font-size: 11px; fill: var(--text); }
-      .angle-diagram .arrow { fill: var(--text); }
+      .angle-diagram .tile { stroke: var(--faint); stroke-width: 0.75; stroke-linejoin: round; }
+      .angle-diagram .kite { stroke-width: 1.25; stroke-linejoin: round; }
+      .angle-diagram .marks { fill: currentColor; stroke: currentColor; }
+      .angle-diagram .edge { stroke-width: 1.25; }
+      .angle-diagram .arc { fill-opacity: 0.3; stroke-width: 1; stroke-linejoin: round; }
+      .angle-diagram .arrow, .angle-diagram .pt { stroke: none; }
+      .angle-diagram text {
+        font-family: var(--mono);
+        font-size: 11px;
+        fill: var(--text);
+        stroke: var(--bg);
+        stroke-width: 3px;
+        stroke-linejoin: round;
+        paint-order: stroke;
+      }
 
       /* Phones and small tablets: title, then the canvas across the full width (kept in view), then the menu */
       @media (max-width: 760px) {
@@ -308,7 +307,7 @@
           border-width: 1px 0;
           border-radius: 0;
         }
-        .angle-diagram { width: 110px; height: 73px; left: 8px; bottom: 8px; }
+        .angle-diagram { width: 120px; height: 80px; left: 8px; bottom: 8px; }
       }
       /* Touch: larger targets */
       @media (pointer: coarse) {
@@ -341,7 +340,7 @@
     // line settings are [on, color, width]
     const DEFAULTS = {t: 'bourgoin047', a: 12, c1: '#449ebc', c2: '#ffffff', k: 1, kc: '#ff7f50',
       b: [true, '#b2b2b2', 2], d: [false, '#b2b2b2', 1], o: [false, '#6464e6', 1], n: [false, '#000000', 2],
-      z: 2.5, x: 0, y: 0, g: true};
+      z: 2.5, x: 0, y: 0};
     const ZOOM_MIN = 1, ZOOM_MAX = 8;
 
     let state = structuredClone(DEFAULTS);
@@ -416,10 +415,10 @@
       cs(`changeTiling("${id}");`);
       if (!flagsDone.has(id)) { computeFlags(); flagsDone.add(id); }
       angleRange = csGet('[re(tilings.angleRange_1), re(tilings.angleRange_2)] * 180 / pi').map(v => Math.round(v * 10) / 10);
-      for (const el of [$('angle'), $('angle-number')]) { el.min = angleRange[0]; el.max = angleRange[1]; }
-      $('angle-min').textContent = angleRange[0] + '°';
-      $('angle-max').textContent = angleRange[1] + '°';
+      $('angle').min = angleRange[0];
+      $('angle').max = angleRange[1];
       document.querySelectorAll('.tiling-button').forEach(b => b.setAttribute('aria-checked', b.dataset.id === id));
+      setupDiagram();
       setAngle(state.a);
     }
 
@@ -429,21 +428,62 @@
       a = clamp(Math.round(a * 10) / 10, angleRange[0], angleRange[1]);
       state.a = a;
       if (from !== 'range') $('angle').value = a;
-      if (from !== 'number') $('angle-number').value = a.toFixed(1);
+      $('angle').setAttribute('aria-valuetext', a.toFixed(1) + '°');
       cs(`setAngle(${a} * pi / 180);`);
       drawDiagram();
       saveState();
     }
-    // Fig. 3(a) of the paper: at the start p of an edge, two lines at the angle alpha to the edge
+    // Fig. 3(a) of the paper, with the whole kite: the kite on one edge p -> q of the current tiling, between a tile
+    // of color 1 and one of color 2; at p, its borders make the angle alpha with the edge. p is on the left, the tile
+    // of color 1 above, and the kite as large as fits.
+    const DIAGRAM = {w: 132, h: 88, top: 22, side: 10};
+    let diagramEdge = null;            // for the current tiling: coordinates along the edge, and the two tiles in them
+    function setupDiagram() {
+      cs('findKiteEdge();');
+      const tiles = csGet('kiteEdgeTiles()');
+      diagramEdge = null;
+      if (!tiles || tiles.length !== 2) return;
+      // coordinates along the edge (p at 0, q at 1) and across it, towards the tile of color 1
+      const [p, q] = tiles[0], len = Math.hypot(q[0] - p[0], q[1] - p[1]), u = [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
+      const across = ([x, y]) => ((y - p[1]) * u[0] - (x - p[0]) * u[1]) / len;
+      const side = Math.sign(tiles[0].reduce((s, v) => s + across(v), 0)) || 1;
+      const local = v => [((v[0] - p[0]) * u[0] + (v[1] - p[1]) * u[1]) / len, side * across(v)];
+      diagramEdge = {local, tiles: tiles.map(t => t.map(local))};
+    }
     function drawDiagram() {
-      const t = state.a * Math.PI / 180, p = [16, 62], len = 96, r = 30;
-      const end = s => [p[0] + len * Math.cos(t), p[1] - s * len * Math.sin(t)];
-      const [u1, u2] = end(1), [l1, l2] = end(-1);
-      $('ray-up').setAttribute('x2', u1); $('ray-up').setAttribute('y2', u2);
-      $('ray-down').setAttribute('x2', l1); $('ray-down').setAttribute('y2', l2);
-      $('angle-arc').setAttribute('d', `M ${p[0] + r} ${p[1]} A ${r} ${r} 0 0 0 ${p[0] + r * Math.cos(t)} ${p[1] - r * Math.sin(t)}`);
-      $('angle-label').textContent = 'α = ' + state.a.toFixed(1) + '°';
-      $('angle-diagram').style.display = state.g ? '' : 'none';   // an <svg> has no working `hidden` property
+      $('angle-label').textContent = state.a.toFixed(1) + '°';
+      if (!diagramEdge) return;
+      const {local, tiles} = diagramEdge;
+      const [[p, ka, q], [, kb]] = csGet(`kiteAt(${state.a} * pi / 180)`).map(t => t.map(local));
+      const {w, h, top, side} = DIAGRAM;
+      const xs = [p, ka, q, kb].map(v => v[0]), ys = [p, ka, q, kb].map(v => v[1]);
+      const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+      const s = Math.min((w - 2 * side) / (x1 - x0), (h - top - side) / (y1 - y0));
+      const ox = (w - s * (x1 - x0)) / 2 - s * x0, oy = top + (h - top - side - s * (y1 - y0)) / 2 + s * y1;
+      const px = ([x, y]) => [+(ox + s * x).toFixed(2), +(oy - s * y).toFixed(2)];
+      const [P, KA, Q, KB] = [p, ka, q, kb].map(px);
+      const kite = [state.c1, state.c2, state.kc][state.k - 1];
+      $('diagram-tile1').setAttribute('points', tiles[0].map(px).join(' '));
+      $('diagram-tile2').setAttribute('points', tiles[1].map(px).join(' '));
+      $('diagram-tile1').style.fill = state.c1;
+      $('diagram-tile2').style.fill = state.c2;
+      $('diagram-kite').setAttribute('points', [P, KA, Q, KB].join(' '));
+      $('diagram-kite').style.fill = kite;
+      $('diagram-kite').style.stroke = state.b[1];
+      // the edge with its direction, and the angle alpha at p up to the upper border of the kite
+      const d = Math.hypot(KA[0] - P[0], KA[1] - P[1]), r = Math.min(36, 0.45 * d), mid = (P[0] + Q[0]) / 2;
+      $('diagram-edge').setAttribute('d', `M ${P} L ${Q}`);
+      $('diagram-arrow').setAttribute('d', `M ${mid + 4} ${P[1]} l -7 -3.5 v 7 Z`);
+      $('diagram-arc').setAttribute('d', d < 1 ? '' :
+        `M ${P} h ${r} A ${r} ${r} 0 0 0 ${P[0] + r * (KA[0] - P[0]) / d} ${P[1] + r * (KA[1] - P[1]) / d} Z`);
+      $('diagram-p').setAttribute('cx', P[0]);
+      $('diagram-p').setAttribute('cy', P[1]);
+      $('diagram-marks').style.color = contrastingInk(kite);
+    }
+    // black or white, whichever stands out more against a color (relative luminance as in WCAG)
+    function contrastingInk(hex) {
+      const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.substr(i, 2), 16) / 255).map(c => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.18 ? '#000000' : '#ffffff';
     }
 
     // ---------- view: drag, wheel and pinch on the picture ----------
@@ -559,7 +599,7 @@
       const line = l => [l[0] ? 1 : 0, hex(l[1]), l[2]].join('-');
       return new URLSearchParams({t: state.t, a: state.a, c1: hex(state.c1), c2: hex(state.c2), k: state.k, kc: hex(state.kc),
         b: line(state.b), d: line(state.d), o: line(state.o), n: line(state.n),
-        z: +state.z.toFixed(3), x: +state.x.toFixed(3), y: +state.y.toFixed(3), g: state.g ? 1 : 0}).toString();
+        z: +state.z.toFixed(3), x: +state.x.toFixed(3), y: +state.y.toFixed(3)}).toString();
     }
     function decodeState(hash) {
       const s = structuredClone(DEFAULTS), p = new URLSearchParams(hash.replace(/^#/, ''));
@@ -572,7 +612,6 @@
       s.k = clamp(Math.round(num(p.get('k'), s.k)), 1, 3); s.kc = color(p.get('kc'), s.kc);
       s.b = line(p.get('b'), s.b); s.d = line(p.get('d'), s.d); s.o = line(p.get('o'), s.o); s.n = line(p.get('n'), s.n);
       s.z = num(p.get('z'), s.z); s.x = num(p.get('x'), s.x); s.y = num(p.get('y'), s.y);
-      if (p.has('g')) s.g = p.get('g') === '1';
       return s;
     }
     let saveTimer = 0;
@@ -595,7 +634,6 @@
         $(id + '-width').value = state[k][2];
         $(id + '-width-value').textContent = state[k][2];
       }
-      $('diagram').checked = state.g;
       updateNewTilingAvailability();
     }
     // "Outline new tiling" needs kite color 1 or 2: only then do the kites merge with tiles into new tiles
@@ -607,7 +645,7 @@
     }
     // the kite color options 1 and 2 show the two tile colors
     function showDots() { $('dot1').style.background = state.c1; $('dot2').style.background = state.c2; }
-    function changed() { pushStyle(); drawPreviews(); showDots(); saveState(); }
+    function changed() { pushStyle(); drawPreviews(); drawDiagram(); showDots(); saveState(); }
     function bindControls() {
       $('color1').addEventListener('input', e => { state.c1 = e.target.value; changed(); });
       $('color2').addEventListener('input', e => { state.c2 = e.target.value; changed(); });
@@ -629,10 +667,7 @@
         });
       }
       $('angle').addEventListener('input', e => setAngle(+e.target.value, 'range'));
-      $('angle-number').addEventListener('change', e => setAngle(+e.target.value, 'number'));
-      $('diagram').addEventListener('change', e => { state.g = e.target.checked; drawDiagram(); saveState(); });
       document.querySelectorAll('[data-save]').forEach(b => b.addEventListener('click', () => saveImage(b.dataset.save)));
-      $('copy-link').addEventListener('click', copyLink);
       window.addEventListener('hashchange', () => { if (location.hash.slice(1) !== encodeState()) applyState(decodeState(location.hash)); });
     }
     function applyState(s) {
@@ -715,16 +750,6 @@
         showStatus('save-status', '');
       } catch (err) {
         showStatus('save-status', 'Saving failed');
-      }
-    }
-    async function copyLink() {
-      const link = location.href.split('#')[0] + '#' + encodeState();
-      try {
-        await navigator.clipboard.writeText(link);
-        showStatus('link-status', 'Link copied');
-      } catch (err) {
-        history.replaceState(null, '', '#' + encodeState());
-        showStatus('link-status', 'Use the address bar');
       }
     }
 
@@ -1418,19 +1443,36 @@
         geom.key = "";
       );
 
-      // kite triangles [corner, kite vertex, next corner] of one tile, in the tile's own coordinates
+      // kite triangle [corner, kite vertex, next corner] on edge k of a tile at the angle theta, in the tile's own
+      // coordinates: the kite vertex is where the lines at the angle theta from the starts of edges k and k+1 meet
+      kiteTriangle(tile, k, theta) := (
+        regional(n, a, b, c, s);
+        n = tile.length;
+        a = tile.vertices_k;
+        b = tile.vertices_(mod(k, n)+1);
+        c = tile.vertices_(mod(k+1, n)+1);
+        s = if(tile.clockwise, -1, 1);
+        [a, meet(join(a, (a.xy + rotate(s * theta, b.xy - a.xy)).homog), join(b, (b.xy + rotate(s * theta, c.xy - b.xy)).homog)).homog, b]
+      );
+      // kite triangles of all edges of a tile, and the seams between them (see sealKites) as pairs of triangle vertices
+      // [triangle, vertex, triangle, vertex]
       tileTriangles(tile) := (
-        tile.length = length(tile.vertices);
-        tile.edges = apply(1..tile.length, k, [tile.vertices_k, tile.vertices_(mod(k,tile.length)+1)]);
-        tile.triangles = apply(1..tile.length, k,
-          regional(edge, nextedge, kitevertex);
-          edge = tile.edges_k;
-          nextedge = tile.edges_(mod(k,tile.length)+1);
-          kitevertex = meet(
-            join(edge_1, ((edge_1).xy + rotate(if(tile.clockwise, -1, 1) * tilings.theta, (edge_2).xy - (edge_1).xy)).homog),
-            join(nextedge_1, ((nextedge_1).xy + rotate(if(tile.clockwise, -1, 1) * tilings.theta, (nextedge_2).xy - (nextedge_1).xy)).homog)
-          ).homog;
-          [edge_1, kitevertex, edge_2]
+        regional(n, tr);
+        n = tile.length;
+        tr = apply(1..n, k, kiteTriangle(tile, k, tilings.theta));
+        tile.triangles = tr;
+        tile.seams = [];
+        forall(1..n, k,
+          regional(next, a, b, c);
+          next = mod(k, n) + 1;
+          // the edge of the tiling (the diagonal of a kite): every edge has one tile of each color, list it once
+          if(!tile.clockwise, tile.seams = append(tile.seams, [k, 1, k, 3]));
+          // the borders of kites k and next lie on one line through the corner c; they are shared up to the nearer
+          // kite vertex if both kite vertices lie on the same side of the corner (not at a reflex corner)
+          a = normalize3(tr_k_2);
+          b = normalize3(tr_next_2);
+          c = tr_k_3;
+          if((a - c) * (b - c) > 0, tile.seams = append(tile.seams, if(|a - c| < |b - c|, [k, 3, k, 2], [k, 3, next, 2])));
         );
       );
 
@@ -1487,6 +1529,16 @@
         regional(col);
         col = kiteColor();
         forall(geom.items, it, forall(it.tris, t, fillpoly(t, color->col)));
+      );
+
+      // Where two filled triangles meet, antialiasing leaves a faint seam of what lies below. Between two kite
+      // triangles a thin line in the kite color closes it (the seams of tileTriangles). Drawn below all outlines.
+      sealKites() := (
+        regional(col);
+        col = kiteColor();
+        forall(geom.items, it, forall(it.tile.seams, s,
+          draw(it.tris_(s_1)_(s_2), it.tris_(s_3)_(s_4), color->col, size->1, lineCap->"butt");
+        ));
       );
 
       outlineKites() := if(style.kiteBorderBool % style.kiteDiagonalBool,
@@ -1559,6 +1611,39 @@
       );
       setTileFlags(i, f) := (regional(t); t = tilings.selectedTiling_i; t.problematicEdge = f;);
 
+      // for the angle diagram: one edge p -> q of the current tiling, namely edge 1 of the copy of a tile of color 1
+      // nearest to the origin, and the copy of a tile of color 2 on the other side; kiteEdge = [[tile, copy, edge], ...]
+      kiteEdge = [];
+      findKiteEdge() := (
+        regional(tiles, ia, A, MA, best, p, q, m);
+        tiles = tilings.selectedTiling;
+        ia = 0;
+        forall(1..length(tiles), i, regional(t); t = tiles_i; if(ia == 0 & !t.clockwise, ia = i));
+        A = tiles_ia;
+        best = 1000;
+        forall(copiesNear(A, tilings.lattice, [-20, -20], [20, 20]), M,
+          if(|(M * A.center).xy| < best, best = |(M * A.center).xy|; MA = M);
+        );
+        p = (MA * A.vertices_1).xy;
+        q = (MA * A.vertices_2).xy;
+        m = (p + q) / 2;
+        kiteEdge = [];
+        forall(1..length(tiles), ib,
+          regional(B);
+          B = tiles_ib;
+          if(B.clockwise, forall(copiesNear(B, tilings.lattice, m, m), MB, forall(1..B.length, k,
+            regional(a, b);
+            a = (MB * B.vertices_k).xy;
+            b = (MB * B.vertices_(mod(k, B.length)+1)).xy;
+            if((|a - p| + |b - q| < 0.01) % (|a - q| + |b - p| < 0.01), kiteEdge = [[ia, MA, 1], [ib, MB, k]]);
+          )));
+        );
+      );
+      worldPoints(M, pts) := apply(pts, v, regional(w); w = normalize3(M * v); [re(w_1), re(w_2)]);
+      // the two tiles, and the kite triangles on the edge at the angle theta, in world coordinates
+      kiteEdgeTiles() := apply(kiteEdge, e, regional(t); t = tilings.selectedTiling_(e_1); worldPoints(e_2, t.vertices));
+      kiteAt(theta) := apply(kiteEdge, e, regional(t); t = tilings.selectedTiling_(e_1); worldPoints(e_2, kiteTriangle(t, e_3, theta)));
+
       tilings.theta = 12 * pi / 180;  // the angle used in the paper
       changeTiling("bourgoin047");
       javascript("setTimeout(appReady, 0);");
@@ -1568,6 +1653,7 @@
       updateGeometry(tilings.selectedTiling);
       fillTiling();
       fillKites();
+      sealKites();
       outlineKites();
       outlineOriginalTiling();
       outlineNewTiling();
@@ -1603,15 +1689,17 @@
 
     <div class="stage">
       <div id="CSCanvas"></div>
-      <svg class="angle-diagram" id="angle-diagram" viewBox="0 0 132 88" aria-hidden="true">
-        <line class="ray" id="ray-up" x1="16" y1="62" x2="112" y2="62"/>
-        <line class="ray" id="ray-down" x1="16" y1="62" x2="112" y2="62"/>
-        <path class="arc" id="angle-arc" d=""/>
-        <line class="edge" x1="16" y1="62" x2="108" y2="62"/>
-        <path class="arrow" d="M 116 62 L 106 58 L 106 66 Z"/>
-        <circle class="pt" cx="16" cy="62" r="2.5"/>
-        <text x="10" y="80">p</text>
-        <text id="angle-label" x="10" y="17"></text>
+      <svg class="angle-diagram" viewBox="0 0 132 88" aria-hidden="true">
+        <polygon class="tile" id="diagram-tile1"/>
+        <polygon class="tile" id="diagram-tile2"/>
+        <polygon class="kite" id="diagram-kite"/>
+        <g class="marks" id="diagram-marks">
+          <path class="edge" id="diagram-edge"/>
+          <path class="arc" id="diagram-arc"/>
+          <path class="arrow" id="diagram-arrow"/>
+          <circle class="pt" id="diagram-p" r="2"/>
+        </g>
+        <text id="angle-label" x="9" y="15"></text>
       </svg>
     </div>
 
@@ -1632,15 +1720,9 @@
       <fieldset>
         <legend>Kites</legend>
         <div class="group">
-          <div class="row angle-head">
-            <label for="angle">Kite angle</label>
-            <input type="checkbox" id="diagram"><label for="diagram" class="tight" title="Show the angle diagram on the canvas">Diagram</label>
-            <span class="angle-value"><input type="number" id="angle-number" step="0.1" aria-label="Kite angle in degrees"> °</span>
-          </div>
-          <div class="row">
-            <span class="range-end" id="angle-min" aria-hidden="true"></span>
+          <div class="row angle-row">
+            <label for="angle" class="tight">Kite angle</label>
             <input type="range" id="angle" step="0.1">
-            <span class="range-end" id="angle-max" aria-hidden="true"></span>
           </div>
         </div>
         <div class="group">
@@ -1709,12 +1791,6 @@
               <option value="2000">2000 px wide</option>
               <option value="4000">4000 px wide</option>
             </select>
-          </div>
-        </div>
-        <div class="group">
-          <div class="row">
-            <button type="button" class="link-button text-link" id="copy-link" title="The link keeps the tiling, angle, colors and view">Copy link to this view</button>
-            <span class="status" id="link-status" role="status"></span>
           </div>
         </div>
       </fieldset>
