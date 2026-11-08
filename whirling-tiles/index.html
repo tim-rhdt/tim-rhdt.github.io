@@ -7,51 +7,56 @@
     <script type="text/javascript" src="../talks/applets/cindyjs/Cindy.js"></script>
     <title>Whirling Tiles</title>
     <script>
-      // Apply a saved dark theme before the first paint (same setting as on the homepage)
+      // Follow the system's light/dark setting unless the visitor picked the other one
+      // (same setting as on the homepage). Runs before the first paint, so the page doesn't flash.
       try {
-        if (localStorage.getItem("theme") === "dark") document.documentElement.dataset.theme = "dark";
+        var saved = localStorage.getItem("theme");
+        if (saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches) {
+          document.documentElement.dataset.theme = "dark";
+        }
       } catch (e) {}
     </script>
-    <link rel="preload" href="../assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="../assets/fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="../assets/fonts/instrument-serif-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="../assets/fonts/ibm-plex-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
     <style>
       /* Self-hosted fonts of the homepage, SIL Open Font License (../assets/fonts/OFL-*.txt) */
       @font-face { font-family: "Instrument Serif"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/instrument-serif-latin.woff2") format("woff2"); }
+      /* IBM Plex Sans is variable: one file covers weights 100–700 */
+      @font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 100 700; font-display: swap; src: url("../assets/fonts/ibm-plex-sans-latin.woff2") format("woff2"); }
       @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/ibm-plex-mono-latin.woff2") format("woff2"); }
-      /* Arrows (← ↑ → ↓ ↖ ↗ ↘ ↙) are not part of the Latin subset */
-      @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap; src: url("../assets/fonts/ibm-plex-mono-arrows.woff2") format("woff2"); unicode-range: U+2190-2199; }
-      @font-face { font-family: "Inter"; font-style: normal; font-weight: 300 600; font-display: swap; src: url("../assets/fonts/inter-latin.woff2") format("woff2"); }
+      /* Arrows (← ↑ → ↓ ↖ ↗ ↘ ↙) are in no Latin subset; Plex Mono's fit Plex Sans */
+      @font-face { font-family: "Arrows"; font-style: normal; font-weight: 100 700; font-display: swap; src: url("../assets/fonts/ibm-plex-mono-arrows.woff2") format("woff2"); unicode-range: U+2190-2199; }
     </style>
     <style>
-      /* Design as on tim-rhdt.github.io: colors only via these variables, light by default, dark via the toggle */
+      /* Design as on tim-rhdt.github.io: colors only via these variables; light or dark like the system, switchable at the top */
       :root {
         color-scheme: light;
-        --bg: oklch(0.98 0.003 255);
-        --surface: oklch(0.94 0.005 255);
-        --text: oklch(0.2 0.01 255);
-        --muted: oklch(0.45 0.01 255);
-        --faint: oklch(0.55 0.01 255);
-        --line: oklch(0.86 0.006 255);
-        --line-soft: oklch(0.91 0.005 255);
-        --underline: oklch(0.7 0.01 255);
+        --bg: #fbfaf7;
+        --surface: #f0eee9;
+        --text: #1b2329;
+        --muted: #47525a;
+        --faint: #656f76;
+        --line: #e2dfd9;
+        --line-soft: #ecebe6;
+        /* Accent from the "Tim" theme of CindyInCindy: point color, a little darker for contrast */
+        --point: #b0466f;
+        --underline: color-mix(in oklab, var(--point) 50%, transparent);
         --serif: "Instrument Serif", Georgia, serif;
         --mono: "IBM Plex Mono", ui-monospace, monospace;
-        --sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
-        --accent: #d4541a;
+        --sans: "Arrows", "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
         --pad: clamp(1rem, 3vw, 2rem);
       }
       :root[data-theme="dark"] {
         color-scheme: dark;
-        --bg: oklch(0.19 0.01 255);
-        --surface: oklch(0.24 0.01 255);
-        --text: oklch(0.95 0.005 255);
-        --muted: oklch(0.78 0.01 255);
-        --faint: oklch(0.7 0.01 255);
-        --line: oklch(0.35 0.01 255);
-        --line-soft: oklch(0.28 0.01 255);
-        --underline: oklch(0.5 0.01 255);
-        --accent: #f0864f;
+        --bg: #121a20;
+        --surface: #1b252c;
+        --text: #ece8e2;
+        --muted: #bcc2c6;
+        --faint: #98a1a7;
+        --line: #27323a;
+        --line-soft: #212b32;
+        --point: #e58aab;
+        --underline: color-mix(in oklab, var(--point) 55%, transparent);
       }
       * { box-sizing: border-box; }
       html { background: var(--bg); }
@@ -77,39 +82,33 @@
       }
 
       /* ---------- Top bar and footer as on the homepage ---------- */
-      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-      .label {
-        font-family: var(--mono);
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--faint);
-      }
-      .name { text-decoration: none; transition: color 0.2s ease; }
-      .name:hover { color: var(--text); }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 0.9375rem; font-weight: 400; }
+      .topbar a { text-decoration: none; transition: color 0.2s ease; }
+      .topbar a:hover { color: var(--point); }
+      .uni { color: var(--muted); }
       .theme-toggle {
         display: grid;
         place-items: center;
-        width: 2.25rem;
-        height: 2.25rem;
+        width: 2rem;
+        height: 2rem;
+        margin-right: -0.5rem;
         padding: 0;
-        border: 1px solid var(--line);
-        border-radius: 50%;
-        background: transparent;
-        color: var(--faint);
+        border: 0;
+        background: none;
+        color: var(--muted);
         cursor: pointer;
-        transition: color 0.2s ease, border-color 0.2s ease;
+        transition: color 0.2s ease;
       }
-      .theme-toggle:hover { color: var(--text); border-color: var(--text); }
+      .theme-toggle:hover { color: var(--point); }
       .theme-toggle .sun,
       :root[data-theme="dark"] .theme-toggle .moon { display: none; }
       :root[data-theme="dark"] .theme-toggle .sun { display: block; }
-      .icon { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-      footer { margin-top: auto; font-family: var(--mono); font-size: 0.75rem; }
+      .icon { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+      footer { margin-top: auto; font-size: 0.9375rem; font-weight: 400; }
       .controls footer { padding-top: 0.25rem; }
-      footer a { color: var(--faint); text-decoration: none; transition: color 0.2s ease; }
-      footer a:hover { color: var(--text); }
-      a:focus-visible, button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 2px; }
+      footer a { color: var(--muted); text-decoration: none; transition: color 0.2s ease; }
+      footer a:hover { color: var(--point); }
+      a:focus-visible, button:focus-visible { outline: 2px solid var(--point); outline-offset: 3px; border-radius: 2px; }
 
       /* ---------- Layout: header, title and menu on the left; the canvas on the right fills the window and stays in view ---------- */
       :root { --menu: 300px; }
@@ -124,7 +123,7 @@
         height: max(360px, calc(100vh - 2.5rem));
         height: max(360px, calc(100dvh - 2.5rem));
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: 3px;
         overflow: hidden;
         background: var(--surface);
       }
@@ -150,29 +149,21 @@
         cursor: pointer;
         transition: color 0.2s ease;
       }
-      .info-toggle:hover { color: var(--text); }
-      .info-icon {
-        display: grid;
-        place-items: center;
-        width: 1.375rem;
-        height: 1.375rem;
-        border: 1px solid var(--line);
-        border-radius: 50%;
-        transition: border-color 0.2s ease;
-      }
-      .info-toggle:hover .info-icon { border-color: var(--text); }
-      .info-icon .icon { width: 0.75rem; height: 0.75rem; transition: transform 0.2s ease; }
+      .info-toggle:hover { color: var(--point); }
+      .info-icon { display: grid; place-items: center; width: 1rem; height: 1rem; }
+      .info-icon .icon { width: 0.875rem; height: 0.875rem; transition: transform 0.2s ease; }
       .info-toggle[aria-expanded="false"] .icon { transform: rotate(180deg); }
       .info { margin-top: 0.5rem; }
-      .intro .lead { margin: 0; color: var(--muted); font-size: 0.875rem; text-wrap: pretty; }
-      .intro .with { margin: 0.5rem 0 0; color: var(--faint); font-size: 0.75rem; text-wrap: pretty; }
+      .intro .lead { margin: 0; color: var(--muted); font-size: 0.9375rem; text-wrap: pretty; }
+      .intro .with { margin: 0.5rem 0 0; color: var(--faint); font-size: 0.8125rem; font-weight: 400; text-wrap: pretty; }
       .text-link {
         text-decoration: underline;
-        text-underline-offset: 4px;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
         text-decoration-color: var(--underline);
-        transition: text-decoration-color 0.2s ease;
+        transition: color 0.2s ease, text-decoration-color 0.2s ease;
       }
-      .text-link:hover { text-decoration-color: currentColor; }
+      .text-link:hover { color: var(--point); text-decoration-color: currentColor; }
 
       /* ---------- Controls: sections with a strong rule, rows separated by hairlines ---------- */
       fieldset { min-width: 0; margin: 0; padding: 0.5rem 0 0; border: 0; border-top: 2px solid var(--text); }
@@ -180,12 +171,11 @@
         float: left;
         width: 100%;
         padding: 0;
-        margin-bottom: 0.2rem;
-        font-family: var(--mono);
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--faint);
+        margin-bottom: 0.35rem;
+        font-family: var(--serif);
+        font-size: 1.5rem;
+        line-height: 1;
+        color: var(--text);
       }
       legend + * { clear: both; }
       .group { padding: 0.35rem 0; border-bottom: 1px solid var(--line-soft); }
@@ -211,20 +201,20 @@
         height: 24px;
         padding: 2px;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: 3px;
         background: var(--bg);
         cursor: pointer;
       }
       input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-      input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 4px; }
-      input[type="color"]::-moz-color-swatch { border: 0; border-radius: 4px; }
+      input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 2px; }
+      input[type="color"]::-moz-color-swatch { border: 0; border-radius: 2px; }
       button, select { font: inherit; color: inherit; }
       /* export: the formats are underlined words, like the links in the text */
       .link-button { padding: 0; border: 0; background: none; cursor: pointer; }
       select {
         padding: 2px 4px;
         border: 1px solid var(--line);
-        border-radius: 6px;
+        border-radius: 3px;
         background: transparent;
         font-size: 0.8125rem;
       }
@@ -238,7 +228,7 @@
         min-width: 0;
         padding: 4px 4px 3px;
         border: 1px solid var(--line-soft);
-        border-radius: 7px;
+        border-radius: 3px;
         background: transparent;
         cursor: pointer;
         font-size: 0.6875rem;
@@ -247,7 +237,7 @@
         text-align: center;
         transition: border-color 0.2s ease, color 0.2s ease;
       }
-      .tiling-button canvas { display: block; width: 100%; aspect-ratio: 3 / 2; border-radius: 4px; }
+      .tiling-button canvas { display: block; width: 100%; aspect-ratio: 3 / 2; border-radius: 2px; }
       .tiling-button span { min-height: 2.4em; }   /* room for names in two lines */
       .tiling-button:hover { border-color: var(--line); color: var(--text); }
       .tiling-button[aria-checked="true"] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); color: var(--text); }
@@ -258,7 +248,7 @@
 
       /* kite color: three options in a row */
       .options { display: flex; align-items: center; gap: 0.7rem; }
-      .options label { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; font-family: var(--mono); font-size: 0.75rem; }
+      .options label { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.875rem; }
 
       /* canvas: drag to move, wheel or two fingers to zoom */
       #CSCanvas { cursor: grab; touch-action: none; }
@@ -271,7 +261,7 @@
         width: 156px;
         height: 104px;
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: 3px;
         overflow: hidden;
         background: var(--surface);
         pointer-events: none;
@@ -1698,14 +1688,14 @@
 
 <body>
   <svg width="0" height="0" style="position: absolute" aria-hidden="true">
-    <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
-    <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
     <symbol id="icon-chevron" viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></symbol>
   </svg>
 
   <div class="page">
     <header class="topbar">
-      <span class="label"><a class="name" href="../">Tim Reinhardt</a> · <a class="name" href="https://www.math.cit.tum.de/math/personen/wissenschaftliches-personal/reinhardt-tim/">TUM&nbsp;↗</a></span>
+      <span><a href="../">Tim Reinhardt</a> <span class="uni">·</span> <a class="uni" href="https://www.math.cit.tum.de/math/personen/wissenschaftliches-personal/reinhardt-tim/">TUM&nbsp;↗</a></span>
       <button class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
         <svg class="icon moon" aria-hidden="true"><use href="#icon-moon"/></svg>
         <svg class="icon sun" aria-hidden="true"><use href="#icon-sun"/></svg>
@@ -1841,23 +1831,36 @@
   </div>
 
   <script>
-    // Light/dark toggle, stored as "theme" like on the homepage
+    // Light/dark toggle, stored as "theme" like on the homepage.
+    // Choosing what the system shows anyway means: follow the system again.
     (function () {
       var root = document.documentElement;
       var toggle = document.querySelector(".theme-toggle");
-      function updateLabel() {
-        var label = root.dataset.theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+      var system = matchMedia("(prefers-color-scheme: dark)");
+      function apply(dark) {
+        if (dark) root.dataset.theme = "dark";
+        else delete root.dataset.theme;
+        var label = dark ? "Switch to light mode" : "Switch to dark mode";
         toggle.setAttribute("aria-label", label);
         toggle.title = label;
       }
       toggle.addEventListener("click", function () {
         var dark = root.dataset.theme !== "dark";
-        if (dark) root.dataset.theme = "dark";
-        else delete root.dataset.theme;
-        try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
-        updateLabel();
+        apply(dark);
+        try {
+          if (dark === system.matches) localStorage.removeItem("theme");
+          else localStorage.setItem("theme", dark ? "dark" : "light");
+        } catch (e) {}
       });
-      updateLabel();
+      // Follow changes of the system setting (addListener: Safari before 14)
+      var follow = function (e) {
+        var saved = null;
+        try { saved = localStorage.getItem("theme"); } catch (err) {}
+        if (!saved) apply(e.matches);
+      };
+      if (system.addEventListener) system.addEventListener("change", follow);
+      else system.addListener(follow);
+      apply(root.dataset.theme === "dark");
     })();
 
     // "Info" shows and hides the description

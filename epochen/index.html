@@ -2066,11 +2066,14 @@ else showZoomHint();
       else localStorage.setItem("theme", dark ? "dark" : "light");
     } catch (e) {}
   });
-  system.addEventListener("change", function (e) {
+  // Änderungen der Systemeinstellung folgen (addListener: Safari vor Version 14)
+  var follow = function (e) {
     var saved = null;
     try { saved = localStorage.getItem("theme"); } catch (err) {}
     if (!saved) apply(e.matches);
-  });
+  };
+  if (system.addEventListener) system.addEventListener("change", follow);
+  else system.addListener(follow);
   apply(root.dataset.theme === "dark");
 })();
 </script>

@@ -619,15 +619,23 @@
         } catch (e) {}
       });
 
-      system.addEventListener("change", function (e) {
+      // Follow changes of the system setting (addListener: Safari before 14)
+      var follow = function (e) {
         var saved = null;
         try { saved = localStorage.getItem("theme"); } catch (err) {}
         if (!saved) apply(e.matches);
-      });
+      };
+      if (system.addEventListener) {
+        system.addEventListener("change", follow);
+      } else {
+        system.addListener(follow);
+      }
 
       apply(root.dataset.theme === "dark");
     })();
+  </script>
 
+  <script>
     (function () {
       var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 

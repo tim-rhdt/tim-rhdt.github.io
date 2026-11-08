@@ -265,10 +265,10 @@
       text-decoration-color: currentColor;
     }
 
-    /* App Store screenshots, side by side at every width */
+    /* App Store screenshots of six themes: one row, on phones two rows of three */
     .screens {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 15rem));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: clamp(0.5rem, 2vw, 1rem);
       margin: 0;
       padding: 0;
@@ -344,6 +344,7 @@
 
     @media (max-width: 760px) {
       .policies { grid-template-columns: 1fr; }
+      .screens { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     @media (max-width: 480px) {
@@ -395,10 +396,13 @@
         </div>
       </div>
 
-      <ul class="screens" aria-label="Screenshots">
-        <li><img src="media/screen-browser.webp" width="480" height="1043" alt="Puzzle overview with the daily puzzle and a calendar" loading="lazy"></li>
-        <li><img src="media/screen-solved.webp" width="480" height="1043" alt="A solved board of colorful curved hexagon tiles" loading="lazy"></li>
-        <li><img src="media/screen-wood.webp" width="480" height="1043" alt="The Honeycomb board with wood textures" loading="lazy"></li>
+      <ul class="screens" aria-label="Screenshots in six themes">
+        <li><img src="media/screen-press.webp" width="400" height="869" alt="Puzzle overview in the Press Sheet theme" loading="lazy"></li>
+        <li><img src="media/screen-odeon.webp" width="400" height="869" alt="Puzzle overview in the Odeon theme, dark" loading="lazy"></li>
+        <li><img src="media/screen-aizuri.webp" width="400" height="869" alt="The Honeycomb board in the Aizuri theme" loading="lazy"></li>
+        <li><img src="media/screen-conservatory.webp" width="400" height="869" alt="The Starfish board in the Conservatory theme, dark" loading="lazy"></li>
+        <li><img src="media/screen-blueprint.webp" width="400" height="869" alt="The Spectacles board in the Blueprint theme" loading="lazy"></li>
+        <li><img src="media/screen-soap.webp" width="400" height="869" alt="An infinite board in the Soap theme" loading="lazy"></li>
       </ul>
 
       <div class="policies">
@@ -421,8 +425,8 @@
     </main>
 
     <footer>
-      <span>Last updated August 2026</span>
-      <span lang="de">Stand: August 2026</span>
+      <span>Last updated November 2026</span>
+      <span lang="de">Stand: November 2026</span>
     </footer>
   </div>
 
@@ -456,11 +460,17 @@
         } catch (e) {}
       });
 
-      system.addEventListener("change", function (e) {
+      // Follow changes of the system setting (addListener: Safari before 14)
+      var follow = function (e) {
         var saved = null;
         try { saved = localStorage.getItem("theme"); } catch (err) {}
         if (!saved) apply(e.matches);
-      });
+      };
+      if (system.addEventListener) {
+        system.addEventListener("change", follow);
+      } else {
+        system.addListener(follow);
+      }
 
       apply(root.dataset.theme === "dark");
     })();

@@ -338,9 +338,11 @@
       border-radius: 2px;
     }
 
-    /* ---------- Android download ---------- */
+    /* ---------- iPhone and Android ---------- */
 
-    .android > * { max-width: 42rem; }
+    .platform > * { max-width: 42rem; }
+
+    .soon { color: var(--faint); }
 
     .facts {
       color: var(--muted);
@@ -418,13 +420,21 @@
         </div>
         <p class="lead" lang="de">Deine Trikots und Stadien</p>
         <div class="links">
+          <a href="#iphone">iPhone</a>
           <a href="#android">Android</a>
           <a href="#privacy">Privacy Policy</a>
           <a href="#datenschutz" lang="de">Datenschutzerklärung</a>
         </div>
       </div>
 
-      <section class="block android" id="android" lang="de" aria-labelledby="android-title">
+      <section class="block platform" id="iphone" lang="de" aria-labelledby="iphone-title">
+        <h2 class="section-title" id="iphone-title">Kits &amp; Sites für iPhone</h2>
+        <p class="facts">Version 1.0 · ab iOS 26</p>
+        <!-- Placeholder until the app is in the App Store: replace with <a class="download" href="https://apps.apple.com/…">Im App Store laden</a> -->
+        <p class="soon">Der Link zum App Store folgt.</p>
+      </section>
+
+      <section class="block platform" id="android" lang="de" aria-labelledby="android-title">
         <h2 class="section-title" id="android-title">Kits &amp; Sites für Android</h2>
         <p class="facts">Version 1.0.1 · ab Android 9 · 28 MB</p>
         <a class="download" href="https://github.com/tim-rhdt/tim-rhdt.github.io/releases/download/kits-and-sites-android-1.0.1/KitsAndSites-1.0.1.apk">APK herunterladen</a>
@@ -508,11 +518,17 @@
         } catch (e) {}
       });
 
-      system.addEventListener("change", function (e) {
+      // Follow changes of the system setting (addListener: Safari before 14)
+      var follow = function (e) {
         var saved = null;
         try { saved = localStorage.getItem("theme"); } catch (err) {}
         if (!saved) apply(e.matches);
-      });
+      };
+      if (system.addEventListener) {
+        system.addEventListener("change", follow);
+      } else {
+        system.addListener(follow);
+      }
 
       apply(root.dataset.theme === "dark");
     })();
