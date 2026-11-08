@@ -68,10 +68,12 @@
       a { color: inherit; }
       .page {
         min-height: 100vh;
-        padding: 1.25rem var(--pad) 2rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
+        padding: 1.25rem var(--pad);
+        display: grid;
+        grid-template-columns: var(--menu) minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        align-items: start;
+        gap: 1.25rem 2.5rem;
       }
 
       /* ---------- Top bar and footer as on the homepage ---------- */
@@ -109,11 +111,23 @@
       footer a:hover { color: var(--text); }
       a:focus-visible, button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 2px; }
 
-      /* ---------- Layout: title and text across the top; below, the menu on the left and the canvas on the right ---------- */
-      :root { --menu: 316px; --gap-x: 2rem; }
-      /* title with a toggle on the left; next to it the description and Save and share, which the toggle hides */
-      .intro { display: grid; grid-template-columns: var(--menu) minmax(0, 1fr); column-gap: var(--gap-x); align-items: start; }
-      .intro-head { display: flex; align-items: center; gap: 0.75rem; }
+      /* ---------- Layout: header, title and menu on the left; the canvas on the right fills the window and stays in view ---------- */
+      :root { --menu: 300px; }
+      .topbar { grid-column: 1; grid-row: 1; }
+      .intro { grid-column: 1; grid-row: 2; }
+      .controls { grid-column: 1; grid-row: 3; display: flex; flex-direction: column; gap: 1rem; }
+      .stage {
+        grid-column: 2;
+        grid-row: 1 / -1;
+        position: sticky;
+        top: 1.25rem;
+        height: max(360px, calc(100vh - 2.5rem));
+        height: max(360px, calc(100dvh - 2.5rem));
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--surface);
+      }
       .intro h1 {
         margin: 0;
         font-family: var(--serif);
@@ -122,69 +136,36 @@
         line-height: 1;
         letter-spacing: -0.015em;
       }
-      .intro-toggle {
+      /* "Info" shows and hides the description */
+      .info-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: 0.75rem;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--muted);
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: color 0.2s ease;
+      }
+      .info-toggle:hover { color: var(--text); }
+      .info-icon {
         display: grid;
         place-items: center;
-        flex: none;
-        width: 1.75rem;
-        height: 1.75rem;
-        padding: 0;
+        width: 1.375rem;
+        height: 1.375rem;
         border: 1px solid var(--line);
         border-radius: 50%;
-        background: transparent;
-        color: var(--faint);
-        cursor: pointer;
-        transition: color 0.2s ease, border-color 0.2s ease;
+        transition: border-color 0.2s ease;
       }
-      .intro-toggle:hover { color: var(--text); border-color: var(--text); }
-      .intro-toggle .icon { width: 0.875rem; height: 0.875rem; transition: transform 0.2s ease; }
-      .intro-toggle[aria-expanded="false"] .icon { transform: rotate(180deg); }
-      .intro-more { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem var(--gap-x); align-items: start; }
-      .intro-more[hidden] { display: none; }
-      .intro .lead { max-width: 100ch; margin: 0; color: var(--muted); font-size: 0.875rem; text-wrap: pretty; }
-      .intro .with { margin: 0.25rem 0 0; color: var(--faint); font-size: 0.75rem; text-wrap: pretty; }
-      /* as wide as the format buttons, so that a status message wraps instead of moving the text */
-      .export { display: flex; flex-direction: column; gap: 0.25rem; width: min-content; }
-      .export .row + .row { margin-top: 0; }
-      /* medium widths: Save and share in one line below the text */
-      @media (max-width: 1100px) {
-        .intro-more { grid-template-columns: minmax(0, 1fr); }
-        .export { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 0.75rem; width: auto; }
-      }
-      .container { display: grid; grid-template-columns: var(--menu) minmax(0, 1fr); gap: 1rem var(--gap-x); }
-      .controls { display: flex; flex-direction: column; gap: 1rem; }
-      .stage {
-        position: relative;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        overflow: hidden;
-        background: var(--surface);
-      }
-      /* the window holds everything; only the menu scrolls */
-      @media (min-width: 761px) {
-        .page { height: 100vh; height: 100dvh; min-height: 0; padding-bottom: 1.25rem; gap: 1rem; }
-        .container { flex: 1; min-height: 360px; grid-template-rows: minmax(0, 1fr); }
-        .controls {
-          min-height: 0;
-          overflow-y: auto;
-          overscroll-behavior: contain;
-          scrollbar-width: thin;
-          /* room for focus outlines and the scroll bar */
-          margin-left: -4px;
-          padding: 0 0.75rem 0 4px;
-        }
-        .stage { height: 100%; }
-        /* a fade at the bottom while there is more of the menu below */
-        .controls.more-below {
-          -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
-          mask-image: linear-gradient(to bottom, #000 calc(100% - 2.5rem), transparent);
-        }
-      }
-      /* low windows: the title scrolls away, menu and canvas then fill the window */
-      @media (min-width: 761px) and (max-height: 599px) {
-        .page { height: auto; }
-        .container { flex: none; height: calc(100vh - 1.25rem); height: calc(100dvh - 1.25rem); min-height: 0; }
-      }
+      .info-toggle:hover .info-icon { border-color: var(--text); }
+      .info-icon .icon { width: 0.75rem; height: 0.75rem; transition: transform 0.2s ease; }
+      .info-toggle[aria-expanded="false"] .icon { transform: rotate(180deg); }
+      .info { margin-top: 0.5rem; }
+      .intro .lead { margin: 0; color: var(--muted); font-size: 0.875rem; text-wrap: pretty; }
+      .intro .with { margin: 0.5rem 0 0; color: var(--faint); font-size: 0.75rem; text-wrap: pretty; }
       .text-link {
         text-decoration: underline;
         text-underline-offset: 4px;
@@ -218,7 +199,7 @@
       .dot { width: 11px; height: 11px; border-radius: 50%; border: 1px solid var(--line); flex: none; }
       output, .value { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); min-width: 1.5ch; text-align: right; }
       .hint { margin: 0.4rem 0 0; font-size: 0.8125rem; color: var(--faint); text-wrap: pretty; }
-      .status { font-family: var(--mono); font-size: 0.75rem; color: var(--faint); }
+      .status { font-size: 0.8125rem; color: var(--faint); }
 
       input[type="checkbox"], input[type="radio"] { width: 15px; height: 15px; margin: 0; accent-color: var(--text); }
       input[type="range"] { accent-color: var(--text); margin: 0; }
@@ -238,45 +219,38 @@
       input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 4px; }
       input[type="color"]::-moz-color-swatch { border: 0; border-radius: 4px; }
       button, select, input[type="number"] { font: inherit; color: inherit; }
-      .pill {
-        font-family: var(--mono);
-        font-size: 0.75rem;
-        letter-spacing: 0.04em;
-        padding: 4px 11px;
+      /* export: the formats are underlined words, like the links in the text */
+      .link-button { padding: 0; border: 0; background: none; cursor: pointer; }
+      select {
+        padding: 2px 4px;
         border: 1px solid var(--line);
-        border-radius: 999px;
+        border-radius: 6px;
         background: transparent;
-        color: var(--muted);
-        cursor: pointer;
-        transition: color 0.2s ease, border-color 0.2s ease;
+        font-size: 0.8125rem;
       }
-      .pill:hover { border-color: var(--text); color: var(--text); }
-      select.pill { padding-right: 6px; }
 
-      /* tiling list: preview and name in two columns; the tile colors take the free cell after an odd number of tilings */
-      .tiling-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 38px; gap: 4px; }
+      /* tiling buttons: preview with the name below, three in a row */
+      .tiling-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 0.4rem; }
       .tiling-button {
         display: flex;
-        align-items: center;
-        gap: 0.45rem;
+        flex-direction: column;
+        gap: 4px;
         min-width: 0;
-        padding: 3px 6px 3px 3px;
+        padding: 4px 4px 3px;
         border: 1px solid var(--line-soft);
         border-radius: 7px;
         background: transparent;
         cursor: pointer;
-        font-size: 0.75rem;
+        font-size: 0.6875rem;
         line-height: 1.2;
         color: var(--muted);
-        text-align: left;
+        text-align: center;
         transition: border-color 0.2s ease, color 0.2s ease;
       }
-      .tiling-button canvas { display: block; flex: none; width: 30px; height: 30px; border-radius: 4px; }
+      .tiling-button canvas { display: block; width: 100%; aspect-ratio: 3 / 2; border-radius: 4px; }
+      .tiling-button span { min-height: 2.4em; }   /* room for names in two lines */
       .tiling-button:hover { border-color: var(--line); color: var(--text); }
       .tiling-button[aria-checked="true"] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); color: var(--text); }
-      .tile-colors { display: flex; align-items: center; gap: 6px; height: 38px; margin-top: 4px; padding-left: 8px; }
-      .tile-colors .row-label { flex: 1; font-size: 0.75rem; color: var(--muted); }
-      .tiling-grid:has(> :last-child:nth-child(odd)) + .tile-colors { width: calc(50% - 2px); margin: -38px 0 0 auto; }
 
       /* kite angle */
       .angle-head > label:first-child { font-weight: 400; }
@@ -321,30 +295,26 @@
 
       /* Phones and small tablets: title, then the canvas across the full width (kept in view), then the menu */
       @media (max-width: 760px) {
-        .page { --pad: 1rem; gap: 1rem; }
-        .intro { grid-template-columns: minmax(0, 1fr); row-gap: 0.6rem; }
+        .page { --pad: 1rem; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; gap: 1rem; padding-bottom: 2rem; }
+        .topbar, .intro, .stage, .controls { grid-column: 1; grid-row: auto; }
         .intro h1 { font-size: 2.25rem; }
-        .intro .with { margin-top: 0.5rem; }
-        .container { grid-template-columns: minmax(0, 1fr); }
         .stage {
-          grid-row: 1;
-          position: sticky;
           top: 0;
           z-index: 1;
+          height: auto;
           aspect-ratio: 1;
           width: calc(100% + 2 * var(--pad));
           margin-inline: calc(-1 * var(--pad));
           border-width: 1px 0;
           border-radius: 0;
         }
-        .controls { grid-row: 2; }
         .angle-diagram { width: 110px; height: 73px; left: 8px; bottom: 8px; }
       }
       /* Touch: larger targets */
       @media (pointer: coarse) {
         input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }
         input[type="color"] { height: 32px; }
-        .pill { padding: 7px 14px; }
+        select { min-height: 32px; }
         input[type="range"] { min-height: 28px; }
       }
       @media (prefers-reduced-motion: reduce) {
@@ -545,14 +515,16 @@
         b.className = 'tiling-button';
         b.dataset.id = t.id;
         b.setAttribute('role', 'radio');
-        b.innerHTML = `<canvas width="64" height="64" aria-hidden="true"></canvas><span>${t.label}</span>`;
+        // names break only between words, not inside "3-4-6-4" or before a number
+        const name = t.label.replace(/-/g, '‑').replace(/ (\d+)$/, ' $1');
+        b.innerHTML = `<canvas width="180" height="120" aria-hidden="true"></canvas><span>${name}</span>`;
         b.addEventListener('click', () => { selectTiling(t.id); saveState(); });
         grid.appendChild(b);
         previews[t.id] = csGet(`previewPolys("${t.id}", ${t.preview})`);
       }
       // arrow keys move between the tiling buttons (radio group)
       grid.addEventListener('keydown', e => {
-        const i = TILINGS.findIndex(t => t.id === state.t), step = {ArrowRight: 1, ArrowDown: 2, ArrowLeft: -1, ArrowUp: -2}[e.key];
+        const i = TILINGS.findIndex(t => t.id === state.t), step = {ArrowRight: 1, ArrowDown: 3, ArrowLeft: -1, ArrowUp: -3}[e.key];
         if (step === undefined) return;
         e.preventDefault();
         const next = TILINGS[clamp(i + step, 0, TILINGS.length - 1)].id;
@@ -565,13 +537,14 @@
     function drawPreviews() {
       for (const t of TILINGS) {
         const c = document.querySelector(`.tiling-button[data-id="${t.id}"] canvas`), ctx = c.getContext('2d');
-        const R = t.preview, k = c.width / (2 * R);
+        // the width shows [-R, R], centered on the origin
+        const R = t.preview, k = c.width / (2 * R), cx = c.width / 2, cy = c.height / 2;
         ctx.clearRect(0, 0, c.width, c.height);
         ctx.lineWidth = 1;
         ctx.strokeStyle = 'rgba(120, 120, 120, 0.55)';
         for (const [cw, poly] of previews[t.id]) {
           ctx.beginPath();
-          poly.forEach(([x, y], i) => ctx[i ? 'lineTo' : 'moveTo']((x + R) * k, (R - y) * k));
+          poly.forEach(([x, y], i) => ctx[i ? 'lineTo' : 'moveTo'](cx + x * k, cy - y * k));
           ctx.closePath();
           ctx.fillStyle = cw ? state.c2 : state.c1;
           ctx.fill();
@@ -631,12 +604,6 @@
       $('new-tiling').disabled = own;
       $('new-tiling-group').classList.toggle('disabled', own);
       $('new-tiling-hint').hidden = !own;
-      updateMenuFade();
-    }
-    // the menu fades out at the bottom while there is more of it below
-    function updateMenuFade() {
-      const m = document.querySelector('.controls');
-      m.classList.toggle('more-below', m.scrollTop + m.clientHeight < m.scrollHeight - 2);
     }
     // the kite color options 1 and 2 show the two tile colors
     function showDots() { $('dot1').style.background = state.c1; $('dot2').style.background = state.c2; }
@@ -765,15 +732,13 @@
     function appReady() {
       readBounds();
       window.addEventListener('resize', () => setTimeout(readBounds, 100));   // after CindyJS has resized the canvas
-      // CindyJS only follows window resizes, but the canvas also changes size when the text above it wraps differently
-      // (e.g. once the fonts have loaded), so pass those changes on
+      // CindyJS only follows window resizes, but the canvas also changes size without one
+      // (e.g. when a scroll bar appears because the description is opened), so pass those changes on
       let stageSize = '';
       new ResizeObserver(([entry]) => {
         const size = Math.round(entry.contentRect.width) + 'x' + Math.round(entry.contentRect.height);
         if (size !== stageSize) { stageSize = size; window.dispatchEvent(new Event('resize')); }
-        updateMenuFade();
       }).observe(document.querySelector('.stage'));
-      document.querySelector('.controls').addEventListener('scroll', updateMenuFade, {passive: true});
       buildTilingButtons();
       bindControls();
       initGestures();
@@ -1626,133 +1591,137 @@
     </header>
 
     <div class="intro">
-      <div class="intro-head">
-        <h1>Whirling Tiles</h1>
-        <button class="intro-toggle" type="button" aria-expanded="true" aria-controls="intro-more" aria-label="Hide description and export" title="Hide description and export">
-          <svg class="icon" aria-hidden="true"><use href="#icon-chevron"/></svg>
-        </button>
-      </div>
-      <div class="intro-more" id="intro-more">
-        <div>
-          <p class="lead">The edges of every two-colorable tiling can be oriented consistently. Kites placed along these oriented edges at a fixed but adjustable base angle seem to “whirl” around (parts of) new tiles. Colored like one of the two tile classes, the kites merge with its tiles into a new tiling.</p>
-          <p class="with">Based on <a class="text-link" href="https://archive.bridgesmathart.org/2023/bridges2023-485.html">Whirling Tiles</a> by Ulrich Reitebuch, Martin Skrodzki, Henriette Lipschütz and Konrad Polthier (Bridges 2023)</p>
-        </div>
-        <div class="export" role="group" aria-labelledby="export-label">
-          <span class="label" id="export-label">Save and share</span>
-          <div class="row">
-            <button type="button" class="pill" data-save="png">PNG</button>
-            <button type="button" class="pill" data-save="jpg">JPG</button>
-            <button type="button" class="pill" data-save="svg">SVG</button>
-            <select class="pill" id="export-size" aria-label="Image size for PNG and JPG" title="Image size for PNG and JPG">
-              <option value="screen">Screen</option>
-              <option value="2000">2000 px</option>
-              <option value="4000">4000 px</option>
-            </select>
-          </div>
-          <div class="row">
-            <button type="button" class="pill" id="copy-link" title="The link keeps the tiling, angle, colors and view">Copy link</button>
-            <span class="status" id="link-status" role="status"></span>
-            <span class="status" id="save-status" role="status"></span>
-          </div>
-        </div>
+      <h1>Whirling Tiles</h1>
+      <button class="info-toggle" type="button" aria-expanded="true" aria-controls="info">
+        <span class="info-icon"><svg class="icon" aria-hidden="true"><use href="#icon-chevron"/></svg></span>Info
+      </button>
+      <div class="info" id="info">
+        <p class="lead">The edges of every two-colorable tiling can be oriented consistently. Kites placed along these oriented edges at a fixed but adjustable base angle seem to “whirl” around (parts of) new tiles. Colored like one of the two tile classes, the kites merge with its tiles into a new tiling.</p>
+        <p class="with">Based on <a class="text-link" href="https://archive.bridgesmathart.org/2023/bridges2023-485.html">Whirling Tiles</a> by Ulrich Reitebuch, Martin Skrodzki, Henriette Lipschütz and Konrad Polthier (Bridges 2023)</p>
       </div>
     </div>
 
-    <div class="container">
-      <div class="controls">
+    <div class="stage">
+      <div id="CSCanvas"></div>
+      <svg class="angle-diagram" id="angle-diagram" viewBox="0 0 132 88" aria-hidden="true">
+        <line class="ray" id="ray-up" x1="16" y1="62" x2="112" y2="62"/>
+        <line class="ray" id="ray-down" x1="16" y1="62" x2="112" y2="62"/>
+        <path class="arc" id="angle-arc" d=""/>
+        <line class="edge" x1="16" y1="62" x2="108" y2="62"/>
+        <path class="arrow" d="M 116 62 L 106 58 L 106 66 Z"/>
+        <circle class="pt" cx="16" cy="62" r="2.5"/>
+        <text x="10" y="80">p</text>
+        <text id="angle-label" x="10" y="17"></text>
+      </svg>
+    </div>
 
-        <fieldset>
-          <legend>Tiling</legend>
-          <div class="group">
-            <div class="tiling-grid" id="tiling-grid" role="radiogroup" aria-label="Tiling"></div>
-            <div class="tile-colors">
-              <span class="row-label">Colors</span>
-              <input type="color" id="color1" aria-label="Tile color 1" title="Tile color 1">
-              <input type="color" id="color2" aria-label="Tile color 2" title="Tile color 2">
-            </div>
-          </div>
-        </fieldset>
+    <div class="controls">
 
-        <fieldset>
-          <legend>Kites</legend>
-          <div class="group">
-            <div class="row angle-head">
-              <label for="angle">Kite angle</label>
-              <input type="checkbox" id="diagram"><label for="diagram" class="tight" title="Show the angle diagram on the canvas">Diagram</label>
-              <span class="angle-value"><input type="number" id="angle-number" step="0.1" aria-label="Kite angle in degrees"> °</span>
-            </div>
-            <div class="row">
-              <span class="range-end" id="angle-min" aria-hidden="true"></span>
-              <input type="range" id="angle" step="0.1">
-              <span class="range-end" id="angle-max" aria-hidden="true"></span>
-            </div>
+      <fieldset>
+        <legend>Tiling</legend>
+        <div class="group">
+          <div class="tiling-grid" id="tiling-grid" role="radiogroup" aria-label="Tiling"></div>
+          <div class="row">
+            <span class="row-label">Colors</span>
+            <input type="color" id="color1" aria-label="Tile color 1" title="Tile color 1">
+            <input type="color" id="color2" aria-label="Tile color 2" title="Tile color 2">
           </div>
-          <div class="group">
-            <div class="row">
-              <span class="row-label">Kite color</span>
-              <div class="options" role="radiogroup" aria-label="Kite color">
-                <label title="Like tile color 1"><input type="radio" name="kite-mode" value="1"><span class="dot" id="dot1"></span>1</label>
-                <label title="Like tile color 2"><input type="radio" name="kite-mode" value="2"><span class="dot" id="dot2"></span>2</label>
-                <label title="Own color"><input type="radio" name="kite-mode" value="3"><input type="color" id="kite-color" aria-label="Own kite color"></label>
-              </div>
-            </div>
-          </div>
-          <div class="group">
-            <div class="row">
-              <input type="checkbox" id="borders"><label for="borders">Kite borders</label>
-              <input type="color" id="borders-color" aria-label="Kite border color">
-              <input type="range" class="width" id="borders-width" min="1" max="5" step="1" aria-label="Kite border width">
-              <output id="borders-width-value" for="borders-width"></output>
-            </div>
-          </div>
-          <div class="group">
-            <div class="row">
-              <input type="checkbox" id="diagonals"><label for="diagonals">Kite diagonals</label>
-              <input type="color" id="diagonals-color" aria-label="Kite diagonal color">
-              <input type="range" class="width" id="diagonals-width" min="1" max="5" step="1" aria-label="Kite diagonal width">
-              <output id="diagonals-width-value" for="diagonals-width"></output>
-            </div>
-          </div>
-        </fieldset>
+        </div>
+      </fieldset>
 
-        <fieldset>
-          <legend>Outlines</legend>
-          <div class="group">
-            <div class="row">
-              <input type="checkbox" id="original"><label for="original">Original tiling</label>
-              <input type="color" id="original-color" aria-label="Original tiling line color">
-              <input type="range" class="width" id="original-width" min="1" max="5" step="1" aria-label="Original tiling line width">
-              <output id="original-width-value" for="original-width"></output>
+      <fieldset>
+        <legend>Kites</legend>
+        <div class="group">
+          <div class="row angle-head">
+            <label for="angle">Kite angle</label>
+            <input type="checkbox" id="diagram"><label for="diagram" class="tight" title="Show the angle diagram on the canvas">Diagram</label>
+            <span class="angle-value"><input type="number" id="angle-number" step="0.1" aria-label="Kite angle in degrees"> °</span>
+          </div>
+          <div class="row">
+            <span class="range-end" id="angle-min" aria-hidden="true"></span>
+            <input type="range" id="angle" step="0.1">
+            <span class="range-end" id="angle-max" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="group">
+          <div class="row">
+            <span class="row-label">Kite color</span>
+            <div class="options" role="radiogroup" aria-label="Kite color">
+              <label title="Like tile color 1"><input type="radio" name="kite-mode" value="1"><span class="dot" id="dot1"></span>1</label>
+              <label title="Like tile color 2"><input type="radio" name="kite-mode" value="2"><span class="dot" id="dot2"></span>2</label>
+              <label title="Own color"><input type="radio" name="kite-mode" value="3"><input type="color" id="kite-color" aria-label="Own kite color"></label>
             </div>
           </div>
-          <div class="group" id="new-tiling-group">
-            <div class="row">
-              <input type="checkbox" id="new-tiling"><label for="new-tiling">New tiling</label>
-              <input type="color" id="new-tiling-color" aria-label="New tiling line color">
-              <input type="range" class="width" id="new-tiling-width" min="1" max="5" step="1" aria-label="New tiling line width">
-              <output id="new-tiling-width-value" for="new-tiling-width"></output>
-            </div>
-            <p id="new-tiling-hint" class="hint" hidden>Only with kite color 1 or 2: the new tiles form where the kites merge with the tiles of that color.</p>
+        </div>
+        <div class="group">
+          <div class="row">
+            <input type="checkbox" id="borders"><label for="borders">Kite borders</label>
+            <input type="color" id="borders-color" aria-label="Kite border color">
+            <input type="range" class="width" id="borders-width" min="1" max="5" step="1" aria-label="Kite border width">
+            <output id="borders-width-value" for="borders-width"></output>
           </div>
-        </fieldset>
+        </div>
+        <div class="group">
+          <div class="row">
+            <input type="checkbox" id="diagonals"><label for="diagonals">Kite diagonals</label>
+            <input type="color" id="diagonals-color" aria-label="Kite diagonal color">
+            <input type="range" class="width" id="diagonals-width" min="1" max="5" step="1" aria-label="Kite diagonal width">
+            <output id="diagonals-width-value" for="diagonals-width"></output>
+          </div>
+        </div>
+      </fieldset>
 
-        <footer>
-          <a href="mailto:tim.reinhardt@tum.de">tim.reinhardt@tum.de</a>
-        </footer>
-      </div>
-      <div class="stage">
-        <div id="CSCanvas"></div>
-        <svg class="angle-diagram" id="angle-diagram" viewBox="0 0 132 88" aria-hidden="true">
-          <line class="ray" id="ray-up" x1="16" y1="62" x2="112" y2="62"/>
-          <line class="ray" id="ray-down" x1="16" y1="62" x2="112" y2="62"/>
-          <path class="arc" id="angle-arc" d=""/>
-          <line class="edge" x1="16" y1="62" x2="108" y2="62"/>
-          <path class="arrow" d="M 116 62 L 106 58 L 106 66 Z"/>
-          <circle class="pt" cx="16" cy="62" r="2.5"/>
-          <text x="10" y="80">p</text>
-          <text id="angle-label" x="10" y="17"></text>
-        </svg>
-      </div>
+      <fieldset>
+        <legend>Outlines</legend>
+        <div class="group">
+          <div class="row">
+            <input type="checkbox" id="original"><label for="original">Original tiling</label>
+            <input type="color" id="original-color" aria-label="Original tiling line color">
+            <input type="range" class="width" id="original-width" min="1" max="5" step="1" aria-label="Original tiling line width">
+            <output id="original-width-value" for="original-width"></output>
+          </div>
+        </div>
+        <div class="group" id="new-tiling-group">
+          <div class="row">
+            <input type="checkbox" id="new-tiling"><label for="new-tiling">New tiling</label>
+            <input type="color" id="new-tiling-color" aria-label="New tiling line color">
+            <input type="range" class="width" id="new-tiling-width" min="1" max="5" step="1" aria-label="New tiling line width">
+            <output id="new-tiling-width-value" for="new-tiling-width"></output>
+          </div>
+          <p id="new-tiling-hint" class="hint" hidden>Only with kite color 1 or 2: the new tiles form where the kites merge with the tiles of that color.</p>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Export</legend>
+        <div class="group">
+          <div class="row">
+            <span class="row-label">Download
+              <button type="button" class="link-button text-link" data-save="png">PNG</button>,
+              <button type="button" class="link-button text-link" data-save="jpg">JPG</button> or
+              <button type="button" class="link-button text-link" data-save="svg">SVG</button></span>
+            <span class="status" id="save-status" role="status"></span>
+          </div>
+          <div class="row">
+            <label class="row-label" for="export-size">Image size</label>
+            <select id="export-size" title="Size of PNG and JPG images; SVG keeps the screen size and scales freely">
+              <option value="screen">as on screen</option>
+              <option value="2000">2000 px wide</option>
+              <option value="4000">4000 px wide</option>
+            </select>
+          </div>
+        </div>
+        <div class="group">
+          <div class="row">
+            <button type="button" class="link-button text-link" id="copy-link" title="The link keeps the tiling, angle, colors and view">Copy link to this view</button>
+            <span class="status" id="link-status" role="status"></span>
+          </div>
+        </div>
+      </fieldset>
+
+      <footer>
+        <a href="mailto:tim.reinhardt@tum.de">tim.reinhardt@tum.de</a>
+      </footer>
     </div>
   </div>
 
@@ -1776,17 +1745,13 @@
       updateLabel();
     })();
 
-    // The description and Save and share can be hidden, leaving more room for the menu and the canvas
+    // "Info" shows and hides the description
     (function () {
-      var toggle = document.querySelector(".intro-toggle");
-      var more = document.getElementById("intro-more");
+      var toggle = document.querySelector(".info-toggle");
+      var info = document.getElementById("info");
       toggle.addEventListener("click", function () {
-        var open = more.hidden;
-        more.hidden = !open;
-        toggle.setAttribute("aria-expanded", open);
-        var label = open ? "Hide description and export" : "Show description and export";
-        toggle.setAttribute("aria-label", label);
-        toggle.title = label;
+        info.hidden = !info.hidden;
+        toggle.setAttribute("aria-expanded", !info.hidden);
       });
     })();
   </script>
