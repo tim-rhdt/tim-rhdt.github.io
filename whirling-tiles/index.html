@@ -268,16 +268,15 @@
         position: absolute;
         left: 10px;
         bottom: 10px;
-        width: 132px;
-        height: 88px;
+        width: 156px;
+        height: 104px;
         border: 1px solid var(--line);
         border-radius: 8px;
         overflow: hidden;
         background: var(--surface);
         pointer-events: none;
       }
-      .angle-diagram .tile { stroke: var(--faint); stroke-width: 0.75; stroke-linejoin: round; }
-      .angle-diagram .kite { stroke-width: 1.25; stroke-linejoin: round; }
+      .angle-diagram .line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
       .angle-diagram .marks { fill: currentColor; stroke: currentColor; }
       .angle-diagram .edge { stroke-width: 1.25; }
       .angle-diagram .arc { fill-opacity: 0.3; stroke-width: 1; stroke-linejoin: round; }
@@ -307,7 +306,7 @@
           border-width: 1px 0;
           border-radius: 0;
         }
-        .angle-diagram { width: 120px; height: 80px; left: 8px; bottom: 8px; }
+        .angle-diagram { width: 132px; height: 88px; left: 8px; bottom: 8px; }
       }
       /* Touch: larger targets */
       @media (pointer: coarse) {
@@ -371,7 +370,7 @@
     let viewFrame = 0;
     function pushView() {
       if (viewFrame) return;
-      viewFrame = requestAnimationFrame(() => { viewFrame = 0; cs(`setView(${state.z}, ${state.x}, ${state.y});`); });
+      viewFrame = requestAnimationFrame(() => { viewFrame = 0; cs(`setView(${state.z}, ${state.x}, ${state.y});`); diagramLineWidths(); });
     }
 
     // ---------- tiling, with the corner flags for the outline of the new tiling ----------
@@ -433,45 +432,65 @@
       drawDiagram();
       saveState();
     }
-    // Fig. 3(a) of the paper, with the whole kite: the kite on one edge p -> q of the current tiling, between a tile
-    // of color 1 and one of color 2; at p, its borders make the angle alpha with the edge. p is on the left, the tile
-    // of color 1 above, and the kite as large as fits.
-    const DIAGRAM = {w: 132, h: 88, top: 22, side: 10};
-    let diagramEdge = null;            // for the current tiling: coordinates along the edge, and the two tiles in them
+    // Fig. 3(a) of the paper, in the picture: a piece of the current picture around one edge p -> q, turned so that
+    // p -> q points to the right with the tile of color 1 above; at p, the borders of the kite on this edge make the
+    // angle alpha with the edge. The scale is fixed per tiling: the piece is about two and a half edges wide.
+    const DIAGRAM = {w: 156, h: 104, edge: 60};
+    let diagramFrame = null;           // for the current tiling: world coordinates -> diagram pixels
     function setupDiagram() {
+      diagramFrame = null;
       cs('findKiteEdge();');
-      const tiles = csGet('kiteEdgeTiles()');
-      diagramEdge = null;
-      if (!tiles || tiles.length !== 2) return;
-      // coordinates along the edge (p at 0, q at 1) and across it, towards the tile of color 1
-      const [p, q] = tiles[0], len = Math.hypot(q[0] - p[0], q[1] - p[1]), u = [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
-      const across = ([x, y]) => ((y - p[1]) * u[0] - (x - p[0]) * u[1]) / len;
-      const side = Math.sign(tiles[0].reduce((s, v) => s + across(v), 0)) || 1;
-      const local = v => [((v[0] - p[0]) * u[0] + (v[1] - p[1]) * u[1]) / len, side * across(v)];
-      diagramEdge = {local, tiles: tiles.map(t => t.map(local))};
+      // at an angle inside the range, the kite vertex lies on the side of the tile of color 1
+      const t = csGet(`kiteEdgeAt(${(angleRange[0] + angleRange[1]) / 2} * pi / 180)`);
+      if (!t || t.length !== 3) return;
+      const [p, k, q] = t, len = Math.hypot(q[0] - p[0], q[1] - p[1]), u = [(q[0] - p[0]) / len, (q[1] - p[1]) / len];
+      const side = Math.sign(u[0] * (k[1] - p[1]) - u[1] * (k[0] - p[0])) || 1, n = [-side * u[1], side * u[0]];
+      const {w, h, edge} = DIAGRAM, s = edge / len, ox = (w - edge) / 2, oy = h / 2 + 4;
+      const px = ([x, y]) => [ox + s * ((x - p[0]) * u[0] + (y - p[1]) * u[1]), oy - s * ((x - p[0]) * n[0] + (y - p[1]) * n[1])];
+      const corners = [[0, 0], [w, 0], [0, h], [w, h]].map(([X, Y]) => [0, 1].map(i => p[i] + (X - ox) / s * u[i] + (oy - Y) / s * n[i]));
+      const xs = corners.map(c => c[0]), ys = corners.map(c => c[1]), box = v => '[' + v.map(c => c.toFixed(4)).join(', ') + ']';
+      cs(`setDiagramBox(${box([Math.min(...xs), Math.min(...ys)])}, ${box([Math.max(...xs), Math.max(...ys)])});`);
+      diagramFrame = {px, scale: s};
     }
     function drawDiagram() {
       $('angle-label').textContent = state.a.toFixed(1) + '°';
-      if (!diagramEdge) return;
-      const {local, tiles} = diagramEdge;
-      const [[p, ka, q], [, kb]] = csGet(`kiteAt(${state.a} * pi / 180)`).map(t => t.map(local));
-      const {w, h, top, side} = DIAGRAM;
-      const xs = [p, ka, q, kb].map(v => v[0]), ys = [p, ka, q, kb].map(v => v[1]);
-      const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
-      const s = Math.min((w - 2 * side) / (x1 - x0), (h - top - side) / (y1 - y0));
-      const ox = (w - s * (x1 - x0)) / 2 - s * x0, oy = top + (h - top - side - s * (y1 - y0)) / 2 + s * y1;
-      const px = ([x, y]) => [+(ox + s * x).toFixed(2), +(oy - s * y).toFixed(2)];
-      const [P, KA, Q, KB] = [p, ka, q, kb].map(px);
+      if (!diagramFrame) return;
+      const px = diagramFrame.px;
+      const [edge, copies] = csGet('[kiteEdgeAt(tilings.theta), diagramPatch()]');
+      const xy = v => px(v).map(c => c.toFixed(1)).join(' ');
+      const line = (a, b) => `M${xy(a)}L${xy(b)}`;
+      // the shapes of a layer all turn the same way and form one path, so there are no seams between them
+      const shape = pts => {
+        const q = pts.map(px), area = q.reduce((sum, v, i) => { const w = q[(i + 1) % q.length]; return sum + v[0] * w[1] - w[0] * v[1]; }, 0);
+        if (area < 0) q.reverse();
+        return 'M' + q.map(v => v[0].toFixed(1) + ' ' + v[1].toFixed(1)).join('L') + 'Z';
+      };
+      const tiles = ['', ''];
+      let kites = '', borders = '', diagonals = '', newTiling = '';
+      for (const [cw, poly, tris, flags] of copies) {
+        tiles[cw] += shape(poly);
+        // the outline of the new tiling as in outlineNewTiling: around the tiles that the kites do not merge with
+        const outlined = state.n[0] && state.k !== 3 && (cw === 1) !== (state.k === 2), n = tris.length;
+        tris.forEach((t, k) => {
+          kites += shape(t);
+          borders += line(t[0], t[1]) + line(t[1], t[2]);
+          diagonals += line(t[2], t[0]);
+          if (outlined) newTiling += line(t[1], tris[(k + 1) % n][1]) + (flags[k] ? line(tris[(k + n - 1) % n][1], t[1]) : line(t[0], t[1]));
+        });
+      }
       const kite = [state.c1, state.c2, state.kc][state.k - 1];
-      $('diagram-tile1').setAttribute('points', tiles[0].map(px).join(' '));
-      $('diagram-tile2').setAttribute('points', tiles[1].map(px).join(' '));
-      $('diagram-tile1').style.fill = state.c1;
-      $('diagram-tile2').style.fill = state.c2;
-      $('diagram-kite').setAttribute('points', [P, KA, Q, KB].join(' '));
-      $('diagram-kite').style.fill = kite;
-      $('diagram-kite').style.stroke = state.b[1];
-      // the edge with its direction, and the angle alpha at p up to the upper border of the kite
-      const d = Math.hypot(KA[0] - P[0], KA[1] - P[1]), r = Math.min(36, 0.45 * d), mid = (P[0] + Q[0]) / 2;
+      const paint = (id, d, color, property) => { $(id).setAttribute('d', d); $(id).style[property] = color; };
+      paint('diagram-tiles1', tiles[0], state.c1, 'fill');
+      paint('diagram-tiles2', tiles[1], state.c2, 'fill');
+      paint('diagram-kites', kites, kite, 'fill');
+      paint('diagram-borders', state.b[0] ? borders : '', state.b[1], 'stroke');
+      paint('diagram-diagonals', state.d[0] ? diagonals : '', state.d[1], 'stroke');
+      paint('diagram-original', state.o[0] ? diagonals : '', state.o[1], 'stroke');
+      paint('diagram-new', newTiling, state.n[1], 'stroke');
+      diagramLineWidths();
+      const [P, KA, Q] = edge.map(px);
+      // the edge with its direction, and the angle alpha at p up to the upper border of its kite
+      const d = Math.hypot(KA[0] - P[0], KA[1] - P[1]), r = Math.min(22, 0.45 * d), mid = (P[0] + Q[0]) / 2;
       $('diagram-edge').setAttribute('d', `M ${P} L ${Q}`);
       $('diagram-arrow').setAttribute('d', `M ${mid + 4} ${P[1]} l -7 -3.5 v 7 Z`);
       $('diagram-arc').setAttribute('d', d < 1 ? '' :
@@ -479,6 +498,14 @@
       $('diagram-p').setAttribute('cx', P[0]);
       $('diagram-p').setAttribute('cy', P[1]);
       $('diagram-marks').style.color = contrastingInk(kite);
+    }
+    // the lines as thick as in the picture relative to the tiles (the picture keeps their width when zooming)
+    function diagramLineWidths() {
+      const width = $('CSCanvas').getBoundingClientRect().width;
+      if (!diagramFrame || !width) return;
+      const k = diagramFrame.scale * (bounds[1] - bounds[0]) / (width * state.z);
+      [['diagram-borders', state.b], ['diagram-diagonals', state.d], ['diagram-original', state.o], ['diagram-new', state.n]]
+        .forEach(([id, l]) => { $(id).style.strokeWidth = Math.max(0.5, l[2] * k).toFixed(2); });
     }
     // black or white, whichever stands out more against a color (relative luminance as in WCAG)
     function contrastingInk(hex) {
@@ -499,6 +526,7 @@
     function readBounds() {
       const b = csGet('apply(screenbounds(), q, [q_1 / q_3, q_2 / q_3])');
       if (b) bounds = [Math.min(...b.map(q => q[0])), Math.max(...b.map(q => q[0])), Math.min(...b.map(q => q[1])), Math.max(...b.map(q => q[1]))];
+      diagramLineWidths();
     }
     // canvas coordinates of a point on the screen
     function canvasPoint(clientX, clientY) {
@@ -1612,37 +1640,40 @@
       setTileFlags(i, f) := (regional(t); t = tilings.selectedTiling_i; t.problematicEdge = f;);
 
       // for the angle diagram: one edge p -> q of the current tiling, namely edge 1 of the copy of a tile of color 1
-      // nearest to the origin, and the copy of a tile of color 2 on the other side; kiteEdge = [[tile, copy, edge], ...]
+      // nearest to the origin; kiteEdge = [tile, copy]
       kiteEdge = [];
       findKiteEdge() := (
-        regional(tiles, ia, A, MA, best, p, q, m);
+        regional(tiles, ia, A, best);
         tiles = tilings.selectedTiling;
         ia = 0;
         forall(1..length(tiles), i, regional(t); t = tiles_i; if(ia == 0 & !t.clockwise, ia = i));
         A = tiles_ia;
         best = 1000;
         forall(copiesNear(A, tilings.lattice, [-20, -20], [20, 20]), M,
-          if(|(M * A.center).xy| < best, best = |(M * A.center).xy|; MA = M);
-        );
-        p = (MA * A.vertices_1).xy;
-        q = (MA * A.vertices_2).xy;
-        m = (p + q) / 2;
-        kiteEdge = [];
-        forall(1..length(tiles), ib,
-          regional(B);
-          B = tiles_ib;
-          if(B.clockwise, forall(copiesNear(B, tilings.lattice, m, m), MB, forall(1..B.length, k,
-            regional(a, b);
-            a = (MB * B.vertices_k).xy;
-            b = (MB * B.vertices_(mod(k, B.length)+1)).xy;
-            if((|a - p| + |b - q| < 0.01) % (|a - q| + |b - p| < 0.01), kiteEdge = [[ia, MA, 1], [ib, MB, k]]);
-          )));
+          if(|(M * A.center).xy| < best, best = |(M * A.center).xy|; kiteEdge = [ia, M]);
         );
       );
       worldPoints(M, pts) := apply(pts, v, regional(w); w = normalize3(M * v); [re(w_1), re(w_2)]);
-      // the two tiles, and the kite triangles on the edge at the angle theta, in world coordinates
-      kiteEdgeTiles() := apply(kiteEdge, e, regional(t); t = tilings.selectedTiling_(e_1); worldPoints(e_2, t.vertices));
-      kiteAt(theta) := apply(kiteEdge, e, regional(t); t = tilings.selectedTiling_(e_1); worldPoints(e_2, kiteTriangle(t, e_3, theta)));
+      // the kite triangle [p, kite vertex, q] on that edge at the angle theta, in world coordinates
+      kiteEdgeAt(theta) := (regional(t); t = tilings.selectedTiling_(kiteEdge_1); worldPoints(kiteEdge_2, kiteTriangle(t, 1, theta)));
+      // the copies of the tiles near the box lo..hi (world coordinates) shown in the diagram, as [tile, copy]
+      diagramCopies = [];
+      setDiagramBox(lo, hi) := (
+        diagramCopies = flatten(apply(1..length(tilings.selectedTiling), i,
+          regional(t);
+          t = tilings.selectedTiling_i;
+          apply(copiesNear(t, tilings.lattice, lo, hi), M, [i, M])
+        ));
+      );
+      // these copies at the current angle, in world coordinates: [1 for color 2, polygon, kite triangles, corner flags]
+      diagramPatch() := (
+        forall(set(apply(diagramCopies, c, c_1)), i, regional(t); t = tilings.selectedTiling_i; tileTriangles(t));
+        apply(diagramCopies, c,
+          regional(t);
+          t = tilings.selectedTiling_(c_1);
+          [if(t.clockwise, 1, 0), worldPoints(c_2, t.vertices), apply(t.triangles, tr, worldPoints(c_2, tr)), t.problematicEdge]
+        )
+      );
 
       tilings.theta = 12 * pi / 180;  // the angle used in the paper
       changeTiling("bourgoin047");
@@ -1689,10 +1720,14 @@
 
     <div class="stage">
       <div id="CSCanvas"></div>
-      <svg class="angle-diagram" viewBox="0 0 132 88" aria-hidden="true">
-        <polygon class="tile" id="diagram-tile1"/>
-        <polygon class="tile" id="diagram-tile2"/>
-        <polygon class="kite" id="diagram-kite"/>
+      <svg class="angle-diagram" viewBox="0 0 156 104" aria-hidden="true">
+        <path id="diagram-tiles1"/>
+        <path id="diagram-tiles2"/>
+        <path id="diagram-kites"/>
+        <path class="line" id="diagram-borders"/>
+        <path class="line" id="diagram-diagonals"/>
+        <path class="line" id="diagram-original"/>
+        <path class="line" id="diagram-new"/>
         <g class="marks" id="diagram-marks">
           <path class="edge" id="diagram-edge"/>
           <path class="arc" id="diagram-arc"/>
