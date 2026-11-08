@@ -112,23 +112,19 @@ b,strong{font-weight:500}
 
 /* Werkzeugleiste */
 .toolbar{display:flex;align-items:center;gap:8px 10px;padding:4px 20px 9px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
-.chips{display:flex;gap:5px;flex-wrap:wrap}
-.chip{height:30px;border:1px solid var(--line);background:transparent;border-radius:3px;padding:0 10px 0 8px;display:inline-flex;align-items:center;gap:7px;font:400 12.5px/1 var(--font-ui);color:var(--ink-2)}
-.chip .dot{background:transparent;box-shadow:inset 0 0 0 2px var(--c)}
-.chip[aria-pressed="true"]{color:var(--ink);border-color:color-mix(in oklab,var(--c) 55%,var(--line));background:color-mix(in oklab,var(--c) 12%,var(--bg))}
-.chip[aria-pressed="true"] .dot{background:var(--c);box-shadow:none}
-.chip.ev .dia{background:transparent;box-shadow:inset 0 0 0 1.6px var(--ink-2)}
-.chip.ev[aria-pressed="true"]{border-color:color-mix(in oklab,var(--ink-2) 45%,var(--line));background:color-mix(in oklab,var(--ink-2) 9%,var(--bg))}
-.chip.ev[aria-pressed="true"] .dia{background:var(--ink-2);box-shadow:none}
+/* Sparten als Legende zum Anklicken: ausgeblendete mit hohlem Punkt und blasser Schrift */
+.chips{display:flex;gap:2px;flex-wrap:wrap;margin-left:-7px}
+.chip{height:30px;border:0;background:transparent;border-radius:3px;padding:0 7px;display:inline-flex;align-items:center;gap:6px;font:400 13px/1 var(--font-ui);color:var(--ink)}
+.chip:hover{background:var(--band-row)}
+.chip[aria-pressed="false"]{color:var(--muted)}
+.chip[aria-pressed="false"] .dot{background:transparent;box-shadow:inset 0 0 0 1.6px var(--c)}
+.chip[aria-pressed="false"] .dia{background:transparent;box-shadow:inset 0 0 0 1.4px var(--ink-2)}
+.tools-r{display:flex;align-items:center;gap:8px;margin-left:auto}
 .tgroup{display:flex;align-items:center;gap:6px}
 body:not(.v-tl) .tl-only{display:none}
 .tlabel{font-size:11.5px;color:var(--muted)}
-.stage{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 11px;border:1px solid var(--line);border-radius:3px;font:400 13px/1 var(--font-ui);color:var(--ink-2);white-space:nowrap;min-width:122px}
-.stage .pips{display:inline-flex;gap:3px}
-.stage .pips i{width:7px;height:7px;border-radius:50%;background:var(--line);transition:background-color .25s}
-.stage .pips i.on{background:var(--ink-2)}
 .pop{position:relative}
-.popover{position:absolute;z-index:45;top:38px;left:0;min-width:250px;background:var(--raised);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:12px}
+.popover{position:absolute;z-index:45;top:38px;left:0;min-width:250px;max-height:calc(100dvh - 130px);overflow:auto;background:var(--raised);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:12px}
 .popover.right{left:auto;right:0}
 .popover h4{margin:0 0 8px;font:500 13px/1.3 var(--font-ui);color:var(--ink-2)}
 .popover .opt{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:13.5px}
@@ -149,7 +145,6 @@ main{flex:1;min-height:0;display:flex;position:relative}
 .tl{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--surface);position:relative}
 .tl-head{display:flex;border-bottom:1px solid var(--line);background:var(--surface);flex:none;position:relative;z-index:6}
 .tl-corner{width:var(--lab-w);flex:none;border-right:1px solid var(--line);padding:5px 10px 5px 16px;display:flex;flex-direction:column;justify-content:center}
-.tl-corner b{font:500 12px/1.3 var(--font-ui);color:var(--ink-2)}
 .tl-corner span{font-size:12.5px;font-weight:400;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-axis{position:relative;flex:1;height:40px;overflow:hidden;cursor:pointer;touch-action:none}
 .tick{position:absolute;bottom:8px;transform:translateX(-50%);font:400 11px/1 var(--font-mono);color:var(--ink-2);white-space:nowrap;pointer-events:none}
@@ -184,7 +179,6 @@ svg.links circle{fill:var(--ink);opacity:.6}
 .rt button:hover{background:var(--band-row)}
 .rt .chev{display:inline-block;width:14px;transition:transform .15s;color:var(--muted)}
 .rt button[aria-expanded="false"] .chev{transform:rotate(-90deg)}
-.rt small{color:var(--muted);font:400 11px/1 var(--font-mono)}
 .lab{position:absolute;left:0;right:0;padding:0 8px 0 16px;font-size:12.5px;color:var(--ink-2);transition:top .16s ease-out}
 .lab .lt{position:absolute;left:16px;top:4px;height:24px;display:flex;align-items:center;gap:7px;white-space:nowrap}
 .lab.band .lt{height:20px;font:500 11px/1 var(--font-ui);color:var(--muted)}
@@ -254,7 +248,7 @@ svg.links circle{fill:var(--ink);opacity:.6}
 .p-sec h3{margin:0 0 6px;font:500 13px/1.3 var(--font-ui);color:var(--ink-2)}
 .p-sec p{margin:0;line-height:1.55}
 .p-names .sep{color:var(--muted)}
-.p-actions{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
+.p-actions{margin-top:16px;display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap}
 .p-more{margin-top:18px;border-top:1px solid var(--line);padding-top:4px}
 .p-more summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:10px 0;font:500 13px/1.3 var(--font-ui);color:var(--ink-2)}
 .p-more summary::-webkit-details-marker{display:none}
@@ -267,14 +261,13 @@ svg.links circle{fill:var(--ink);opacity:.6}
 .p-rel li{display:grid;gap:1px}
 .rel{display:inline-flex;align-items:center;gap:7px;border:0;background:none;padding:0;text-align:left;font-weight:400;color:var(--ink);text-decoration:underline;text-decoration-color:var(--underline);text-underline-offset:4px}
 .rel:hover{text-decoration-color:currentColor}
-.p-rel .rm{font:400 11.5px/1.4 var(--font-mono);color:var(--muted);padding-left:16px}
 .p-rel .rnote{font-size:13px;color:var(--ink-2);padding-left:16px}
 
 /* Zeitschnitt in der Detailspalte */
 .cut-head{display:flex;align-items:center;gap:8px;margin:10px 0 2px;flex-wrap:wrap}
 .cut-year{font-family:var(--font-display);font-weight:400;font-size:44px;line-height:1;font-variant-numeric:tabular-nums;min-width:3ch;text-align:center}
 .cut-form{margin-left:auto}
-.cut-form input{width:150px;height:32px;border:1px solid var(--line);border-radius:3px;background:transparent;padding:0 12px;font:400 12px/1 var(--font-mono)}
+.cut-form input{width:calc(23ch + 30px);height:32px;border:1px solid var(--line);border-radius:3px;background:transparent;padding:0 12px;font:400 12px/1 var(--font-mono)}
 .cut-hint{margin:6px 0 0;font-size:13px;color:var(--ink-2);line-height:1.5}
 .cut-reg{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .cut-reg h3{margin:0;font:400 22px/1.05 var(--font-display)}
@@ -283,8 +276,6 @@ svg.links circle{fill:var(--ink);opacity:.6}
 .cut-list li{display:flex;align-items:baseline;gap:8px;justify-content:space-between}
 .cut-list .rel{font-size:13.5px}
 .cut-list small{font:400 11px/1.3 var(--font-mono);color:var(--muted);white-space:nowrap}
-.cut-fine{margin:7px 0 0;font-size:12.5px;color:var(--ink-2);line-height:1.6}
-.cut-fine .rel{font-weight:400;font-size:12.5px;color:var(--ink-2)}
 .cut-ms{margin:8px 0 0;display:grid;gap:4px}
 .cut-ms .rel{font-size:13px;font-weight:400}
 .cut-empty{color:var(--muted);font-size:13.5px;margin-top:14px}
@@ -315,8 +306,7 @@ svg.links circle{fill:var(--ink);opacity:.6}
 .qz-bar{flex:1;height:5px;background:var(--line-2);border-radius:3px;overflow:hidden;min-width:90px}
 .qz-bar i{display:block;height:100%;background:var(--ink-2);transition:width .3s}
 .qz-top select{height:30px;border:1px solid var(--line);border-radius:3px;background:transparent;padding:0 8px;font:400 13px/1 var(--font-ui)}
-.qz-kicker{margin:28px 0 0;font:500 13px/1.3 var(--font-ui);color:var(--ink-2)}
-.qz-q{font-family:var(--font-display);font-weight:400;font-size:38px;line-height:1.05;margin:10px 0 8px;letter-spacing:-.015em;text-wrap:balance}
+.qz-q{font-family:var(--font-display);font-weight:400;font-size:38px;line-height:1.05;margin:28px 0 8px;letter-spacing:-.015em;text-wrap:balance}
 .qz-sub{margin:0;color:var(--ink-2);font-size:14px}
 .qz-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
 .qz-opt{display:flex;gap:11px;align-items:flex-start;text-align:left;border:1px solid var(--line);background:transparent;border-radius:3px;padding:12px 14px;font-size:15px;line-height:1.35;color:var(--ink);min-height:54px}
@@ -362,7 +352,6 @@ svg.links circle{fill:var(--ink);opacity:.6}
 .lb figcaption{color:#e9ecee;font-size:13.5px;text-align:center;max-width:70ch;line-height:1.45}
 #lbClose{position:fixed;top:14px;right:14px;z-index:2}
 
-@media (max-width: 1180px){ .stage .sn{display:none} .stage{min-width:0} }
 @media (max-height: 940px) and (min-width: 901px){ .brand p{display:none} .top{padding-top:8px;padding-bottom:4px} .brand h1{font-size:30px} }
 @media (max-width: 900px){
   :root{--lab-w:112px}
@@ -376,9 +365,11 @@ svg.links circle{fill:var(--ink);opacity:.6}
   .btn .short{display:inline}
   .toolbar{flex-wrap:nowrap;overflow-x:auto;padding:4px 14px 8px;scrollbar-width:none}
   .toolbar::-webkit-scrollbar{display:none}
-  .chips{flex-wrap:nowrap;flex:none}
+  .chips{flex-wrap:nowrap;flex:none;margin-left:0}
   .chip{flex:none}
-  .popover{position:fixed;top:auto;left:12px;right:12px}
+  /* Werkzeuge zuerst, die Sparten dahinter */
+  .tools-r{order:-1;margin-left:0;flex:none}
+  .popover,.popover.right{position:fixed;top:auto;left:12px;right:12px}
   .panel{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:60%;border-left:0;border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:var(--shadow);z-index:50;padding:10px 18px calc(24px + env(safe-area-inset-bottom));overscroll-behavior:contain;transition:transform .2s ease-out}
   .panel::before{content:"";display:block;width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 6px}
   .p-fig img{max-height:200px}
@@ -389,7 +380,6 @@ svg.links circle{fill:var(--ink);opacity:.6}
   .lab .lg{max-width:56px;font-size:9.5px;right:4px}
   .tl-corner{padding-left:10px}
   .rt{padding-left:4px}
-  .list th:nth-child(5),.list td:nth-child(5){display:none}
   .qz-q{font-size:30px}
   .zhint{white-space:normal;padding:6px 10px}
   .sheet{padding:18px 18px 22px}
@@ -407,8 +397,9 @@ svg.links circle{fill:var(--ink);opacity:.6}
   .top.searching .search{display:block}
   .btn.search-toggle{display:inline-flex}
   .search-toggle[aria-expanded="true"]{background:var(--ink);color:var(--on-ink);border-color:var(--ink)}
-  .tl-corner b{display:none}
   .tl-corner span{white-space:normal;font-size:11.5px;line-height:1.25}
+  /* Zoomen geht hier mit zwei Fingern; ohne − und + passen Zeitraum, Zeitschnitt und Anpassen in die Breite */
+  .tgroup{display:none}
   /* Liste als Karten statt Tabelle */
   .list table,.list tbody,.list tr,.list td{display:block}
   .list thead{display:none}
@@ -420,7 +411,7 @@ svg.links circle{fill:var(--ink);opacity:.6}
   .list tr.is-sel{background:color-mix(in oklab,var(--focus) 10%,var(--surface))}
   .list td.num{white-space:normal;font-size:11.5px;margin:2px 0 0 17px}
   .list td:nth-child(3){font-size:12.5px;color:var(--ink-2);margin-left:17px}
-  .list td:nth-child(4),.list td:nth-child(5){display:none}
+  .list td:nth-child(4){display:none}
   .list-head{padding:10px 14px}
 }
 /* Touchgeräte: größere Ziele; Eingabefelder mit 16px, sonst zoomt iOS beim Antippen hinein */
@@ -473,35 +464,34 @@ svg.links circle{fill:var(--ink);opacity:.6}
 
 <div class="toolbar" id="toolbar">
   <div class="chips" id="spChips" role="group" aria-label="Sparten ein- und ausblenden"></div>
-  <div class="pop">
-    <button type="button" class="btn" id="btnReg" aria-expanded="false" aria-controls="regPop">Kulturräume <span id="regCount" class="tlabel"></span></button>
-    <div class="popover" id="regPop" hidden></div>
-  </div>
-  <div class="pop tl-only">
-    <button type="button" class="btn" id="btnRange" aria-expanded="false" aria-controls="rangePop">Zeitraum <span class="chev" aria-hidden="true">▾</span></button>
-    <div class="popover" id="rangePop" hidden><h4>Zeitraum zeigen</h4><div class="plist" id="presets" role="group" aria-label="Zeitraum"></div></div>
-  </div>
-  <div class="tgroup tl-only">
-    <button type="button" class="btn icon" id="zOut" aria-label="Herauszoomen">−</button>
-    <span class="stage" id="stage" role="status" title="Detailstufe: Beim Hineinzoomen erscheinen mehr Einzelheiten"><span class="pips" aria-hidden="true"><i></i><i></i><i></i></span><span class="sn" id="stageName">Überblick</span></span>
-    <button type="button" class="btn icon" id="zIn" aria-label="Hineinzoomen">+</button>
-  </div>
-  <button type="button" class="btn tl-only" id="btnCut" aria-pressed="false" title="Zeigt, was zu einem Zeitpunkt überall los war"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1v12" stroke="currentColor" stroke-width="2"/><path d="M2 4h3M2 10h3M9 7h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Zeitschnitt</button>
-  <div class="pop tl-only">
-    <button type="button" class="btn" id="btnView" aria-expanded="false" aria-controls="viewPop">Darstellung <span class="chev" aria-hidden="true">▾</span></button>
-    <div class="popover right" id="viewPop" hidden>
-      <section>
-        <h4>Detailstufe</h4>
-        <label class="opt"><input type="radio" name="lod" value="auto" checked> Automatisch beim Zoomen</label>
-        <label class="opt"><input type="radio" name="lod" value="1"> Immer Überblick</label>
-        <label class="opt"><input type="radio" name="lod" value="2"> Epochen und Reiche</label>
-        <label class="opt"><input type="radio" name="lod" value="3"> Alles, auch Strömungen</label>
-      </section>
-      <section>
-        <h4><label for="warp">Zeitachse zur Gegenwart dehnen</label></h4>
-        <input type="range" id="warp" min="0" max="100" step="1" value="60">
-        <div class="scale"><span>gleichmäßig</span><span>stark gedehnt</span></div>
-      </section>
+  <div class="tools-r">
+    <div class="pop tl-only">
+      <button type="button" class="btn" id="btnRange" aria-expanded="false" aria-controls="rangePop">Zeitraum <span class="chev" aria-hidden="true">▾</span></button>
+      <div class="popover" id="rangePop" hidden><h4>Zeitraum zeigen</h4><div class="plist" id="presets" role="group" aria-label="Zeitraum"></div></div>
+    </div>
+    <div class="tgroup tl-only">
+      <button type="button" class="btn icon" id="zOut" aria-label="Herauszoomen">−</button>
+      <button type="button" class="btn icon" id="zIn" aria-label="Hineinzoomen">+</button>
+    </div>
+    <span class="sr" id="stage" role="status"></span>
+    <button type="button" class="btn tl-only" id="btnCut" aria-pressed="false" title="Zeigt, was zu einem Zeitpunkt überall los war"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1v12" stroke="currentColor" stroke-width="2"/><path d="M2 4h3M2 10h3M9 7h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>Zeitschnitt</button>
+    <div class="pop">
+      <button type="button" class="btn" id="btnOpt" aria-expanded="false" aria-controls="optPop">Anpassen <span class="chev" aria-hidden="true">▾</span></button>
+      <div class="popover right" id="optPop" hidden>
+        <section id="regSec"></section>
+        <section class="tl-only">
+          <h4>Detailstufe</h4>
+          <label class="opt"><input type="radio" name="lod" value="auto" checked> Automatisch beim Zoomen</label>
+          <label class="opt"><input type="radio" name="lod" value="1"> Immer Überblick</label>
+          <label class="opt"><input type="radio" name="lod" value="2"> Epochen und Reiche</label>
+          <label class="opt"><input type="radio" name="lod" value="3"> Alles, auch Strömungen</label>
+        </section>
+        <section class="tl-only">
+          <h4><label for="warp">Zeitachse zur Gegenwart dehnen</label></h4>
+          <input type="range" id="warp" min="0" max="100" step="1" value="60">
+          <div class="scale"><span>gleichmäßig</span><span>stark gedehnt</span></div>
+        </section>
+      </div>
     </div>
   </div>
 </div>
@@ -509,7 +499,7 @@ svg.links circle{fill:var(--ink);opacity:.6}
 <main>
   <section class="tl" id="tl" aria-label="Zeitleiste">
     <div class="tl-head">
-      <div class="tl-corner"><b>Ausschnitt</b><span id="range"></span></div>
+      <div class="tl-corner"><span id="range"></span></div>
       <div class="tl-axis" id="axis" title="Klicken oder ziehen: Zeitschnitt setzen"><div id="ticks"></div><div class="cut-tag" id="cutTag" hidden></div></div>
     </div>
     <div class="tl-scroll" id="scroll">
@@ -540,7 +530,7 @@ svg.links circle{fill:var(--ink);opacity:.6}
       </label>
     </div>
     <table>
-      <thead><tr><th>Name</th><th>Zeit</th><th>Kulturraum</th><th>Sparte</th><th>Ebene</th></tr></thead>
+      <thead><tr><th>Name</th><th>Zeit</th><th>Kulturraum</th><th>Sparte</th></tr></thead>
       <tbody id="listBody"></tbody>
     </table>
   </section>
@@ -554,26 +544,16 @@ svg.links circle{fill:var(--ink);opacity:.6}
   <div class="sheet" tabindex="-1">
     <button type="button" class="btn icon x" id="infoClose" aria-label="Schließen">×</button>
     <h2 id="infoTitle">Über diese Übersicht</h2>
-    <p>Eine Orientierung über rund 2500 Jahre Geschichte und Kultur, gegliedert nach Kulturräumen statt nach Kontinenten. Reiche wie Rom, die Kalifate oder das Mongolenreich reichten über mehrere Kontinente; deshalb tauchen manche Themen in mehreren Spuren auf.</p>
-    <h3>Aufbau</h3>
-    <p>Jeder Kulturraum ist eine Spur. Rauten markieren einzelne Ereignisse, die graue Leiste zeigt die Großepochen, farbige Balken stehen für die Sparten:</p>
+    <p>Rund 2500 Jahre Geschichte und Kultur, gegliedert nach Kulturräumen statt nach Kontinenten. Jeder Kulturraum ist eine Spur: Graue Leisten zeigen die Großepochen, farbige Balken die Sparten, Rauten einzelne Ereignisse.</p>
     <div class="legend" id="legend"></div>
-    <h3>Drei Zoomstufen</h3>
-    <p>In der gröbsten Ansicht stehen alle Kulturräume übereinander, jeweils nur mit Großepochen, den wichtigsten Strömungen und Schlüsselereignissen. Beim Hineinzoomen teilt sich jede Spur in Sparten auf, und Epochen, Reiche und weitere Ereignisse kommen hinzu. In der feinsten Stufe erscheinen auch Strömungen, Phasen und kleinere Ereignisse. Unter „Darstellung“ lässt sich eine Stufe fest einstellen. Weil die Zeitachse zur Gegenwart hin gedehnt ist, bekommt die jüngere Zeit mehr Platz.</p>
-    <h3>Zeitschnitt</h3>
-    <p>Ein Klick auf die Zeitachse oder auf „Zeitschnitt“ setzt eine senkrechte Linie. Rechts erscheint, was zu diesem Zeitpunkt in jedem Kulturraum aktuell war. Die Markierung auf der Achse lässt sich verschieben; das Jahr kann man auch eintippen.</p>
-    <h3>Quiz</h3>
-    <p>Das Quiz stellt Fragen zu Zeiten, Personen, Werken und Ereignissen und richtet sich nach den gewählten Sparten und Kulturräumen. Jede Antwort lässt sich auf der Zeitleiste nachschlagen.</p>
     <h3>Bedienung</h3>
     <ul>
-      <li>Ziehen verschiebt die Zeitleiste. Zoomen geht mit Strg/⌘ + Mausrad, Doppelklick, den Tasten + und − oder auf Touchgeräten mit zwei Fingern.</li>
-      <li>Ein Klick auf einen Balken oder eine Raute öffnet die Details. Querverbindungen erscheinen als gestrichelte Linien.</li>
-      <li>Die Liste zeigt alle Einträge als Tabelle, die Suche findet auch Personen und Werke.</li>
+      <li>Ziehen verschiebt die Zeitleiste. Zoomen geht mit Strg/⌘ + Mausrad, Doppelklick, + und − oder mit zwei Fingern; je näher, desto mehr Einzelheiten.</li>
+      <li>Ein Klick auf einen Balken oder eine Raute zeigt die Details.</li>
+      <li>Ein Klick auf die Zeitachse setzt einen Zeitschnitt: Rechts steht dann, was zu diesem Zeitpunkt überall los war.</li>
     </ul>
-    <h3>Abbildungen</h3>
-    <p>Die Abbildungen stammen von Wikimedia Commons. Sie sind gemeinfrei oder stehen unter einer CC-BY-Lizenz; dann sind Urheber und Lizenz unter dem Bild genannt. Fotos realer Personen sind bewusst nicht enthalten.</p>
-    <h3>Datierungen und Begriffe</h3>
-    <p>Epochengrenzen sind Konventionen und schwanken je nach Land, Sparte und Lehrbuch. Angegeben sind gängige Richtwerte; „ca.“ und „um“ kennzeichnen unscharfe Daten. Für die letzten Jahrzehnte sind Epochenbegriffe noch nicht gefestigt. Europäische Begriffe wie „Mittelalter“ oder „Barock“ stehen nur bei Europa; die anderen Kulturräume folgen ihren eigenen Einteilungen, etwa Dynastien in China oder Perioden in Japan. Die Auswahl ist zwangsläufig lückenhaft.</p>
+    <h3>Abbildungen und Daten</h3>
+    <p>Die Abbildungen stammen von Wikimedia Commons und sind gemeinfrei oder stehen unter CC BY (Urheber und Lizenz unter dem Bild). Fotos realer Personen sind bewusst nicht dabei. Epochengrenzen sind Konventionen, die Jahreszahlen gängige Richtwerte; die Auswahl ist zwangsläufig lückenhaft.</p>
     <p class="sheet-foot"><a href="mailto:tim.reinhardt@tum.de">tim.reinhardt@tum.de</a></p>
   </div>
 </div>
@@ -711,12 +691,6 @@ function tickLabel(y, ya) {
 }
 const regName = e => (REGN[e.r] ? REGN[e.r].n : e.r);
 const spName = e => SPN[e.s] ? SPN[e.s].n : '';
-function levelName(e) {
-  if (e.ms) return 'Ereignis';
-  if (e.lv === 1) return 'Großepoche';
-  if (e.s === 'p') return e.lv === 2 ? 'Reich / Epoche' : 'Phase / Ereignis';
-  return e.lv === 2 ? 'Epoche' : 'Strömung / Phase';
-}
 function mark(e) { return e.ms ? '<span class="dia" aria-hidden="true"></span>' : '<span class="dot s-' + e.s + '" aria-hidden="true"></span>'; }
 
 /* Textbreiten für die Beschriftung */
@@ -979,16 +953,15 @@ function render() {
   }
 }
 function updateStageUI() {
-  document.querySelectorAll('#stage .pips i').forEach((p, i) => p.classList.toggle('on', i < stageNow));
-  $('#stageName').textContent = STAGES[stageNow];
-  $('#stage').setAttribute('aria-label', 'Detailstufe ' + stageNow + ' von 3: ' + STAGES[stageNow]);
+  $('#stage').textContent = 'Detailstufe ' + stageNow + ' von 3: ' + STAGES[stageNow];
   if (stageNow > 1) hideZoomHint();
 }
 function renderAxis(W, X, H) {
   const ya = Yof(S.v0), yb = Math.min(Yof(S.v1), NOW);
   const Xy = y => X(U(y));
   const steps = [1000, 500, 250, 100, 50, 25, 10, 5, 1];
-  const acc = [], GAP = 80;
+  /* Mindestabstand der Jahreszahlen; auf schmaler Achse (Handy) enger, sonst bliebe sie in der Gesamtansicht leer */
+  const acc = [], GAP = Math.max(44, Math.min(80, W / 6));
   for (const s of steps) {
     const first = Math.ceil(ya / s) * s;
     if ((yb - first) / s > 800) continue;
@@ -1039,11 +1012,6 @@ function keyed(map, key, parent, make) {
   return el;
 }
 function sweep(map) { for (const [k, el] of map) { if (!el._seen) { el.remove(); map.delete(k); } else el._seen = false; } }
-function regionCount(R) {
-  let n = IDX[R.k].e.length + (S.sp.s ? IDX[R.k].s.length : 0);
-  for (const s of SPARTEN) if (S.sp[s.k]) n += IDX[R.k][s.k].length;
-  return n;
-}
 function renderRows(rows) {
   for (const r of rows) {
     const key = r.t + ':' + r.R.k + ':' + (r.key || '');
@@ -1051,13 +1019,12 @@ function renderRows(rows) {
       const el = keyed(titleEls, key, titlesBox, () => {
         const d = document.createElement('div');
         d.className = 'rt';
-        d.innerHTML = '<button type="button" data-reg="' + r.R.k + '"><span class="chev" aria-hidden="true">▾</span><span class="rn">' + esc(r.R.n) + '</span></button><small></small>';
+        d.innerHTML = '<button type="button" data-reg="' + r.R.k + '"><span class="chev" aria-hidden="true">▾</span><span class="rn">' + esc(r.R.n) + '</span></button>';
         return d;
       });
       el.style.top = r.y + 'px';
       el.style.height = r.h + 'px';
       el.firstChild.setAttribute('aria-expanded', S.collapsed[r.R.k] ? 'false' : 'true');
-      el.lastChild.textContent = regionCount(r.R) + ' Einträge';
       continue;
     }
     const lab = keyed(labEls, key, labelsBox, () => {
@@ -1260,42 +1227,9 @@ function relsOf(e) {
   for (const [id, note] of (back.get(e.id) || [])) if (!out.has(id)) out.set(id, note);
   return [...out].map(([id, note]) => ({e: byId.get(id), note}));
 }
-function sameTime(e) {
-  const rel = new Set(relsOf(e).map(r => r.e.id));
-  const best = new Map();
-  if (e.ms) {
-    const win = e.A < 1000 ? 60 : e.A < 1800 ? 25 : 8;
-    for (const o of E) {
-      if (!o.ms || o.r === e.r || rel.has(o.id) || Math.abs(o.A - e.A) > win) continue;
-      const arr = best.get(o.r) || [];
-      arr.push([-Math.abs(o.A - e.A) - o.tier * 3, o]);
-      best.set(o.r, arr);
-    }
-  } else {
-    for (const o of E) {
-      if (o.ms || o.r === e.r || o.s !== e.s || o.lv > 2 || rel.has(o.id)) continue;
-      const ov = Math.min(e.B, o.B) - Math.max(e.A, o.A);
-      if (ov <= 0) continue;
-      const score = ov / Math.max(1, Math.max(e.B - e.A, o.B - o.A));
-      if (score < 0.18) continue;
-      const arr = best.get(o.r) || [];
-      arr.push([score, o]);
-      best.set(o.r, arr);
-    }
-  }
-  const out = [];
-  for (const R of REGIONS) {
-    const arr = best.get(R.k);
-    if (!arr) continue;
-    arr.sort((x, y) => y[0] - x[0]);
-    for (const [, o] of arr.slice(0, e.ms ? 1 : 2)) out.push(o);
-  }
-  return out.slice(0, 10);
-}
 function sec(title, body) { return '<section class="p-sec"><h3>' + esc(title) + '</h3>' + body + '</section>'; }
 function relItem(o, note) {
   return '<li><button type="button" class="rel" data-go="' + esc(o.id) + '">' + mark(o) + esc(o.n) + '</button>' +
-    '<span class="rm">' + esc(regName(o)) + ' · ' + esc(SPN[o.s].s) + ' · ' + esc(fmtRange(o)) + '</span>' +
     (note ? '<span class="rnote">' + esc(note) + '</span>' : '') + '</li>';
 }
 function creditHtml(im) {
@@ -1320,13 +1254,12 @@ function renderPanel() {
   }
   panel.hidden = false;
   const reg = regName(e) + (e.g ? ' · ' + e.g : '');
-  const rels = relsOf(e), same = sameTime(e);
+  const rels = relsOf(e);
   const more = [];
   if (e.x) more.push(sec('Hintergrund', '<p>' + esc(e.x) + '</p>'));
   if (e.w && e.w.length) more.push(sec(e.s === 'p' || e.s === 'e' ? 'Schlüsselereignisse' : (e.s === 'i' ? 'Schlüsseltexte und Ereignisse' : 'Schlüsselwerke'), '<ul class="p-list">' + e.w.map(w => '<li>' + esc(w) + '</li>').join('') + '</ul>'));
   if (rels.length) more.push(sec('Querverbindungen', '<ul class="p-rel">' + rels.map(r => relItem(r.e, r.note)).join('') + '</ul>'));
-  if (same.length) more.push(sec(e.ms ? 'Etwa zur gleichen Zeit anderswo' : 'Zur gleichen Zeit anderswo', '<ul class="p-rel">' + same.map(o => relItem(o, '')).join('') + '</ul>'));
-  const kicker = e.ms ? '<span class="dia" aria-hidden="true"></span>Ereignis' : '<span class="dot"></span>' + esc(SPN[e.s].n) + (levelName(e) !== SPN[e.s].n ? ' · ' + esc(levelName(e)) : '');
+  const kicker = e.ms ? '<span class="dia" aria-hidden="true"></span>Ereignis' : '<span class="dot"></span>' + esc(SPN[e.s].n);
   const back = S.cut != null ? '<button type="button" class="p-back" data-act="cutback">← Zeitschnitt ' + esc(fmtYear(S.cut)) + '</button>' : '';
   const cy = midYear(e);
   panel.innerHTML =
@@ -1338,8 +1271,9 @@ function renderPanel() {
     figHtml(e) +
     '<p class="p-desc">' + esc(e.d || '') + '</p>' +
     (e.p && e.p.length ? sec('Wichtige Namen', '<p class="p-names">' + e.p.map(esc).join('<span class="sep"> · </span>') + '</p>') : '') +
-    '<div class="p-actions"><button type="button" class="btn" data-act="show">Auf der Zeitleiste zeigen</button>' +
-    '<button type="button" class="btn" data-act="cuthere" data-year="' + cy + '">Was war ' + (e.ms ? '' : 'um ') + esc(fmtYear(cy)) + ' anderswo?</button></div>' +
+    /* Auf der Zeitleiste ist der Eintrag schon zu sehen; den Knopf braucht es nur in der Liste */
+    '<div class="p-actions">' + (S.view === 'list' ? '<button type="button" class="btn" data-act="show">Auf der Zeitleiste zeigen</button>' : '') +
+    '<button type="button" class="rel" data-act="cuthere" data-year="' + cy + '">Was war ' + (e.ms ? '' : 'um ') + esc(fmtYear(cy)) + ' anderswo?</button></div>' +
     (more.length ? '<details class="p-more"' + (S.more ? ' open' : '') + '><summary>Mehr erfahren</summary><div class="p-more-body">' + more.join('') + '</div></details>' : '');
   panel.scrollTop = 0;
 }
@@ -1394,7 +1328,11 @@ function setCut(y, opts) {
   hideZoomHint();
   y = Math.round(Math.max(Y0 + 10, Math.min(NOW, y)));
   S.cut = y;
-  if (opts.clearSel !== false) S.sel = null;
+  if (opts.clearSel !== false && S.sel) {
+    /* Auch den Eintrag aus der Adresse nehmen, sonst öffnet ihn ein Neuladen wieder */
+    S.sel = null;
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (err) {}
+  }
   $('#btnCut').setAttribute('aria-pressed', 'true');
   if (opts.reveal) {
     const u = U(y);
@@ -1425,10 +1363,9 @@ function cutData(y) {
     const eps = act.filter(e => e.s === 'e').sort((a, b) => (R.groups.indexOf(a.g || '') - R.groups.indexOf(b.g || '')));
     const bySp = (a, b) => SORD[a.s] - SORD[b.s] || a.A - b.A;
     const main = act.filter(e => e.s !== 'e' && e.lv === 2).sort(bySp);
-    const fine = act.filter(e => e.s !== 'e' && e.lv === 3).sort(bySp);
     const win = y < 1000 ? 60 : y < 1800 ? 30 : 12;
     const ms = S.sp.s ? IDX[R.k].s.filter(m => Math.abs(m.A - y) <= win).sort((a, b) => Math.abs(a.A - y) - Math.abs(b.A - y) || a.tier - b.tier).slice(0, 3).sort((a, b) => a.A - b.A) : [];
-    if (eps.length || main.length || fine.length || ms.length) out.push({R, eps, main, fine, ms});
+    if (eps.length || main.length || ms.length) out.push({R, eps, main, ms});
   }
   return out;
 }
@@ -1442,14 +1379,13 @@ function renderCutPanel() {
     '<div class="cut-head"><button type="button" class="btn icon" data-cut="-1" aria-label="' + step + ' Jahre früher">‹</button>' +
     '<div class="cut-year" aria-live="polite">' + esc(fmtYear(y)) + '</div>' +
     '<button type="button" class="btn icon" data-cut="1" aria-label="' + step + ' Jahre später">›</button>' +
-    '<form class="cut-form" id="cutForm"><label class="sr" for="cutIn">Jahr eingeben</label><input id="cutIn" type="text" inputmode="text" autocomplete="off" placeholder="Jahr eingeben"></form></div>' +
-    '<p class="cut-hint">Was in jedem Kulturraum gerade aktuell war. Die Markierung auf der Zeitachse lässt sich verschieben; Jahre vor Christus mit „v. Chr.“ oder Minus eingeben.</p>';
+    '<form class="cut-form" id="cutForm"><label class="sr" for="cutIn">Jahr eingeben</label><input id="cutIn" type="text" inputmode="text" autocomplete="off" placeholder="Jahr, z. B. 300 v. Chr."></form></div>' +
+    '<p class="cut-hint">Was in jedem Kulturraum gerade aktuell war.</p>';
   if (!data.length) h += '<p class="cut-empty">Für dieses Jahr gibt es mit den gewählten Filtern keine Einträge.</p>';
   for (const d of data) {
     h += '<section class="cut-reg"><h3>' + esc(d.R.n) + '</h3>';
     if (d.eps.length) h += '<p class="cut-ep">' + d.eps.map(e => (e.g ? esc(GSHORT[e.g] || e.g) + ': ' : '') + '<button type="button" class="rel" data-go="' + esc(e.id) + '" style="font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit">' + esc(e.n) + '</button>').join(' · ') + '</p>';
     if (d.main.length) h += '<ul class="cut-list">' + d.main.map(e => '<li><button type="button" class="rel" data-go="' + esc(e.id) + '">' + mark(e) + esc(e.n) + '</button><small>' + esc(fmtRange(e)) + '</small></li>').join('') + '</ul>';
-    if (d.fine.length) h += '<p class="cut-fine">Außerdem: ' + d.fine.map(e => '<button type="button" class="rel" data-go="' + esc(e.id) + '">' + esc(e.n) + '</button>').join(', ') + '</p>';
     if (d.ms.length) h += '<div class="cut-ms">' + d.ms.map(m => '<button type="button" class="rel" data-go="' + esc(m.id) + '"><span class="dia" aria-hidden="true"></span>' + esc(fmtRange(m)) + ': ' + esc(m.n) + '</button>').join('') + '</div>';
     h += '</section>';
   }
@@ -1480,8 +1416,7 @@ function renderList() {
     '<td class="nm"><span class="nmw">' + mark(e) + '<span class="lv-' + e.lv + '">' + esc(e.n) + '</span></span></td>' +
     '<td class="num">' + esc(fmtRange(e)) + '</td>' +
     '<td>' + esc(regName(e)) + (e.g ? '<span class="g"> · ' + esc(e.g) + '</span>' : '') + '</td>' +
-    '<td>' + esc(SPN[e.s].s) + '</td>' +
-    '<td>' + esc(levelName(e)) + (e.tier === 1 && !e.ms && e.s !== 'e' ? ' · im Überblick' : '') + '</td></tr>').join('');
+    '<td>' + esc(SPN[e.s].s) + '</td></tr>').join('');
 }
 function setViewMode(v) {
   S.view = v;
@@ -1640,7 +1575,7 @@ const QGEN = {
     if (ys.length < 4) return null;
     const bc = ys.some(y => y < 0);
     const fy = y => y < 0 ? fmtYear(y) : (bc ? y + ' n. Chr.' : String(y));
-    return {kind: 'Wann war das?', q: m.n, sub: regName(m),
+    return {kind: 'Wann war das?', q: 'In welches Jahr fällt ' + (/„/.test(m.n) ? m.n : '„' + m.n + '“') + '?', sub: regName(m),
       opts: shuffle(ys.map((y, i) => i === 0 ? {t: fy(y), ok: true} : {t: fy(y)})), focus: m.id,
       expl: m.n + ' (' + fmtRange(m) + '): ' + m.d};
   }
@@ -1663,7 +1598,7 @@ function renderQuiz() {
   const box = $('#qz');
   const lvl = '<label class="tlabel" for="qzLevel">Umfang</label><select id="qzLevel"><option value="basis"' + (QZ.level === 'basis' ? ' selected' : '') + '>Das Wichtigste</option><option value="alle"' + (QZ.level === 'alle' ? ' selected' : '') + '>Alles</option></select>';
   if (!QZ.round.length) {
-    box.innerHTML = '<div class="qz-top">' + lvl + '</div><p class="qz-empty">Mit den gewählten Sparten und Kulturräumen lassen sich keine Fragen bilden. Wähle unter „Kulturräume“ oder bei den Sparten mehr aus.</p>';
+    box.innerHTML = '<div class="qz-top">' + lvl + '</div><p class="qz-empty">Mit den gewählten Sparten und Kulturräumen lassen sich keine Fragen bilden. Wähle bei den Sparten oder unter „Anpassen“ mehr aus.</p>';
     return;
   }
   if (QZ.i >= QZ.round.length) {
@@ -1689,7 +1624,7 @@ function renderQuiz() {
       '<div class="qz-act"><button type="button" class="btn primary" data-qact="next" id="qzNext">' + (QZ.i + 1 < QZ.round.length ? 'Nächste Frage' : 'Zum Ergebnis') + '</button><button type="button" class="btn" data-qgo="' + esc(q.focus) + '">Auf der Zeitleiste zeigen</button></div>';
   }
   box.innerHTML = '<div class="qz-top"><span class="qz-prog">Frage ' + (QZ.i + 1) + ' von ' + QZ.round.length + ' · ' + QZ.score + ' richtig</span><span class="qz-bar"><i style="width:' + (100 * QZ.i / QZ.round.length).toFixed(0) + '%"></i></span>' + lvl + '</div>' +
-    '<p class="qz-kicker">' + esc(q.kind) + '</p><h2 class="qz-q">' + esc(q.q) + '</h2>' + (q.sub ? '<p class="qz-sub">' + esc(q.sub) + '</p>' : '') +
+    '<h2 class="qz-q">' + esc(q.q) + '</h2>' + (q.sub ? '<p class="qz-sub">' + esc(q.sub) + '</p>' : '') +
     '<div class="qz-opts"' + (q.two ? ' style="grid-template-columns:1fr 1fr"' : '') + '>' + opts + '</div>' + fb;
   if (done) { const n = $('#qzNext'); if (n) n.focus(); }
 }
@@ -1707,9 +1642,7 @@ function answerQuiz(i) {
 /* Steuerelemente */
 function syncControls() {
   document.querySelectorAll('#spChips .chip').forEach(b => b.setAttribute('aria-pressed', S.sp[b.dataset.sp] ? 'true' : 'false'));
-  document.querySelectorAll('#regPop input[type=checkbox]').forEach(c => { c.checked = !!S.reg[c.value]; });
-  const on = REGIONS.filter(r => S.reg[r.k]).length;
-  $('#regCount').textContent = on + '/' + REGIONS.length;
+  document.querySelectorAll('#regSec input[type=checkbox]').forEach(c => { c.checked = !!S.reg[c.value]; });
   document.querySelectorAll('input[name=lod]').forEach(r => { r.checked = r.value === String(S.lod); });
 }
 function buildControls() {
@@ -1718,7 +1651,7 @@ function buildControls() {
   $('#legend').innerHTML = '<span><span class="dia"></span>Ereignis</span><span class="s-e"><span class="dot"></span>Großepoche</span>' + SPARTEN.map(s => '<span class="s-' + s.k + '"><span class="dot"></span>' + esc(s.n) + '</span>').join('');
   const fy = y => y < 0 ? (-y) + ' v. Chr.' : y >= 2026 ? 'heute' : String(y);
   $('#presets').innerHTML = PRESETS.map((p, i) => '<button type="button" data-preset="' + i + '" aria-pressed="false"><span>' + esc(p.n) + '</span><small>' + fy(p.a) + ' – ' + fy(p.b) + '</small></button>').join('');
-  $('#regPop').innerHTML = '<h4>Kulturräume</h4>' + REGIONS.map(r => {
+  $('#regSec').innerHTML = '<h4>Kulturräume</h4>' + REGIONS.map(r => {
     const n = E.filter(e => e.r === r.k).length;
     return '<label class="opt"><input type="checkbox" value="' + r.k + '" checked> ' + esc(r.n) + '<small>' + n + '</small></label>';
   }).join('') + '<div class="row"><button type="button" class="btn" data-regall="1">Alle</button><button type="button" class="btn" data-regall="0">Keine</button></div>';
@@ -1754,23 +1687,19 @@ function bind() {
   });
   $('#zIn').addEventListener('click', () => zoomAt(S.W / 2, 1.6));
   $('#zOut').addEventListener('click', () => zoomAt(S.W / 2, 1 / 1.6));
-  $('#btnReg').addEventListener('click', ev => { ev.stopPropagation(); togglePop($('#btnReg'), $('#regPop')); });
   $('#btnRange').addEventListener('click', ev => { ev.stopPropagation(); togglePop($('#btnRange'), $('#rangePop')); });
-  $('#btnView').addEventListener('click', ev => { ev.stopPropagation(); togglePop($('#btnView'), $('#viewPop')); });
-  $('#regPop').addEventListener('change', ev => {
-    const c = ev.target; if (c.type !== 'checkbox') return;
-    S.reg[c.value] = c.checked; syncControls(); filtersChanged();
+  $('#btnOpt').addEventListener('click', ev => { ev.stopPropagation(); togglePop($('#btnOpt'), $('#optPop')); });
+  $('#optPop').addEventListener('change', ev => {
+    const t = ev.target;
+    if (t.type === 'checkbox') { S.reg[t.value] = t.checked; syncControls(); filtersChanged(); return; }
+    if (t.name === 'lod') { S.lod = t.value; if (S.lod !== 'auto') hideZoomHint(); }
+    schedule();
   });
-  $('#regPop').addEventListener('click', ev => {
+  $('#optPop').addEventListener('click', ev => {
     const b = ev.target.closest('[data-regall]'); if (!b) return;
     const on = b.dataset.regall === '1';
     for (const r of REGIONS) S.reg[r.k] = on;
     syncControls(); filtersChanged();
-  });
-  $('#viewPop').addEventListener('change', ev => {
-    const t = ev.target;
-    if (t.name === 'lod') { S.lod = t.value; if (S.lod !== 'auto') hideZoomHint(); }
-    schedule();
   });
   $('#warp').addEventListener('input', ev => {
     const ya = Yof(S.v0), yb = Yof(S.v1);
