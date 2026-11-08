@@ -256,27 +256,28 @@ footer a:hover { color: var(--point); }
 .node:focus-visible { outline: none; }
 .node:focus-visible rect { stroke-width: 3; stroke: var(--ink); }
 
-/* ---------- Steckbrief ---------- */
+/* ---------- Steckbrief: links Name und Vorkommen, rechts das Datenblatt ---------- */
 .detail { display: grid; gap: 26px; border-top: 2px solid var(--ink); padding-top: 1rem; }
 .d-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "title" "sheet" "where";
   gap: 22px;
 }
 @media (min-width: 900px) {
-  .d-head { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 36px; }
+  .d-head {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-areas: "title sheet" "where sheet";
+    grid-template-rows: auto 1fr;
+    gap: 22px 40px;
+  }
 }
-.d-title { display: grid; gap: 10px; align-content: start; }
-.d-title .crumbs {
-  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
-  font-size: 0.875rem; font-weight: 400; color: var(--muted);
-}
-.pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 1px 7px; border-radius: 3px;
-  border: 1px solid var(--g); color: var(--g);
-  font-size: 0.8125rem; font-weight: 400;
-}
+.d-sheet { grid-area: sheet; min-width: 0; }
+.where { grid-area: where; align-self: start; }
+.gn { font-family: var(--font-math); font-size: 1.08em; }
+.d-title { grid-area: title; display: grid; gap: 12px; align-content: start; }
+.d-meta { font-size: 0.875rem; font-weight: 400; color: var(--muted); }
+.d-meta .fam { color: var(--g); }
 .d-title h2 {
   font-family: var(--font-display);
   font-weight: 400;
@@ -294,40 +295,63 @@ footer a:hover { color: var(--point); }
   margin-top: 8px;
   line-height: 1.4;
 }
-.tag { font-size: 1.08rem; max-width: 52ch; }
-.facts {
+/* Datenblatt: links der Begriff, rechts die Formel */
+.sheet { margin: 0; border-bottom: 1px solid var(--rule); }
+.sheet > div {
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  gap: 4px 16px;
-  margin: 6px 0 0;
-  font-size: 0.88rem;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  gap: 2px 14px;
+  align-items: baseline;
+  padding: 7px 0;
+  border-top: 1px solid var(--rule);
 }
-.facts dt { color: var(--muted); }
-.facts dd { margin: 0; font-variant-numeric: tabular-nums; }
-.facts .mono { font-family: var(--font-mono); font-size: 0.84rem; }
-.where h3, .block-h {
+.sheet dt { color: var(--muted); font-size: 0.84rem; line-height: 1.35; }
+.sheet dd {
+  margin: 0;
+  font-family: var(--font-math);
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+.sheet .gref, .sub-facts .gref { font-size: inherit; }
+.sheet .gens { display: block; font-family: var(--font-body); font-size: 0.84rem; color: var(--muted); }
+@media (max-width: 560px) {
+  .sheet > div { grid-template-columns: minmax(0, 1fr); }
+}
+.ordtab { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ordtab th {
+  font-family: var(--font-body); font-size: 0.8rem; font-weight: 300; color: var(--muted);
+  text-align: left; padding: 0 12px 0 0; white-space: nowrap;
+}
+.ordtab td { text-align: right; padding: 0 0 0 14px; min-width: 1.6em; }
+.ordtab tr + tr td { color: var(--muted); }
+.footnote { margin-top: 10px; font-size: 0.875rem; color: var(--muted); max-width: 66ch; }
+.footnote .gref { color: var(--muted); }
+.block-h {
   font-size: 0.9375rem;
   color: var(--ink);
   font-weight: 500;
   margin-bottom: 10px;
 }
+/* Zugeklappte Teile: Vorkommen, Tabelle aller Untergruppen */
+.fold summary {
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  width: fit-content;
+}
+.fold summary:hover { color: var(--g); }
+.fold summary .cnt { color: var(--muted); }
+.fold[open] summary { margin-bottom: 10px; }
 .where ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
 .where li {
   position: relative;
   padding-left: 18px;
   max-width: 70ch;
+  font-size: 0.92rem;
 }
 .where li::before {
   content: ""; position: absolute; left: 2px; top: 0.62em;
   width: 7px; height: 7px; border-radius: 50%; background: var(--g);
-}
-.note {
-  margin-top: 14px;
-  padding: 10px 14px;
-  background: var(--g-soft);
-  border-radius: 3px;
-  font-size: 0.92rem;
-  max-width: 70ch;
 }
 .gref {
   font-family: var(--font-math);
@@ -392,18 +416,11 @@ footer a:hover { color: var(--point); }
   line-height: 1.25;
 }
 .sub-title .iso { color: var(--muted); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  padding: 2px 8px;
-  border-radius: 5px;
-  background: var(--wash);
-  color: var(--ink);
-  white-space: nowrap;
+.sub-facts {
+  display: flex; flex-wrap: wrap; gap: 2px 20px;
+  font-family: var(--font-math); font-size: 1.0625rem;
 }
-.chip.el { background: var(--g-soft); }
-.chip.warn { background: transparent; border: 1px dashed var(--rule-strong); color: var(--muted); }
+.sub-els { font-family: var(--font-math); font-size: 1.0625rem; overflow-wrap: anywhere; }
 .sub-text { max-width: 66ch; }
 
 /* SVG: Verband */
@@ -444,30 +461,32 @@ footer a:hover { color: var(--point); }
 .m-title { fill: var(--muted); font-family: var(--font-math); font-size: 15px; font-style: italic; }
 .m-vlab { fill: var(--ink); font-family: var(--font-mono); font-size: 12px; }
 
-/* Liste aller Untergruppen */
-.subs-list { display: grid; gap: 0; }
+/* Tabelle aller Untergruppen, eine Zeile je Konjugationsklasse */
+.subs-wrap { border-top: 1px solid var(--rule); padding-top: 12px; }
+.subs-list { display: grid; max-width: 44rem; }
 .subs-list .row {
   display: grid;
-  grid-template-columns: 4.6rem 2.6rem minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) 2.4rem 3.6rem 1.4rem minmax(0, 1fr);
   gap: 4px 12px;
   align-items: baseline;
-  padding: 8px 6px;
+  padding: 5px 6px;
+  border: 0;
   border-top: 1px solid var(--rule);
-  cursor: pointer;
-  text-align: left;
   background: transparent;
-  border-left: 0; border-right: 0; border-bottom: 0;
   width: 100%;
+  text-align: left;
+  font-family: var(--font-math);
+  font-size: 1rem;
+  cursor: pointer;
 }
-.subs-list .row:hover { background: var(--wash); }
+.subs-list .row.head { cursor: default; border-top: 0; color: var(--muted); }
+.subs-list .row:not(.head):hover { background: var(--wash); }
 .subs-list .row.sel { background: var(--g-soft); }
-.subs-list .t { font-family: var(--font-math); font-size: 1.05rem; }
-.subs-list .n { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.subs-list .d { font-size: 0.9rem; }
-.subs-list .f { font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); text-align: right; }
+.subs-list .r { text-align: right; font-variant-numeric: tabular-nums; }
+.subs-list .h { overflow-wrap: anywhere; }
 @media (max-width: 560px) {
-  .subs-list .row { grid-template-columns: 3.8rem 2.2rem minmax(0, 1fr); }
-  .subs-list .f { grid-column: 3; text-align: left; }
+  .subs-list .row { grid-template-columns: minmax(0, 1fr) 2.2rem 3.6rem 1.4rem minmax(0, 1fr); }
+  .subs-list .h { display: none; }
 }
 
 /* Lesehilfe */
@@ -552,7 +571,7 @@ footer a:hover { color: var(--point); }
   <main>
   <header class="masthead">
     <h1>Atlas der kleinen Gruppen</h1>
-    <p class="lead">Bis zur Ordnung 31 gibt es genau 93 Gruppen (bis auf Isomorphie), bis 15 sind es nur 28. Das Diagramm zeigt, welche Gruppe in welcher steckt: Eine Linie von G hinunter zu H bedeutet, dass H eine maximale Untergruppe von G ist. Wer den Linien weiter nach unten folgt, erreicht alle Untergruppen. Im Steckbrief darunter sieht man jede Untergruppe und ihre Nebenklassen im Modell, und was schiefgeht, wenn eine Untergruppe kein Normalteiler ist.</p>
+    <p class="lead">Alle 93 Gruppen der Ordnung ≤ 31, bis auf Isomorphie. Eine Linie von G hinunter zu H heißt: H ist maximale Untergruppe von G. Darunter Steckbrief, Untergruppenverband und Nebenklassen der gewählten Gruppe.</p>
   </header>
 
   <section class="atlas" aria-label="Hasse-Diagramm aller Gruppen bis Ordnung 15">
@@ -595,27 +614,27 @@ footer a:hover { color: var(--point); }
     <div>
       <h3>So liest man das Diagramm</h3>
       <ul>
-        <li>Die Zeilen sortieren nach der Anzahl der Primfaktoren der Ordnung: ganz unten die triviale Gruppe, darüber die Primzahlordnungen, dann p² und pq, dann p³, p²q und pqr, oben p⁴ und p³q.</li>
-        <li>Eine Linie verbindet G mit H, wenn H (bis auf Isomorphie) eine maximale Untergruppe von G ist. Gestrichelt heißt: Diese Untergruppen sind keine Normalteiler.</li>
-        <li>Bis Ordnung 31 bedeutet „maximal“ hier dasselbe wie „ohne Zwischenstufe“: Steckt H in G, führt immer ein Weg nach unten von G zu H.</li>
+        <li>Zeilen nach der Anzahl der Primfaktoren von |G|, mit Vielfachheit: 1 · p · p², pq · p³, p²q, pqr · p⁴, p³q.</li>
+        <li>Linie von G hinunter zu H: H ist maximale Untergruppe von G (bis auf Isomorphie); gestrichelt: H ⋬ G.</li>
+        <li>G hat eine Untergruppe ≅ H genau dann, wenn ein Weg nach unten von G zu H führt.</li>
       </ul>
     </div>
     <div>
       <h3>Wie man Untergruppen findet</h3>
       <ul>
-        <li><em>Lagrange:</em> Die Ordnung einer Untergruppe teilt die Gruppenordnung. Umgekehrt gilt das nicht immer: A<sub>4</sub> hat keine Untergruppe mit 6 Elementen.</li>
-        <li><em>Potenzen eines Elements</em> bilden immer eine zyklische Untergruppe.</li>
-        <li><em>Stabilisatoren:</em> Alle Symmetrien, die ein Detail festhalten (eine Ecke, eine Achse, eine Färbung), bilden eine Untergruppe. Darauf beruhen die Bilder im Steckbrief.</li>
-        <li><em>Konjugierte Untergruppen</em> sehen gleich aus, nur verdreht. Hat eine Untergruppe keine verdrehte Kopie, ist sie ein Normalteiler, und man kann durch sie teilen: G/N.</li>
-        <li><em>Sylow:</em> Zu jeder Primzahlpotenz p<sup>k</sup>, die |G| genau teilt, gibt es Untergruppen der Ordnung p<sup>k</sup>, und sie sind alle zueinander konjugiert.</li>
+        <li><em>Lagrange:</em> H ≤ G ⇒ |H| teilt |G|. Die Umkehrung gilt nicht: A<sub>4</sub> hat keine Untergruppe der Ordnung 6.</li>
+        <li><em>Zyklisch:</em> ⟨g⟩ = {g<sup>k</sup> : k ∈ ℤ} ≤ G mit |⟨g⟩| = ord g.</li>
+        <li><em>Stabilisator:</em> G<sub>x</sub> = {g ∈ G : gx = x} ≤ G. Darauf beruhen die Modellbilder.</li>
+        <li><em>Normalteiler:</em> N ⊴ G ⇔ gN = Ng für alle g ∈ G; nur dann ist G/N eine Gruppe.</li>
+        <li><em>Sylow:</em> |G| = p<sup>k</sup>m mit p ∤ m ⇒ es gibt Untergruppen der Ordnung p<sup>k</sup>, sie sind alle zueinander konjugiert, und n<sub>p</sub> ≡ 1 (mod p), n<sub>p</sub> | m.</li>
       </ul>
     </div>
     <div>
       <h3>Warum bis 31?</h3>
       <ul>
-        <li>Anzahl der Gruppen für n = 1 bis 31: 1, 1, 1, 2, 1, 2, 1, 5, 2, 2, 1, 5, 1, 2, 1, <em>14</em>, 1, 5, 1, 5, 2, 2, 1, <em>15</em>, 2, 2, 5, 4, 1, 4, 1. Für n = 32 sind es schon 51, für n = 64 dann 267.</li>
-        <li>Für eine Primzahl p gibt es nur C<sub>p</sub>. Für p² gibt es C<sub>p²</sub> und C<sub>p</sub>×C<sub>p</sub>. Für pq mit p &lt; q gibt es C<sub>pq</sub> und, falls p ein Teiler von q − 1 ist, eine nicht-abelsche Gruppe: hier S<sub>3</sub>, D<sub>5</sub>, D<sub>7</sub>, F<sub>21</sub>, D<sub>11</sub>, D<sub>13</sub>.</li>
-        <li>Die Angabe SmallGroup [n, k] ist die Nummer der Gruppe in der SmallGroups-Bibliothek des Computeralgebrasystems GAP.</li>
+        <li>Anzahl der Gruppen der Ordnung n = 1, …, 31: 1, 1, 1, 2, 1, 2, 1, 5, 2, 2, 1, 5, 1, 2, 1, <em>14</em>, 1, 5, 1, 5, 2, 2, 1, <em>15</em>, 2, 2, 5, 4, 1, 4, 1. Bei n = 32 sind es schon 51, bei n = 64 dann 267.</li>
+        <li>|G| = p ⇒ G ≅ C<sub>p</sub>. |G| = p² ⇒ G ≅ C<sub>p²</sub> oder C<sub>p</sub> × C<sub>p</sub>. |G| = pq mit p &lt; q ⇒ G ≅ C<sub>pq</sub> oder, falls p | q − 1, G ≅ C<sub>q</sub> ⋊ C<sub>p</sub>: hier S<sub>3</sub>, D<sub>5</sub>, D<sub>7</sub>, F<sub>21</sub>, D<sub>11</sub>, D<sub>13</sub>.</li>
+        <li>SmallGroup(n, k): die k-te Gruppe der Ordnung n in der Bibliothek kleiner Gruppen des Computeralgebrasystems GAP.</li>
       </ul>
     </div>
   </section>
@@ -1112,8 +1131,124 @@ for (const g of GROUPS) {
   g.inv = g.tab.map(row => row.indexOf(g.e));
 }
 const RANGES = [8, 12, 15, 16, 24, 31];
-const state = { gid: 'D4', sub: null, lim: 16, focus: false, mode: 'sub' };
+const state = { gid: 'D4', sub: null, lim: 16, focus: false, mode: 'sub', whereOpen: false, tableOpen: false };
 const FAMILY = { cyclic: 'zyklisch', abelian: 'abelsch, nicht zyklisch', nonabelian: 'nicht abelsch' };
+
+/* ---------- Präsentationen ----------
+   Zyklische, abelsche, Dieder- und dizyklische Gruppen nach Schema (presentation unten), die übrigen von Hand.
+   Jede ist nachgerechnet: Die Coset-Aufzählung (Todd–Coxeter) ergibt genau |G| Elemente, und die
+   angegebenen Erzeuger erfüllen in der Verknüpfungstafel die Relationen und erzeugen G.
+   Zweiter Eintrag: die Erzeuger in den Bezeichnungen des Modells, wo sie anders heißen.
+   Kommutator: [a, b] = a⁻¹b⁻¹ab. */
+const PRES = {
+  Q8: ['⟨i, j | i⁴ = 1, i² = j², jij⁻¹ = i⁻¹⟩'],
+  A4: ['⟨a, b | a² = b³ = (ab)³ = 1⟩', 'a = (1 2)(3 4), b = (2 3 4)'],
+  S4: ['⟨a, b | a² = b³ = (ab)⁴ = 1⟩', 'a = (3 4), b = (1 2 3)'],
+  SL23: ['⟨a, b | a³ = b³ = (ab)²⟩', 'a = −ω, b = ω²i'],
+  'C2^2:C4': ['⟨a, b, c | a⁴ = b² = c² = 1, ab = ba, bc = cb, cac⁻¹ = ab⟩'],
+  'C4:C4': ['⟨a, b | a⁴ = b⁴ = 1, bab⁻¹ = a⁻¹⟩'],
+  M16: ['⟨a, b | a⁸ = b² = 1, bab⁻¹ = a⁵⟩'],
+  SD16: ['⟨a, b | a⁸ = b² = 1, bab⁻¹ = a³⟩'],
+  C2xD4: ['⟨r, s, c | r⁴ = s² = c² = 1, srs⁻¹ = r⁻¹, [c, r] = [c, s] = 1⟩', 'r = (0, r), s = (0, s), c = (1, id)'],
+  C2xQ8: ['⟨i, j, c | i⁴ = c² = 1, i² = j², jij⁻¹ = i⁻¹, [c, i] = [c, j] = 1⟩', 'i = (0, i), j = (0, j), c = (1, 1)'],
+  Pauli: ['⟨X, Z, w | X² = Z² = w⁴ = 1, (XZ)² = w², [w, X] = [w, Z] = 1⟩', 'w = iI'],
+  C3xS3: ['⟨a, b | a³ = b⁶ = 1, bab⁻¹ = a⁻¹⟩', 'a = (0, r), b = (1, s)'],
+  'C3^2:C2': ['⟨a, b, t | a³ = b³ = t² = 1, ab = ba, tat⁻¹ = a⁻¹, tbt⁻¹ = b⁻¹⟩', 'a = T(1,0), b = T(0,1), t = P(0,0)'],
+  F20: ['⟨a, b | a⁵ = b⁴ = 1, bab⁻¹ = a²⟩'],
+  F21: ['⟨a, b | a⁷ = b³ = 1, bab⁻¹ = a²⟩'],
+  'C3:C8': ['⟨a, b | a³ = b⁸ = 1, bab⁻¹ = a⁻¹⟩'],
+  C4xS3: ['⟨a, b | a¹² = b² = 1, bab⁻¹ = a⁵⟩', 'a = (1, r), b = (0, s)'],
+  C2xDic3: ['⟨a, b | a⁶ = b⁴ = 1, bab⁻¹ = a⁻¹⟩', 'a = (1, a), b = (0, x)'],
+  'C3:D4': ['⟨r, s, x | r⁴ = s² = x³ = 1, srs⁻¹ = r⁻¹, rxr⁻¹ = x⁻¹, sx = xs⟩'],
+  C3xD4: ['⟨a, b | a¹² = b² = 1, bab⁻¹ = a⁷⟩', 'a = (1, r), b = (0, s)'],
+  C3xQ8: ['⟨a, b | a¹² = 1, b² = a⁶, bab⁻¹ = a⁷⟩', 'a = (1, i), b = (0, j)'],
+  C2xA4: ['⟨a, b, c | a² = b³ = (ab)³ = c² = 1, [c, a] = [c, b] = 1⟩', 'a = (1 2)(3 4), b = (2 3 4), c = −id'],
+  C2xD6: ['⟨r, s, c | r⁶ = s² = c² = 1, srs⁻¹ = r⁻¹, [c, r] = [c, s] = 1⟩', 'r = (0, r), s = (0, s), c = (1, id)'],
+  He3: ['⟨a, b, c | a³ = b³ = c³ = 1, c = [a, b], [a, c] = [b, c] = 1⟩', 'a = (1,0,0), b = (0,1,0), c = (0,0,1); [a, b] = a⁻¹b⁻¹ab'],
+  'C9:C3': ['⟨a, b | a⁹ = b³ = 1, bab⁻¹ = a⁴⟩'],
+  C5xS3: ['⟨a, b | a¹⁵ = b² = 1, bab⁻¹ = a¹¹⟩', 'a = (1, r), b = (0, s)'],
+  C3xD5: ['⟨a, b | a¹⁵ = b² = 1, bab⁻¹ = a⁴⟩', 'a = (1, r), b = (0, s)'],
+};
+const SUPS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const sup = n => String(n).replace(/\d/g, d => SUPS[d]);
+function presentation(g) {
+  if (PRES[g.id]) return PRES[g.id];
+  let m;
+  if (g.id === 'S3' || (m = g.id.match(/^D(\d+)$/))) {
+    return [`⟨r, s | r${sup(m ? m[1] : 3)} = s² = 1, srs⁻¹ = r⁻¹⟩`];
+  }
+  if (g.id === 'Q16' || (m = g.id.match(/^Dic(\d+)$/))) {
+    const k = m ? +m[1] : 4;
+    return [`⟨a, x | a${sup(2 * k)} = 1, x² = a${sup(k)}, xax⁻¹ = a⁻¹⟩`];
+  }
+  if (g.order === 1) return ['⟨a | a = 1⟩'];
+  // Abelsch: Faktoren aus dem Namen, etwa C4xC2^2 → 4, 2, 2
+  const fs = g.id === 'V4' ? [2, 2] : g.id.split('x').flatMap(f => {
+    const [, b, e] = f.match(/^C(\d+)(?:\^(\d+))?$/);
+    return Array(+(e || 1)).fill(+b);
+  });
+  const gens = 'abcd'.slice(0, fs.length).split('');
+  let rel = gens.map((x, i) => x + sup(fs[i])).join(' = ') + ' = 1';
+  if (gens.length === 2) rel += ', ab = ba';
+  else if (gens.length > 2) {
+    const pairs = [];
+    gens.forEach((x, i) => gens.slice(i + 1).forEach(y => pairs.push(`[${x}, ${y}]`)));
+    rel += ', ' + pairs.join(' = ') + ' = 1';
+  }
+  return [`⟨${gens.join(', ')} | ${rel}⟩`];
+}
+
+/* ---------- Kennzahlen, aus der Verknüpfungstafel berechnet ---------- */
+function primePowers(n) {
+  const out = [];
+  for (let p = 2; n > 1; p++) {
+    let k = 0;
+    while (n % p === 0) { n /= p; k++; }
+    if (k) out.push([p, k]);
+  }
+  return out;
+}
+const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+function generated(g, gens) {
+  const set = new Set([g.e]);
+  let front = [g.e];
+  while (front.length) {
+    const next = [];
+    for (const x of front) for (const y of gens) {
+      const z = g.tab[x][y];
+      if (!set.has(z)) { set.add(z); next.push(z); }
+    }
+    front = next;
+  }
+  return set;
+}
+function subOf(g, set) {
+  return g.subs.find(s => s.el.length === set.size && s.el.every(x => set.has(x)));
+}
+function invariants(g) {
+  if (g.iv) return g.iv;
+  const n = g.order, T = g.tab;
+  const all = [...Array(n).keys()];
+  const seen = new Set(), classSizes = [];
+  for (const x of all) {
+    if (seen.has(x)) continue;
+    const c = new Set(all.map(y => T[T[y][x]][g.inv[y]]));
+    c.forEach(z => seen.add(z));
+    classSizes.push(c.size);
+  }
+  classSizes.sort((a, b) => a - b);
+  const center = new Set(all.filter(x => all.every(y => T[x][y] === T[y][x])));
+  const comms = new Set();
+  for (const x of all) for (const y of all) comms.add(T[T[T[g.inv[x]][g.inv[y]]][x]][y]);
+  const pp = primePowers(n);
+  const sylow = pp.length > 1 ? pp.map(([p, k]) => {
+    const P = g.subs.filter(s => s.order === p ** k);
+    return { p, count: P.length, type: P[0].type };
+  }) : [];
+  const exponent = g.facts.orders.reduce((a, [o]) => a * o / gcd(a, o), 1);
+  g.iv = { classSizes, center: subOf(g, center), derived: subOf(g, generated(g, [...comms])), sylow, exponent, pp };
+  return g.iv;
+}
 
 /* ---------- Namen und Querverweise ---------- */
 function nameHTML(m) {
@@ -1366,9 +1501,6 @@ function renderMain(scrollToSel) {
 }
 
 /* Steckbrief, Untergruppenverband, Nebenklassen-Erklärungen, Steuerung. */
-function orderPhrase(orders) {
-  return orders.map(([o, c]) => (o === 1 ? '1 neutrales' : `${c} der Ordnung ${o}`)).join(', ');
-}
 function defaultSub(g) {
   const max = g.subs.map((s, i) => [s, i]).filter(([s]) => s.maximal);
   if (!max.length || (max.length === 1 && max[0][0].order === 1)) return g.subs.length - 1;
@@ -1388,39 +1520,67 @@ function swatch(c) {
   return `<i class="swatch" style="background:${kcol(c)}"></i>`;
 }
 
+/* Untergruppe als Formel: 1, G oder die Erzeuger ⟨…⟩ */
+function subFormula(g, s) {
+  return s.order === 1 ? '1' : (s.order === g.order ? 'G' : esc(s.gl));
+}
+/* Klassengleichung; ab zehn Summanden werden gleiche zusammengefasst: 24 = 6 · 1 + 9 · 2 */
+function classEquation(n, sizes) {
+  if (sizes.length <= 9) return `${n} = ${sizes.join(' + ')}`;
+  const runs = [];
+  for (const s of sizes) {
+    const last = runs[runs.length - 1];
+    if (last && last[0] === s) last[1]++;
+    else runs.push([s, 1]);
+  }
+  return `${n} = ` + runs.map(([s, k]) => (k > 1 ? `${k} · ${s}` : `${s}`)).join(' + ');
+}
+function sheetHTML(g) {
+  const f = g.facts, iv = invariants(g);
+  const row = (dt, dd) => `<div><dt>${dt}</dt><dd>${dd}</dd></div>`;
+  const [pres, gens] = presentation(g);
+  const rows = [row('Präsentation', esc(pres) + (gens ? `<span class="gens">mit ${esc(gens)}</span>` : ''))];
+  let ord = `|G| = ${g.order}`;
+  if (iv.pp.length > 1 || (iv.pp.length === 1 && iv.pp[0][1] > 1)) ord += ' = ' + iv.pp.map(([p, k]) => p + (k > 1 ? sup(k) : '')).join(' · ');
+  rows.push(row('Ordnung', `${ord}, Exponent ${iv.exponent}`));
+  const Z = iv.center, D = iv.derived;
+  rows.push(row('Zentrum', Z.order === 1 || Z.order === g.order ? `Z(G) = ${subFormula(g, Z)}`
+    : `Z(G) = ${esc(Z.gl)} ≅ ${gref(Z.type)}, G/Z(G) ≅ ${gref(Z.quot)}`));
+  rows.push(row('Kommutatorgruppe', D.order === 1 ? 'G′ = 1'
+    : `G′ = ${subFormula(g, D)} ≅ ${gref(D.type)}, G/G′ ≅ ${gref(D.quot)}`));
+  rows.push(row('Klassengleichung', classEquation(g.order, iv.classSizes)));
+  rows.push(row('Elementordnungen', `<table class="ordtab"><tr><th>ord g</th>${f.orders.map(([o]) => `<td>${o}</td>`).join('')}</tr>` +
+    `<tr><th>Anzahl</th>${f.orders.map(([, c]) => `<td>${c}</td>`).join('')}</tr></table>`));
+  const nCls = g.classes.length;
+  rows.push(row('Untergruppen', `${f.nSub}, ${f.nNormal === f.nSub ? 'alle normal' : `davon ${f.nNormal} normal`}` +
+    (nCls !== f.nSub ? `; ${nCls} bis auf Konjugation` : '')));
+  if (g.maxEdges.length) {
+    rows.push(row('Maximale Untergruppen', g.maxEdges.map(e => gref(e.type) + (e.count > 1 ? ` (${e.count}×)` : '')).join(', ')));
+  }
+  if (iv.sylow.length) {
+    rows.push(row('Sylow-Gruppen', iv.sylow.map(({ p, count, type }) => `n<sub>${p}</sub> = ${count}, P<sub>${p}</sub> ≅ ${gref(type)}`).join('; ')));
+  }
+  return `<dl class="sheet">${rows.join('')}</dl>`;
+}
+
 function renderDetail() {
   const g = G[state.gid];
-  const f = g.facts;
   const fam = 'fam-' + g.family;
   const m = g.meta;
-  const nCls = g.classes.length;
-  let subsTxt = `${f.nSub}`;
-  if (nCls !== f.nSub) subsTxt += `, in ${nCls} Konjugationsklassen`;
-  subsTxt += f.nNormal === f.nSub ? '; alle normal' : `; davon ${f.nNormal} Normalteiler`;
-  const maxTxt = g.maxEdges.length ? g.maxEdges.map(e => `${e.count}× ${gref(e.type)}`).join(', ') : 'keine (nur die Gruppe selbst)';
-  const centerTxt = f.centerSize === g.order ? 'die ganze Gruppe' : gref(f.center);
-  const ups = [...up(g.id)].sort((a, b) => G[a].order - G[b].order || G[a].gap[1] - G[b].gap[1]);
-  let upTxt = ups.length ? ups.slice(0, 18).map(gref).join(' ') : 'in keiner anderen Gruppe bis Ordnung 31';
-  if (ups.length > 18) upTxt += ` <span class="more">und ${ups.length - 18} weiteren</span>`;
   const head = `
     <div class="d-head ${fam}">
       <div class="d-title">
-        <div class="crumbs"><span>Ordnung ${g.order}</span><span class="pill">${FAMILY[g.family]}</span><span class="pill" title="Nummer in der SmallGroups-Bibliothek">SmallGroup [${g.gap[0]}, ${g.gap[1]}]</span></div>
         <h2 id="d-name">${nameHTML(g.name)}<span class="alt">${m.alt}</span></h2>
-        <p class="tag">${m.tag}</p>
-        <dl class="facts">
-          <dt>Untergruppen</dt><dd>${subsTxt}</dd>
-          <dt>Maximale Untergruppen</dt><dd>${maxTxt}</dd>
-          <dt>Zentrum</dt><dd>${centerTxt}</dd>
-          <dt>Elemente</dt><dd>${orderPhrase(f.orders)}</dd>
-          <dt>Steckt in</dt><dd>${upTxt}</dd>
-        </dl>
+        <p class="d-meta"><span class="fam">${FAMILY[g.family]}</span> · <span title="Nummer in der Bibliothek kleiner Gruppen von GAP">SmallGroup(${g.gap[0]}, ${g.gap[1]})</span></p>
       </div>
-      <div class="where">
-        <h3>Wo diese Gruppe auftritt</h3>
+      <div class="d-sheet">
+        ${sheetHTML(g)}
+        ${m.note ? `<p class="footnote">${richText(m.note)}</p>` : ''}
+      </div>
+      <details class="fold where"${state.whereOpen ? ' open' : ''}>
+        <summary>Wo <span class="gn">${nameHTML(g.name)}</span> vorkommt <span class="cnt">(${m.wo.length})</span></summary>
         <ul>${m.wo.map(w => `<li>${richText(w)}</li>`).join('')}</ul>
-        ${m.note ? `<p class="note">${richText(m.note)}</p>` : ''}
-      </div>
+      </details>
     </div>`;
   const see = `
     <div class="see ${fam}">
@@ -1442,10 +1602,10 @@ function renderDetail() {
         </div>
         <div class="sub-info area-info" id="sub-info" aria-live="polite"></div>
       </div>
-      <div>
-        <div class="block-h">Alle Untergruppen im Überblick</div>
+      <details class="fold subs-wrap"${state.tableOpen ? ' open' : ''}>
+        <summary>Alle Untergruppen als Tabelle <span class="cnt">(${g.subs.length})</span></summary>
         <div class="subs-list" id="subs-list"></div>
-      </div>
+      </details>
     </div>`;
   document.getElementById('detail').innerHTML = head + see;
   renderSub();
@@ -1475,26 +1635,24 @@ function cosetSection(g, s, mode, cs, cmp) {
   let html = '<div class="coset-box">';
   if (mode === 'left' || mode === 'right') {
     const L = mode === 'left';
-    html += `<p class="sub-text"><strong>${k} ${L ? 'Linksnebenklassen gH' : 'Rechtsnebenklassen Hg'}</strong> mit je ${m} Elementen, jede in einer eigenen Farbe (H selbst in der Gruppenfarbe). `;
-    html += L ? 'Jede Farbe entsteht aus H, indem man alle Elemente von links mit einem festen g multipliziert.'
-      : 'Jede Farbe entsteht, indem man ein festes g von links mit allen Elementen von H multipliziert.';
+    html += `<p class="sub-text">Die [G : H] = ${k} ${L ? 'Linksnebenklassen gH = {gh : h ∈ H}' : 'Rechtsnebenklassen Hg = {hg : h ∈ H}'} mit je ${m} Elementen, jede in eigener Farbe (H selbst in der Gruppenfarbe).`;
     if (chamber) {
-      html += L ? ' Im Bild ist jede Farbfläche die Figur von H, mit g bewegt. Ihre Symmetrie ist die verdrehte Kopie gHg⁻¹.'
-        : ' Im Bild werden die Symmetrien aus H auf das Teildreieck von g angewandt. Darum ist jede Farbfläche unter H selbst symmetrisch.';
+      html += L ? ' Im Bild ist gH die mit g bewegte Figur von H; ihre Symmetrie ist gHg⁻¹.'
+        : ' Im Bild wirkt H auf das Teildreieck von g; darum ist jede Farbfläche unter H symmetrisch.';
     }
     html += '</p>';
     if (k <= 12 && m <= 8) {
       html += '<div class="coset-list">' + cs.members.map((mem, c) => `<span>${swatch(c)}${esc(setStr(g, mem))}</span>`).join('') + '</div>';
     }
     if (s.normal) {
-      html += `<p class="verdict">H ist Normalteiler: Links- und Rechtsnebenklassen färben genau gleich. Deshalb kann man mit den Farben rechnen. Die Farbtafel hat in jedem Feld genau eine Farbe; sie ist die Verknüpfungstafel der Faktorgruppe G/H ≅ ${gref(s.quot)}.</p>`;
+      html += `<p class="verdict">H ⊴ G, also gH = Hg: Links- und Rechtsnebenklassen färben gleich. Jedes Feld der Farbtafel hat genau eine Farbe; die Tafel ist die Verknüpfungstafel von G/H&nbsp;≅&nbsp;${gref(s.quot)}.</p>`;
     } else {
-      html += `<p class="verdict bad">H ist kein Normalteiler: Die ${L ? 'Rechtsnebenklassen' : 'Linksnebenklassen'} färben anders (siehe Vergleich). In der Farbtafel landen manche Produkte in mehreren Farben (Felder mit „?“): Was „Farbe mal Farbe“ ergibt, hängt davon ab, welche Vertreter man nimmt.`;
+      html += `<p class="verdict bad">H ⋬ G: Die ${L ? 'Rechtsnebenklassen' : 'Linksnebenklassen'} färben anders (siehe Vergleich). Felder mit „?“: Das Produkt zweier Farben hängt von den Vertretern ab.`;
       if (cmp && cmp.ex) {
         const { b, h } = cmp.ex;
         const hb = g.tab[h][b];
         const cB = cs.id[b], cHB = cs.id[hb];
-        if (L) html += ` Konkret: ${esc(g.labels[g.e])} und ${esc(g.labels[h])} haben beide die Farbe von H. Mal ${esc(g.labels[b])} von rechts ergibt ${esc(g.labels[b])} ${swatch(cB)} und ${esc(g.labels[hb])} ${swatch(cHB)}, also zwei verschiedene Farben.`;
+        if (L) html += ` Etwa ${esc(g.labels[g.e])}, ${esc(g.labels[h])} ∈ H, aber ${esc(g.labels[g.e])} · ${esc(g.labels[b])} = ${esc(g.labels[b])} ${swatch(cB)} und ${esc(g.labels[h])} · ${esc(g.labels[b])} = ${esc(g.labels[hb])} ${swatch(cHB)} haben verschiedene Farben.`;
       }
       html += '</p>';
     }
@@ -1523,12 +1681,12 @@ function cosetSection(g, s, mode, cs, cmp) {
     const x = cmp.x;
     const lab = esc(g.labels[x]);
     const both = [...cmp.gH].filter(y => cmp.Hg.has(y));
-    html += `<p class="sub-text"><strong>Vergleich für g = ${lab}.</strong> Gefüllt: die Linksnebenklasse gH = ${esc(setStr(g, [...cmp.gH]))}. Umrandet: die Rechtsnebenklasse Hg = ${esc(setStr(g, [...cmp.Hg]))}. Beide enthalten g selbst, gemeinsam haben sie nur ${esc(setStr(g, both))}.</p>`;
+    html += `<p class="sub-text">Vergleich für g = ${lab}. Gefüllt: gH = ${esc(setStr(g, [...cmp.gH]))}; umrandet: Hg = ${esc(setStr(g, [...cmp.Hg]))}; gH ∩ Hg = ${esc(setStr(g, both))}.</p>`;
     const conj = [...cmp.conj].sort((a, b) => a - b);
     const conjIdx = g.subs.findIndex(t => t.el.length === conj.length && t.el.every((e, i) => e === conj[i]));
-    html += `<p class="verdict bad">Was nicht stimmt: gH ≠ Hg. Gleichbedeutend damit ist gHg⁻¹ ≠ H. Die verdrehte Kopie gHg⁻¹ = ${esc(setStr(g, conj))} ist eine andere Untergruppe${conjIdx >= 0 ? ` (im Verband anklickbar: <button type="button" class="gref" data-sub="${conjIdx}">diese Konjugierte zeigen</button>)` : ''}.`;
-    if (chamber) html += ' Im Bild: gH ist die mit g bewegte Figur von H, Hg dagegen hat dieselbe Symmetrie wie H. Die beiden Flächen passen deshalb nicht aufeinander.';
-    html += ' Folge: Mit den Nebenklassen lässt sich nicht wie mit Zahlen rechnen, es gibt keine Faktorgruppe G/H.</p>';
+    html += `<p class="verdict bad">gH ≠ Hg, gleichbedeutend gHg⁻¹ = ${esc(setStr(g, conj))} ≠ H${conjIdx >= 0 ? ` (<button type="button" class="gref" data-sub="${conjIdx}">diese Konjugierte zeigen</button>)` : ''}.`;
+    if (chamber) html += ' Im Bild ist gH die mit g bewegte Figur von H, Hg hat dieselbe Symmetrie wie H; die Flächen passen nicht aufeinander.';
+    html += ' Also ist G/H keine Gruppe.</p>';
   }
   return html + '</div>';
 }
@@ -1555,45 +1713,41 @@ function renderSub() {
   if (lat.mode !== 'full') legend.push(`<span>×k: ${lat.mode === 'cls' ? 'k konjugierte Untergruppen' : 'k Untergruppen gleichen Typs'} in einem Knoten</span>`);
   document.getElementById('lat-legend').innerHTML = legend.join('');
   const cls = g.classes[s.cls];
-  const chips = [`<span class="chip">Ordnung ${s.order}</span>`, `<span class="chip">Index ${g.order / s.order}</span>`];
+  const facts = [`|H| = ${s.order}`, `[G : H] = ${g.order / s.order}`];
   if (s.order > 1 && s.order < g.order) {
-    if (s.normal) chips.push(`<span class="chip">Normalteiler</span>`, `<span class="chip">G/H ≅ ${nameHTML(G[s.quot].name)}</span>`);
-    else chips.push(`<span class="chip warn">nicht normal: ${cls.length} konjugierte Kopien</span>`);
-    if (s.maximal) chips.push(`<span class="chip">maximal</span>`);
+    if (s.normal) facts.push('H ⊴ G', `G/H ≅ ${gref(s.quot)}`);
+    else facts.push(`H ⋬ G, ${cls.length} Konjugierte`);
+    if (s.maximal) facts.push('maximal');
   }
   const node = lat.nodes.find(nd => nd.m.includes(i));
   let stepper = '';
   if (node && node.m.length > 1) {
     stepper = `<span class="stepper"><button type="button" data-step="-1" aria-label="vorherige">‹</button>${node.m.indexOf(i) + 1}/${node.m.length}<button type="button" data-step="1" aria-label="nächste">›</button></span>`;
   }
-  const showPerm = g.model.kind === 'polygon' && g.model.n <= 4;
-  let els = '';
-  if (s.order <= 32) {
-    els = s.el.map(e => `<span class="chip el">${esc(g.labels[e])}${showPerm && g.labels[e] !== 'id' ? ' = ' + esc(g.info[e].perm) : ''}</span>`).join('');
-  }
+  const els = mode === 'sub' && s.order <= 16 ? `<p class="sub-els">H = ${esc(setStr(g, s.el))}</p>` : '';
   document.getElementById('sub-info').innerHTML = `
     <div class="sub-title">H = ${esc(s.gl)} <span class="iso">≅</span> ${gref(s.type)}${stepper}</div>
-    <div class="chips">${chips.join('')}</div>
-    ${mode === 'sub' ? `<div class="chips" aria-label="Elemente">${els}</div>` : ''}
+    <p class="sub-facts">${facts.map(t => `<span>${t}</span>`).join('')}</p>
+    ${els}
     <p class="sub-text">${richText(s.long)}</p>
-    ${mode !== 'sub' ? cosetSection(g, s, mode, cs, cmp) : (state.mode !== 'sub' ? '<p class="more">Für H = {e} und H = G gibt es nur eine bzw. lauter einelementige Nebenklassen. Wähle eine andere Untergruppe.</p>' : '')}`;
+    ${mode !== 'sub' ? cosetSection(g, s, mode, cs, cmp) : (state.mode !== 'sub' ? '<p class="more">Für H = 1 sind die Nebenklassen einelementig, für H = G gibt es nur eine. Wähle eine andere Untergruppe.</p>' : '')}`;
   renderSubsList(g, i);
 }
 
 function renderSubsList(g, i) {
   const useNodes = g.classes.length > 16;
   const rows = useNodes ? g.lat.nodes.map(nd => nd.m) : g.classes;
-  let html = '';
+  let html = `<div class="row head" aria-hidden="true"><span class="h">H</span><span>≅</span><span class="r">|H|</span><span class="r">Anzahl</span><span>⊴</span><span>G/H</span></div>`;
   rows.forEach((members, r) => {
-    const rep = g.subs[members[0]];
-    const isSel = members.includes(i);
-    const allNormal = members.every(k => g.subs[k].normal);
-    const flag = rep.order === g.order ? 'ganze Gruppe' : (rep.order === 1 ? 'trivial' : (allNormal ? 'normal' : 'nicht normal'));
-    html += `<button type="button" class="row${isSel ? ' sel' : ''}" data-row="${r}">
-      <span class="t">${nameHTML(G[rep.type].name)}</span>
-      <span class="n">${members.length > 1 ? members.length + '×' : ''}</span>
-      <span class="d">${members.length > 1 && members.some(k => g.subs[k].short !== rep.short) ? 'z. B. ' : ''}${richText(rep.short)}</span>
-      <span class="f">${flag}${rep.maximal ? ' · maximal' : ''}</span></button>`;
+    const ms = members.map(k => g.subs[k]);
+    const rep = ms[0];
+    const nNormal = ms.filter(s => s.normal).length;
+    const quots = [...new Set(ms.filter(s => s.normal).map(s => s.quot))];
+    html += `<button type="button" class="row${members.includes(i) ? ' sel' : ''}" data-row="${r}">` +
+      `<span class="h">${subFormula(g, rep)}</span><span>${nameHTML(G[rep.type].name)}</span>` +
+      `<span class="r">${rep.order}</span><span class="r">${members.length}</span>` +
+      `<span>${nNormal === ms.length ? '⊴' : (nNormal ? '' : '⋬')}</span>` +
+      `<span>${quots.map(q => nameHTML(G[q].name)).join(', ')}</span></button>`;
   });
   const el = document.getElementById('subs-list');
   el.innerHTML = html;
@@ -1693,7 +1847,7 @@ document.addEventListener('click', ev => {
     selectSub(members[(p + (+st.dataset.step) + members.length) % members.length]);
     return;
   }
-  const row = t.closest('.subs-list .row');
+  const row = t.closest('.subs-list button.row');
   if (row) {
     const useNodes = row.parentElement.dataset.useNodes === '1';
     const members = useNodes ? g.lat.nodes[+row.dataset.row].m : g.classes[+row.dataset.row];
@@ -1716,6 +1870,11 @@ document.addEventListener('keydown', ev => {
     t.dispatchEvent(new MouseEvent('click', { bubbles: true }));
   }
 });
+// Zugeklappt oder offen bleibt beim Wechsel der Gruppe erhalten
+document.addEventListener('toggle', ev => {
+  if (ev.target.matches('.where')) state.whereOpen = ev.target.open;
+  else if (ev.target.matches('.subs-wrap')) state.tableOpen = ev.target.open;
+}, true);
 let rsz;
 window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(() => renderMain(false), 120); });
 
