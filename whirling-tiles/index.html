@@ -278,9 +278,9 @@
       }
       .angle-diagram .line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
       .angle-diagram .marks { fill: currentColor; stroke: currentColor; }
-      .angle-diagram .edge { stroke-width: 1.25; }
+      .angle-diagram .edge { stroke-width: 1.25; stroke-linecap: round; }
       .angle-diagram .arc { fill-opacity: 0.3; stroke-width: 1; stroke-linejoin: round; }
-      .angle-diagram .arrow, .angle-diagram .pt { stroke: none; }
+      .angle-diagram .arrow { stroke: none; }
       .angle-diagram text {
         font-family: var(--mono);
         font-size: 11px;
@@ -433,8 +433,9 @@
       saveState();
     }
     // Fig. 3(a) of the paper, in the picture: a piece of the current picture around one edge p -> q, turned so that
-    // p -> q points to the right with the tile of color 1 above; at p, the borders of the kite on this edge make the
-    // angle alpha with the edge. The scale is fixed per tiling: the piece is about two and a half edges wide.
+    // p -> q points to the right with the tile of color 1 above. Every edge shows its direction and, at its start,
+    // the angle alpha to the border of its kite. The scale is fixed per tiling: the piece is about two and a half
+    // edges wide.
     const DIAGRAM = {w: 156, h: 104, edge: 60};
     let diagramFrame = null;           // for the current tiling: world coordinates -> diagram pixels
     function setupDiagram() {
@@ -456,7 +457,7 @@
       $('angle-label').textContent = state.a.toFixed(1) + '°';
       if (!diagramFrame) return;
       const px = diagramFrame.px;
-      const [edge, copies] = csGet('[kiteEdgeAt(tilings.theta), diagramPatch()]');
+      const copies = csGet('diagramPatch()');
       const xy = v => px(v).map(c => c.toFixed(1)).join(' ');
       const line = (a, b) => `M${xy(a)}L${xy(b)}`;
       // the shapes of a layer all turn the same way and form one path, so there are no seams between them
@@ -466,7 +467,7 @@
         return 'M' + q.map(v => v[0].toFixed(1) + ' ' + v[1].toFixed(1)).join('L') + 'Z';
       };
       const tiles = ['', ''];
-      let kites = '', borders = '', diagonals = '', newTiling = '';
+      let kites = '', borders = '', diagonals = '', newTiling = '', edges = '', arrows = '', angles = '';
       for (const [cw, poly, tris, flags] of copies) {
         tiles[cw] += shape(poly);
         // the outline of the new tiling as in outlineNewTiling: around the tiles that the kites do not merge with
@@ -476,6 +477,16 @@
           borders += line(t[0], t[1]) + line(t[1], t[2]);
           diagonals += line(t[2], t[0]);
           if (outlined) newTiling += line(t[1], tris[(k + 1) % n][1]) + (flags[k] ? line(tris[(k + n - 1) % n][1], t[1]) : line(t[0], t[1]));
+          // every edge has one tile of each color, so it is marked once: from the triangle [p, kite vertex, q] of color 1
+          if (cw === 0) {
+            const [P, K, Q] = t.map(px), len = Math.hypot(Q[0] - P[0], Q[1] - P[1]), u = [(Q[0] - P[0]) / len, (Q[1] - P[1]) / len];
+            const at = (x, y) => `${((P[0] + Q[0]) / 2 + x * u[0] - y * u[1]).toFixed(1)} ${((P[1] + Q[1]) / 2 + x * u[1] + y * u[0]).toFixed(1)}`;
+            const d = Math.hypot(K[0] - P[0], K[1] - P[1]), r = Math.min(16, 0.45 * d), turn = u[0] * (K[1] - P[1]) - u[1] * (K[0] - P[0]) > 0 ? 1 : 0;
+            edges += line(t[0], t[2]);
+            arrows += `M${at(4, 0)}L${at(-3, 3.5)}L${at(-3, -3.5)}Z`;
+            if (d >= 1) angles += `M${xy(t[0])}l${(r * u[0]).toFixed(1)} ${(r * u[1]).toFixed(1)}` +
+              `A${r.toFixed(1)} ${r.toFixed(1)} 0 0 ${turn} ${(P[0] + r * (K[0] - P[0]) / d).toFixed(1)} ${(P[1] + r * (K[1] - P[1]) / d).toFixed(1)}Z`;
+          }
         });
       }
       const kite = [state.c1, state.c2, state.kc][state.k - 1];
@@ -488,15 +499,9 @@
       paint('diagram-original', state.o[0] ? diagonals : '', state.o[1], 'stroke');
       paint('diagram-new', newTiling, state.n[1], 'stroke');
       diagramLineWidths();
-      const [P, KA, Q] = edge.map(px);
-      // the edge with its direction, and the angle alpha at p up to the upper border of its kite
-      const d = Math.hypot(KA[0] - P[0], KA[1] - P[1]), r = Math.min(22, 0.45 * d), mid = (P[0] + Q[0]) / 2;
-      $('diagram-edge').setAttribute('d', `M ${P} L ${Q}`);
-      $('diagram-arrow').setAttribute('d', `M ${mid + 4} ${P[1]} l -7 -3.5 v 7 Z`);
-      $('diagram-arc').setAttribute('d', d < 1 ? '' :
-        `M ${P} h ${r} A ${r} ${r} 0 0 0 ${P[0] + r * (KA[0] - P[0]) / d} ${P[1] + r * (KA[1] - P[1]) / d} Z`);
-      $('diagram-p').setAttribute('cx', P[0]);
-      $('diagram-p').setAttribute('cy', P[1]);
+      $('diagram-edges').setAttribute('d', edges);
+      $('diagram-arrows').setAttribute('d', arrows);
+      $('diagram-angles').setAttribute('d', angles);
       $('diagram-marks').style.color = contrastingInk(kite);
     }
     // the lines as thick as in the picture relative to the tiles (the picture keeps their width when zooming)
@@ -1729,10 +1734,9 @@
         <path class="line" id="diagram-original"/>
         <path class="line" id="diagram-new"/>
         <g class="marks" id="diagram-marks">
-          <path class="edge" id="diagram-edge"/>
-          <path class="arc" id="diagram-arc"/>
-          <path class="arrow" id="diagram-arrow"/>
-          <circle class="pt" id="diagram-p" r="2"/>
+          <path class="edge" id="diagram-edges"/>
+          <path class="arc" id="diagram-angles"/>
+          <path class="arrow" id="diagram-arrows"/>
         </g>
         <text id="angle-label" x="9" y="15"></text>
       </svg>
