@@ -3,7 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Atlas der kleinen Gruppen</title>
+<title>Atlas der kleinen Gruppen · Tim Reinhardt</title>
+<meta name="description" content="Alle 93 Gruppen der Ordnung ≤ 31, bis auf Isomorphie: Steckbrief, Untergruppenverband und Nebenklassen jeder Gruppe.">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<!-- Vorschau beim Teilen eines Links (Messenger, soziale Medien); Bild in ../assets/og/, 1200 × 630 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tim Reinhardt">
+<meta property="og:title" content="Atlas der kleinen Gruppen">
+<meta property="og:description" content="Alle 93 Gruppen der Ordnung ≤ 31, bis auf Isomorphie: Steckbrief, Untergruppenverband und Nebenklassen jeder Gruppe.">
+<meta property="og:url" content="https://tim-rhdt.github.io/gruppen/">
+<meta property="og:image" content="https://tim-rhdt.github.io/assets/og/gruppen.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Diagramm der kleinen Gruppen: Zeilen nach Ordnung, Linien zu maximalen Untergruppen">
+<meta name="twitter:card" content="summary_large_image">
 <script>
   // Hell oder dunkel wie das System, außer man hat oben rechts das andere gewählt
   // (dieselbe Einstellung wie auf der Hauptseite); vor dem ersten Zeichnen, damit nichts aufblitzt
@@ -324,7 +338,8 @@ footer a:hover { color: var(--point); }
 }
 .ordtab td { text-align: right; padding: 0 0 0 14px; min-width: 1.6em; }
 .ordtab tr + tr td { color: var(--muted); }
-.footnote { margin-top: 10px; font-size: 0.875rem; color: var(--muted); max-width: 66ch; }
+/* Erläuterung zur Gruppe: links unter dem Namen, neben dem Datenblatt */
+.footnote { font-size: 0.9375rem; font-weight: 300; line-height: 1.55; color: var(--muted); max-width: 46ch; }
 .footnote .gref { color: var(--muted); }
 .block-h {
   font-size: 0.9375rem;
@@ -365,11 +380,10 @@ footer a:hover { color: var(--point); }
 }
 .gref:hover { text-decoration-color: currentColor; }
 
-/* Untergruppen sehen */
+/* Untergruppen sehen: ein Abschnitt mit kräftiger Linie darüber, wie Steckbrief und Lesehilfe */
 .see {
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  padding: 18px;
+  border-top: 2px solid var(--ink);
+  padding-top: 1rem;
   display: grid;
   gap: 18px;
 }
@@ -1131,7 +1145,8 @@ for (const g of GROUPS) {
   g.inv = g.tab.map(row => row.indexOf(g.e));
 }
 const RANGES = [8, 12, 15, 16, 24, 31];
-const state = { gid: 'D4', sub: null, lim: 16, focus: false, mode: 'sub', whereOpen: false, tableOpen: false };
+// "Wo … vorkommt" ist auf breiten Bildschirmen offen: dort steht es links neben dem Datenblatt
+const state = { gid: 'D4', sub: null, lim: 16, focus: false, mode: 'sub', whereOpen: matchMedia('(min-width: 900px)').matches, tableOpen: false };
 const FAMILY = { cyclic: 'zyklisch', abelian: 'abelsch, nicht zyklisch', nonabelian: 'nicht abelsch' };
 
 /* ---------- Präsentationen ----------
@@ -1572,10 +1587,10 @@ function renderDetail() {
       <div class="d-title">
         <h2 id="d-name">${nameHTML(g.name)}<span class="alt">${m.alt}</span></h2>
         <p class="d-meta"><span class="fam">${FAMILY[g.family]}</span> · <span title="Nummer in der Bibliothek kleiner Gruppen von GAP">SmallGroup(${g.gap[0]}, ${g.gap[1]})</span></p>
+        ${m.note ? `<p class="footnote">${richText(m.note)}</p>` : ''}
       </div>
       <div class="d-sheet">
         ${sheetHTML(g)}
-        ${m.note ? `<p class="footnote">${richText(m.note)}</p>` : ''}
       </div>
       <details class="fold where"${state.whereOpen ? ' open' : ''}>
         <summary>Wo <span class="gn">${nameHTML(g.name)}</span> vorkommt <span class="cnt">(${m.wo.length})</span></summary>

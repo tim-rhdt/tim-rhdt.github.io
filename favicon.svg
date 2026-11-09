@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Three points and the circle through them: drag a point, and the circle follows -->
+  <style>
+    .tile { fill: #fbfaf7 }
+    .line { fill: none; stroke: #265873; stroke-linecap: round; stroke-linejoin: round }
+    .point { fill: #b0466f }
+    @media (prefers-color-scheme: dark) {
+      .tile { fill: #121a20 }
+      .line { stroke: #8fc0dc }
+      .point { fill: #e58aab }
+    }
+  </style>
+  <rect class="tile" width="32" height="32" rx="7"/>
+  <circle class="line" cx="16" cy="16.2" r="9.8" stroke-width="1.9"/>
+  <path class="line" d="M12.97 6.88L8.49 22.5L24.81 20.5Z" stroke-width="1.5"/>
+  <circle class="point" cx="12.97" cy="6.88" r="2.75"/>
+  <circle class="point" cx="8.49" cy="22.5" r="2.75"/>
+  <circle class="point" cx="24.81" cy="20.5" r="2.75"/>
+</svg>

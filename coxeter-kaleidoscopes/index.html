@@ -5,6 +5,20 @@
   <title>Coxeter Kaleidoscopes · Tim Reinhardt</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Coxeter kaleidoscopes and a pseudo-kaleidoscope: mirror models that turn reflection groups into seemingly endless spaces.">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <!-- Link previews (messengers, social media); images in ../assets/og/, 1200 × 630 -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Tim Reinhardt">
+  <meta property="og:title" content="Coxeter Kaleidoscopes">
+  <meta property="og:description" content="Coxeter kaleidoscopes and a pseudo-kaleidoscope: mirror models that turn reflection groups into seemingly endless spaces.">
+  <meta property="og:url" content="https://tim-rhdt.github.io/coxeter-kaleidoscopes/">
+  <meta property="og:image" content="https://tim-rhdt.github.io/assets/og/coxeter-kaleidoscopes.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Red and yellow LED strips repeating as a lattice inside a Coxeter kaleidoscope">
+  <meta name="twitter:card" content="summary_large_image">
 
   <script>
     // Follow the system's light/dark setting unless the visitor picked the other one
@@ -154,6 +168,14 @@
       transition: color 0.2s ease;
     }
 
+    /* Small links get a taller hit area (at least 24px) without moving anything */
+    .topbar a,
+    .back,
+    footer a {
+      padding-block: 0.25rem;
+      margin-block: -0.25rem;
+    }
+
     .topbar a:hover,
     .back:hover { color: var(--point); }
 
@@ -215,7 +237,9 @@
       gap: 1.25rem;
     }
 
+    /* "← All projects": above the title and again after the last gallery */
     .back {
+      align-self: flex-start;
       font-size: 0.9375rem;
       color: var(--muted);
     }
@@ -570,6 +594,8 @@
           <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-4.mp4" data-caption="A blue pattern on the display turns into a lattice of cubes"><video src="media/pseudo-clip-4.mp4" poster="media/pseudo-clip-4.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: a blue pattern on the display turns into a lattice of cubes"></video></button></li>
         </ul>
       </section>
+
+      <a class="back" href="../#projects">← All projects</a>
     </main>
 
     <footer>

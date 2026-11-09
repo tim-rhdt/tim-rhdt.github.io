@@ -5,7 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- the site's own copy of CindyJS (also used by the talk applets); no request to cindyjs.org -->
     <script type="text/javascript" src="../talks/applets/cindyjs/Cindy.js"></script>
-    <title>Whirling Tiles</title>
+    <title>Whirling Tiles · Tim Reinhardt</title>
+    <meta name="description" content="Web app turning two-colorable tilings into new ones by adding kites along the edges.">
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+    <!-- Link previews (messengers, social media); images in ../assets/og/, 1200 × 630 -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Tim Reinhardt">
+    <meta property="og:title" content="Whirling Tiles">
+    <meta property="og:description" content="Web app turning two-colorable tilings into new ones by adding kites along the edges.">
+    <meta property="og:url" content="https://tim-rhdt.github.io/whirling-tiles/">
+    <meta property="og:image" content="https://tim-rhdt.github.io/assets/og/whirling-tiles.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="A whirling-tile tiling: blue kites between white polygons">
+    <meta name="twitter:card" content="summary_large_image">
     <script>
       // Follow the system's light/dark setting unless the visitor picked the other one
       // (same setting as on the homepage). Runs before the first paint, so the page doesn't flash.
@@ -270,11 +284,12 @@
       .angle-diagram .edge { stroke-width: 1.25; stroke-linecap: round; }
       .angle-diagram .arc { fill-opacity: 0.3; stroke-width: 1; stroke-linejoin: round; }
       .angle-diagram .arrow { stroke: none; }
+      /* The cutout shows the pattern in its own colors in both themes, so the label keeps the light theme's colors */
       .angle-diagram text {
         font-family: var(--mono);
         font-size: 11px;
-        fill: var(--text);
-        stroke: var(--bg);
+        fill: #1b2329;
+        stroke: rgb(251 250 247 / 0.85);
         stroke-width: 3px;
         stroke-linejoin: round;
         paint-order: stroke;

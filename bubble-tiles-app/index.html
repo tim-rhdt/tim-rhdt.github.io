@@ -2,9 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bubble Tiles – Privacy Policy &amp; Support</title>
+  <title>Bubble Tiles · Tim Reinhardt</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Bubble Tiles, an iOS puzzle game with curvy hexagon tiles: privacy policy and support.">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+
+  <!-- Link previews (messengers, social media); images in ../assets/og/, 1200 × 630 -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Tim Reinhardt">
+  <meta property="og:title" content="Bubble Tiles">
+  <meta property="og:description" content="Bubble Tiles, an iOS puzzle game with curvy hexagon tiles: privacy policy and support.">
+  <meta property="og:url" content="https://tim-rhdt.github.io/bubble-tiles-app/">
+  <meta property="og:image" content="https://tim-rhdt.github.io/assets/og/bubble-tiles.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Four screenshots of Bubble Tiles in different themes">
+  <meta name="twitter:card" content="summary_large_image">
 
   <script>
     // Follow the system's light/dark setting unless the visitor picked the other one
@@ -133,6 +147,14 @@
       transition: color 0.2s ease;
     }
 
+    /* Small links get a taller hit area (at least 24px) without moving anything */
+    .topbar a,
+    .back,
+    footer a {
+      padding-block: 0.25rem;
+      margin-block: -0.25rem;
+    }
+
     .topbar a:hover,
     .back:hover { color: var(--point); }
 
@@ -195,6 +217,7 @@
     }
 
     .back {
+      align-self: flex-start;
       font-size: 0.9375rem;
       color: var(--muted);
     }
@@ -234,6 +257,16 @@
       font-weight: 300;
       line-height: 1.5;
       color: var(--muted);
+    }
+
+    /* one sentence on how the game works */
+    .rules {
+      margin: 0;
+      max-width: 34rem;
+      font-size: 1.0625rem;
+      font-weight: 300;
+      line-height: 1.6;
+      text-wrap: pretty;
     }
 
     .with {
@@ -387,6 +420,7 @@
           <h1 class="page-title">Bubble Tiles</h1>
         </div>
         <p class="lead">Curvy hexagon puzzles</p>
+        <p class="rules">The tiles are hexagons with circular arcs instead of straight edges – fit them together so that a bulge always meets a hollow.</p>
         <p class="with">With the <a class="text-link" href="https://www.mathhappens.org">MathHappens Foundation</a></p>
         <div class="links">
           <a href="https://apps.apple.com/de/app/bubble-tiles/id6788320832">App Store ↗</a>
