@@ -85,6 +85,8 @@
       /* Accents from the "Tim" theme of CindyInCindy: point color (a little darker, for contrast) and line color */
       --point: #b0466f;
       --stroke: #265873;
+      /* links and buttons under the mouse: the calmer line color instead of the point color */
+      --hover: var(--stroke);
       --underline: color-mix(in oklab, var(--point) 50%, transparent);
       --serif: "Instrument Serif", Georgia, serif;
       --sans: "Arrows", "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
@@ -156,7 +158,7 @@
     }
 
     .topbar a:hover,
-    .back:hover { color: var(--point); }
+    .back:hover { color: var(--hover); }
 
     .uni { color: var(--muted); }
 
@@ -186,7 +188,7 @@
       transition: color 0.2s ease;
     }
 
-    .theme-toggle:hover { color: var(--point); }
+    .theme-toggle:hover { color: var(--hover); }
 
     .theme-toggle .sun,
     :root[data-theme="dark"] .theme-toggle .moon { display: none; }
@@ -279,7 +281,7 @@
 
     .links a:hover,
     .text-link:hover {
-      color: var(--point);
+      color: var(--hover);
       text-decoration-color: currentColor;
     }
 
@@ -355,7 +357,7 @@
 
     a:focus-visible,
     .theme-toggle:focus-visible {
-      outline: 2px solid var(--point);
+      outline: 2px solid var(--hover);
       outline-offset: 3px;
       border-radius: 2px;
     }
@@ -381,7 +383,7 @@
       transition: background-color 0.2s ease;
     }
 
-    .download:hover { background: var(--point); }
+    .download:hover { background: var(--hover); }
 
     .block ol {
       margin: 0;

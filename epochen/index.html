@@ -45,6 +45,7 @@
   --band-row:#f3f1ec;
   /* Akzent aus dem Theme „Tim“ von CindyInCindy (Punktfarbe, für den Kontrast etwas dunkler), wie auf der Hauptseite */
   --point:#b0466f;
+  --hover:#265873;
   --underline:color-mix(in oklab,var(--point) 50%,transparent);
   --focus:#265873;
   --on-ink:#fbfaf7;
@@ -63,7 +64,7 @@
   --bg:#121a20; --surface:#121a20; --raised:#1b252c;
   --ink:#ece8e2; --ink-2:#bcc2c6; --muted:#98a1a7;
   --line:#2c3840; --line-2:#212b32; --band:#2a353d; --band-row:#18222a;
-  --point:#e58aab; --underline:color-mix(in oklab,var(--point) 55%,transparent);
+  --point:#e58aab; --hover:#8fc0dc; --underline:color-mix(in oklab,var(--point) 55%,transparent);
   --focus:#8fc0dc; --on-ink:#121a20; --ok:#3fb950; --bad:#f85149;
   --c-p:#3987e5; --c-k:#d95926; --c-l:#199e70; --c-m:#c98500; --c-i:#d55181; --c-f:#008300;
   --tint:30%; --tint-3:17%; --tint-hover:40%; --tint-sel:50%;
@@ -93,7 +94,7 @@ b,strong{font-weight:500}
 .brand{min-width:0;margin-right:auto}
 .brand .name-line{display:inline-block;margin-bottom:6px}
 .brand .name{color:inherit;text-decoration:none;transition:color .2s}
-.brand .name:hover{color:var(--point)}
+.brand .name:hover{color:var(--hover)}
 .brand h1{font-family:var(--font-display);font-weight:400;font-size:34px;line-height:1;margin:0;letter-spacing:-.015em;text-wrap:balance}
 .brand p{margin:4px 0 0;color:var(--ink-2);font-size:13px}
 .search{position:relative;flex:0 1 320px;min-width:200px}
@@ -358,7 +359,7 @@ svg.links circle{fill:var(--ink);opacity:.6}
 .sheet .x{float:right;margin-left:12px}
 .sheet-foot{margin-top:24px !important;font:400 13px/1 var(--font-ui)}
 .sheet-foot a{color:var(--muted);text-decoration:none}
-.sheet-foot a:hover{color:var(--point)}
+.sheet-foot a:hover{color:var(--hover)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:8px;font-size:13px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .modal.lbx{background:rgba(6,8,9,.86)}

@@ -46,6 +46,7 @@
   --wash: #f0eee9;
   /* Akzent aus dem Theme „Tim“ von CindyInCindy (Punktfarbe, für den Kontrast etwas dunkler), wie auf der Hauptseite */
   --point: #b0466f;
+  --hover: #265873;
   --cyc: #2B5FC4;
   --cyc-soft: #DAE4F8;
   --ab: #A1650F;
@@ -68,7 +69,7 @@
 :root[data-theme="dark"] {
   --paper: #121a20; --sheet: #121a20; --ink: #ece8e2;
   --muted: #bcc2c6; --faint: #98a1a7;
-  --rule: #27323a; --rule-strong: #4f5c64; --wash: #1b252c; --point: #e58aab;
+  --rule: #27323a; --rule-strong: #4f5c64; --wash: #1b252c; --point: #e58aab; --hover: #8fc0dc;
   --cyc: #7DA2F0; --cyc-soft: #1C2A47; --ab: #E2AB52; --ab-soft: #3A2D15;
   --nab: #EE7FA6; --nab-soft: #45202F; --on-g: #121a20;
   --k1: #4FC7B5; --k2: #A88BF0; --k3: #F3A35A; --k4: #86C866; --k5: #5CC9E8; --k6: #C9C451;
@@ -124,7 +125,7 @@ button { font: inherit; color: inherit; }
   font-weight: 400;
 }
 .topbar a { text-decoration: none; transition: color 0.2s ease; }
-.topbar a:hover { color: var(--point); }
+.topbar a:hover { color: var(--hover); }
 .uni { color: var(--muted); }
 .theme-toggle {
   display: grid;
@@ -139,7 +140,7 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
   transition: color 0.2s ease;
 }
-.theme-toggle:hover { color: var(--point); }
+.theme-toggle:hover { color: var(--hover); }
 .theme-toggle .sun,
 :root[data-theme="dark"] .theme-toggle .moon { display: none; }
 :root[data-theme="dark"] .theme-toggle .sun { display: block; }
@@ -154,9 +155,9 @@ button { font: inherit; color: inherit; }
 }
 footer { margin-top: auto; font-size: 0.9375rem; font-weight: 400; }
 footer a { color: var(--muted); text-decoration: none; transition: color 0.2s ease; }
-footer a:hover { color: var(--point); }
+footer a:hover { color: var(--hover); }
 .topbar a:focus-visible, .theme-toggle:focus-visible, footer a:focus-visible {
-  outline: 2px solid var(--point);
+  outline: 2px solid var(--hover);
   outline-offset: 3px;
   border-radius: 2px;
 }

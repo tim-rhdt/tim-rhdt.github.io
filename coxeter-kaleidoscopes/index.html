@@ -102,6 +102,8 @@
       /* Accents from the "Tim" theme of CindyInCindy: point color (a little darker, for contrast) and line color */
       --point: #b0466f;
       --stroke: #265873;
+      /* links and buttons under the mouse: the calmer line color instead of the point color */
+      --hover: var(--stroke);
       --underline: color-mix(in oklab, var(--point) 50%, transparent);
       --serif: "Instrument Serif", Georgia, serif;
       --sans: "Arrows", "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
@@ -177,7 +179,7 @@
     }
 
     .topbar a:hover,
-    .back:hover { color: var(--point); }
+    .back:hover { color: var(--hover); }
 
     .uni { color: var(--muted); }
 
@@ -207,7 +209,7 @@
       transition: color 0.2s ease;
     }
 
-    .theme-toggle:hover { color: var(--point); }
+    .theme-toggle:hover { color: var(--hover); }
 
     .theme-toggle .sun,
     :root[data-theme="dark"] .theme-toggle .moon { display: none; }
@@ -229,6 +231,15 @@
       display: flex;
       flex-direction: column;
       gap: inherit;
+    }
+
+    /* The article – title, text, figures and galleries – is one centered column,
+       and the text runs its full width, so nothing sits off to one side */
+    main,
+    footer {
+      width: 100%;
+      max-width: 50rem;
+      margin-inline: auto;
     }
 
     .intro {
@@ -265,7 +276,6 @@
 
     .lead {
       margin: 0;
-      max-width: 40rem;
       font-size: clamp(1.125rem, 2.4vw, 1.375rem);
       font-weight: 300;
       line-height: 1.5;
@@ -284,7 +294,6 @@
     }
 
     .prose {
-      max-width: 42rem;
       display: flex;
       flex-direction: column;
       gap: 1rem;
@@ -292,7 +301,7 @@
 
     .prose p {
       margin: 0;
-      font-size: 1.0625rem;
+      font-size: 1.125rem;
       font-weight: 300;
       line-height: 1.65;
       text-wrap: pretty;
@@ -307,7 +316,7 @@
     }
 
     .text-link:hover {
-      color: var(--point);
+      color: var(--hover);
       text-decoration-color: currentColor;
     }
 
@@ -315,6 +324,7 @@
     .figs {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 13rem));
+      justify-content: center;
       gap: 1rem 0.75rem;
       margin: 0;
       padding: 0;
@@ -391,6 +401,13 @@
 
     .gallery .item:hover img,
     .gallery .item:hover video { transform: scale(1.02); }
+
+    /* Video tiles keep their poster (the loop's first frame) behind the video,
+       so a tile never flashes empty while a loop starts */
+    .gallery .is-video {
+      background-size: cover;
+      background-position: center;
+    }
 
     /* small play mark on videos */
     .gallery .is-video::after {
@@ -485,11 +502,11 @@
       transition: color 0.2s ease;
     }
 
-    footer a:hover { color: var(--point); }
+    footer a:hover { color: var(--hover); }
 
     a:focus-visible,
     button:focus-visible {
-      outline: 2px solid var(--point);
+      outline: 2px solid var(--hover);
       outline-offset: 3px;
       border-radius: 2px;
     }
@@ -567,9 +584,9 @@
         </div>
         <ul class="gallery" aria-label="Gallery: Coxeter kaleidoscopes">
           <li><button class="item" type="button" data-kind="image" data-full="media/led-lattice-1600.webp" data-caption="Looking into an LED Coxeter kaleidoscope: red and yellow LED strips repeat as a lattice"><img src="media/led-lattice-800.webp" width="625" height="800" alt="Looking into an LED Coxeter kaleidoscope: red and yellow LED strips repeat as a lattice" loading="lazy" decoding="async"></button></li>
-          <li><button class="item is-video" type="button" data-kind="video" data-full="media/led-clip-1.mp4" data-caption="Moving through the light lattice of an LED kaleidoscope"><video src="media/led-clip-1.mp4" poster="media/led-clip-1.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: moving through the light lattice of an LED kaleidoscope"></video></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/led-clip-1.mp4" style="background-image: url(media/led-clip-1.webp)" data-caption="Moving through the light lattice of an LED kaleidoscope"><video src="media/led-clip-1.mp4" poster="media/led-clip-1.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: moving through the light lattice of an LED kaleidoscope"></video></button></li>
           <li><button class="item" type="button" data-kind="image" data-full="media/led-triangle-1600.webp" data-caption="A triangular face of an LED kaleidoscope with nested triangles of light"><img src="media/led-triangle-800.webp" width="800" height="600" alt="A triangular face of an LED kaleidoscope with nested triangles of light" loading="lazy" decoding="async"></button></li>
-          <li><button class="item is-video" type="button" data-kind="video" data-full="media/led-clip-2.mp4" data-caption="Red and yellow LED lattice inside a Coxeter kaleidoscope"><video src="media/led-clip-2.mp4" poster="media/led-clip-2.webp" width="720" height="1280" muted loop playsinline preload="none" aria-label="Video: red and yellow LED lattice inside a Coxeter kaleidoscope"></video></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/led-clip-2.mp4" style="background-image: url(media/led-clip-2.webp)" data-caption="Red and yellow LED lattice inside a Coxeter kaleidoscope"><video src="media/led-clip-2.mp4" poster="media/led-clip-2.webp" width="720" height="1280" muted loop playsinline preload="none" aria-label="Video: red and yellow LED lattice inside a Coxeter kaleidoscope"></video></button></li>
           <li><button class="item" type="button" data-kind="image" data-full="media/led-lit-1600.webp" data-caption="An LED kaleidoscope lit up in the dark"><img src="media/led-lit-800.webp" width="800" height="600" alt="An LED kaleidoscope lit up in the dark" loading="lazy" decoding="async"></button></li>
           <li><button class="item" type="button" data-kind="image" data-full="media/led-pyramid-1600.webp" data-caption="An LED kaleidoscope held up in the dark"><img src="media/led-pyramid-800.webp" width="800" height="800" alt="An LED kaleidoscope held up in the dark" loading="lazy" decoding="async"></button></li>
         </ul>
@@ -587,11 +604,11 @@
         </ul>
         <ul class="gallery" aria-label="Gallery: pseudo-kaleidoscope">
           <li><button class="item" type="button" data-kind="image" data-full="media/pseudo-model-1600.webp" data-caption="The pseudo-kaleidoscope: an upside-down glass pyramid on a table"><img src="media/pseudo-model-800.webp" width="800" height="402" alt="The pseudo-kaleidoscope: an upside-down glass pyramid on a table" loading="lazy" decoding="async"></button></li>
-          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-1.mp4" data-caption="The pseudo-kaleidoscope with a purple and yellow pattern"><video src="media/pseudo-clip-1.mp4" poster="media/pseudo-clip-1.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: the pseudo-kaleidoscope with a purple and yellow pattern"></video></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-1.mp4" style="background-image: url(media/pseudo-clip-1.webp)" data-caption="The pseudo-kaleidoscope with a purple and yellow pattern"><video src="media/pseudo-clip-1.mp4" poster="media/pseudo-clip-1.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: the pseudo-kaleidoscope with a purple and yellow pattern"></video></button></li>
           <li><button class="item" type="button" data-kind="image" data-full="media/pseudo-above-1600.webp" data-caption="The pseudo-kaleidoscope seen from above, with its mirrored side walls"><img src="media/pseudo-above-800.webp" width="800" height="620" alt="The pseudo-kaleidoscope seen from above, with its mirrored side walls" loading="lazy" decoding="async"></button></li>
-          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-2.mp4" data-caption="Cubes with a pink and blue pattern repeat in every direction"><video src="media/pseudo-clip-2.mp4" poster="media/pseudo-clip-2.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: cubes with a pink and blue pattern repeat in every direction"></video></button></li>
-          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-3.mp4" data-caption="Inside the pseudo-kaleidoscope: patterned cubes in every direction"><video src="media/pseudo-clip-3.mp4" poster="media/pseudo-clip-3.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: inside the pseudo-kaleidoscope, patterned cubes in every direction"></video></button></li>
-          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-4.mp4" data-caption="A blue pattern on the display turns into a lattice of cubes"><video src="media/pseudo-clip-4.mp4" poster="media/pseudo-clip-4.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: a blue pattern on the display turns into a lattice of cubes"></video></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-2.mp4" style="background-image: url(media/pseudo-clip-2.webp)" data-caption="Cubes with a pink and blue pattern repeat in every direction"><video src="media/pseudo-clip-2.mp4" poster="media/pseudo-clip-2.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: cubes with a pink and blue pattern repeat in every direction"></video></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-3.mp4" style="background-image: url(media/pseudo-clip-3.webp)" data-caption="Inside the pseudo-kaleidoscope: patterned cubes in every direction"><video src="media/pseudo-clip-3.mp4" poster="media/pseudo-clip-3.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: inside the pseudo-kaleidoscope, patterned cubes in every direction"></video></button></li>
+          <li><button class="item is-video" type="button" data-kind="video" data-full="media/pseudo-clip-4.mp4" style="background-image: url(media/pseudo-clip-4.webp)" data-caption="A blue pattern on the display turns into a lattice of cubes"><video src="media/pseudo-clip-4.mp4" poster="media/pseudo-clip-4.webp" width="1280" height="720" muted loop playsinline preload="none" aria-label="Video: a blue pattern on the display turns into a lattice of cubes"></video></button></li>
         </ul>
       </section>
 

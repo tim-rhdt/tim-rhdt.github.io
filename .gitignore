@@ -1,3 +1,7 @@
 node_modules/
 .claude/
 Epochen-Bilder/
+
+# macOS Finder files (folder settings, custom folder icon "Icon\r")
+.DS_Store
+Icon?

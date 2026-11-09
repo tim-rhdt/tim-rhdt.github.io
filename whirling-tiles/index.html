@@ -54,6 +54,7 @@
         --line-soft: #ecebe6;
         /* Accent from the "Tim" theme of CindyInCindy: point color, a little darker for contrast */
         --point: #b0466f;
+        --hover: #265873;
         --underline: color-mix(in oklab, var(--point) 50%, transparent);
         --serif: "Instrument Serif", Georgia, serif;
         --mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -70,6 +71,7 @@
         --line: #27323a;
         --line-soft: #212b32;
         --point: #e58aab;
+        --hover: #8fc0dc;
         --underline: color-mix(in oklab, var(--point) 55%, transparent);
       }
       * { box-sizing: border-box; }
@@ -98,7 +100,7 @@
       /* ---------- Top bar and footer as on the homepage ---------- */
       .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 0.9375rem; font-weight: 400; }
       .topbar a { text-decoration: none; transition: color 0.2s ease; }
-      .topbar a:hover { color: var(--point); }
+      .topbar a:hover { color: var(--hover); }
       .uni { color: var(--muted); }
       .theme-toggle {
         display: grid;
@@ -113,7 +115,7 @@
         cursor: pointer;
         transition: color 0.2s ease;
       }
-      .theme-toggle:hover { color: var(--point); }
+      .theme-toggle:hover { color: var(--hover); }
       .theme-toggle .sun,
       :root[data-theme="dark"] .theme-toggle .moon { display: none; }
       :root[data-theme="dark"] .theme-toggle .sun { display: block; }
@@ -121,8 +123,8 @@
       footer { margin-top: auto; font-size: 0.9375rem; font-weight: 400; }
       .controls footer { padding-top: 0.25rem; }
       footer a { color: var(--muted); text-decoration: none; transition: color 0.2s ease; }
-      footer a:hover { color: var(--point); }
-      a:focus-visible, button:focus-visible { outline: 2px solid var(--point); outline-offset: 3px; border-radius: 2px; }
+      footer a:hover { color: var(--hover); }
+      a:focus-visible, button:focus-visible { outline: 2px solid var(--hover); outline-offset: 3px; border-radius: 2px; }
 
       /* ---------- Layout: header, title and menu on the left; the canvas on the right fills the window and stays in view ---------- */
       :root { --menu: 300px; }
@@ -162,7 +164,7 @@
         cursor: pointer;
         transition: color 0.2s ease;
       }
-      .info-toggle:hover { color: var(--point); }
+      .info-toggle:hover { color: var(--hover); }
       .info-icon { display: grid; place-items: center; width: 1rem; height: 1rem; }
       .info-icon .icon { width: 0.875rem; height: 0.875rem; transition: transform 0.2s ease; }
       .info-toggle[aria-expanded="false"] .icon { transform: rotate(180deg); }
@@ -176,7 +178,7 @@
         text-decoration-color: var(--underline);
         transition: color 0.2s ease, text-decoration-color 0.2s ease;
       }
-      .text-link:hover { color: var(--point); text-decoration-color: currentColor; }
+      .text-link:hover { color: var(--hover); text-decoration-color: currentColor; }
 
       /* ---------- Controls: sections with a strong rule, rows separated by hairlines ---------- */
       fieldset { min-width: 0; margin: 0; padding: 0.5rem 0 0; border: 0; border-top: 2px solid var(--text); }
