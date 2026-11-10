@@ -179,6 +179,11 @@
         transition: color 0.2s ease, text-decoration-color 0.2s ease;
       }
       .text-link:hover { color: var(--hover); text-decoration-color: currentColor; }
+      /* "← All projects": above the title and again at the end of the menu, as on the project pages */
+      .back { font-size: 0.9375rem; color: var(--muted); text-decoration: none; padding-block: 0.25rem; transition: color 0.2s ease; }
+      .back:hover { color: var(--hover); }
+      .intro .back { display: inline-block; margin: -0.25rem 0 0.5rem; }
+      .controls .back { align-self: flex-start; margin-block: 0.25rem -0.25rem; }
 
       /* ---------- Controls: sections with a strong rule, rows separated by hairlines ---------- */
       fieldset { min-width: 0; margin: 0; padding: 0.5rem 0 0; border: 0; border-top: 2px solid var(--text); }
@@ -1719,6 +1724,7 @@
     </header>
 
     <div class="intro">
+      <a class="back" href="../#projects">← All projects</a>
       <h1>Whirling Tiles</h1>
       <button class="info-toggle" type="button" aria-expanded="true" aria-controls="info">
         <span class="info-icon"><svg class="icon" aria-hidden="true"><use href="#icon-chevron"/></svg></span>Info
@@ -1839,6 +1845,8 @@
           </div>
         </div>
       </fieldset>
+
+      <a class="back" href="../#projects">← All projects</a>
 
       <footer>
         <a href="mailto:tim.reinhardt@tum.de">tim.reinhardt@tum.de</a>

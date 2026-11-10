@@ -227,19 +227,12 @@
 
     /* ---------- Title ---------- */
 
+    /* Title, text, figures and galleries use the full width of the header,
+       as on the homepage and the app pages */
     main {
       display: flex;
       flex-direction: column;
       gap: inherit;
-    }
-
-    /* The article – title, text, figures and galleries – is one centered column,
-       and the text runs its full width, so nothing sits off to one side */
-    main,
-    footer {
-      width: 100%;
-      max-width: 50rem;
-      margin-inline: auto;
     }
 
     .intro {
@@ -276,6 +269,7 @@
 
     .lead {
       margin: 0;
+      max-width: 40rem;
       font-size: clamp(1.125rem, 2.4vw, 1.375rem);
       font-weight: 300;
       line-height: 1.5;
