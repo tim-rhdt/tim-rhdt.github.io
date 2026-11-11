@@ -262,8 +262,8 @@
       .tiling-button:hover { border-color: var(--line); color: var(--text); }
       .tiling-button[aria-checked="true"] { border-color: var(--text); box-shadow: inset 0 0 0 1px var(--text); color: var(--text); }
 
-      /* kite angle: the slider next to the label; the value is shown in the diagram on the canvas */
-      .angle-row > label { font-weight: 400; }
+      /* kite angle: its own section at the top of the menu (the parameter one changes most),
+         the slider across the full width; the value is shown in the diagram on the canvas */
       #angle { flex: 1; min-width: 0; }
 
       /* kite color: three options in a row */
@@ -1757,6 +1757,15 @@
     <div class="controls">
 
       <fieldset>
+        <legend id="angle-legend">Kite Angle</legend>
+        <div class="group">
+          <div class="row">
+            <input type="range" id="angle" step="0.1" aria-labelledby="angle-legend">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
         <legend>Tiling</legend>
         <div class="group">
           <div class="tiling-grid" id="tiling-grid" role="radiogroup" aria-label="Tiling"></div>
@@ -1770,12 +1779,6 @@
 
       <fieldset>
         <legend>Kites</legend>
-        <div class="group">
-          <div class="row angle-row">
-            <label for="angle" class="tight">Kite angle</label>
-            <input type="range" id="angle" step="0.1">
-          </div>
-        </div>
         <div class="group">
           <div class="row">
             <span class="row-label">Kite color</span>
